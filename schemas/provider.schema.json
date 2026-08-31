@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Adam CodexHub Provider Definition",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "adapter",
+    "baseUrl"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "adapter": {
+      "type": "string",
+      "enum": [
+        "openai-responses",
+        "openai-compatible",
+        "anthropic-compatible",
+        "gemini",
+        "ollama",
+        "custom"
+      ]
+    },
+    "baseUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "trustLevel": {
+      "type": "string",
+      "enum": [
+        "official",
+        "verified",
+        "community",
+        "experimental",
+        "custom"
+      ]
+    },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "bearer",
+            "x-api-key",
+            "query",
+            "none"
+          ]
+        },
+        "headerName": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "endpoints": {
+      "type": "object",
+      "properties": {
+        "models": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "responses": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "chatCompletions": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "extraHeaders": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

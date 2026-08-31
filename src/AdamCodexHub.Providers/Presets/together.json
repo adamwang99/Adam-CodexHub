@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "together",
+  "name": "Together AI",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://api.together.xyz/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": null,
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming"
+  ]
+}

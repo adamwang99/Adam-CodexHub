@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <ProjectReference Include="..\AdamCodexHub.Core\AdamCodexHub.Core.csproj" />
+    <ProjectReference Include="..\AdamCodexHub.Infrastructure\AdamCodexHub.Infrastructure.csproj" />
+    <ProjectReference Include="..\AdamCodexHub.Providers\AdamCodexHub.Providers.csproj" />
+    <ProjectReference Include="..\AdamCodexHub.Codex\AdamCodexHub.Codex.csproj" />
+    <ProjectReference Include="..\AdamCodexHub.Gateway\AdamCodexHub.Gateway.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\adam-codexhub-logo.png" />
+  </ItemGroup>
+</Project>

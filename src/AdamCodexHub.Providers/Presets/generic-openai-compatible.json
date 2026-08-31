@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "custom-openai-compatible",
+  "name": "Custom OpenAI-Compatible",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://api.example.com/v1",
+  "trustLevel": "custom",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": "/responses",
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [],
+  "notes": "Template only; user must replace the base URL."
+}

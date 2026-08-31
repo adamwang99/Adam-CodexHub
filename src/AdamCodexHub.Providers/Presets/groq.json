@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "groq",
+  "name": "Groq",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://api.groq.com/openai/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": null,
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools"
+  ]
+}

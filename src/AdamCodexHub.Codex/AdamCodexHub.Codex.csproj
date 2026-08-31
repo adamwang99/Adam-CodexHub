@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AdamCodexHub.Core\AdamCodexHub.Core.csproj" />
+    <PackageReference Include="Tomlyn" />
+  </ItemGroup>
+</Project>

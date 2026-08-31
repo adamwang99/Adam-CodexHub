@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <ProjectReference Include="..\..\src\AdamCodexHub.Core\AdamCodexHub.Core.csproj" />
+    <ProjectReference Include="..\..\src\AdamCodexHub.Codex\AdamCodexHub.Codex.csproj" />
+    <ProjectReference Include="..\..\src\AdamCodexHub.Gateway\AdamCodexHub.Gateway.csproj" />
+    <ProjectReference Include="..\..\src\AdamCodexHub.Infrastructure\AdamCodexHub.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\AdamCodexHub.Providers\AdamCodexHub.Providers.csproj" />
+  </ItemGroup>
+</Project>

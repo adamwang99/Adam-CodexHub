@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "example-provider",
+  "name": "Example Provider",
+  "adapter": "openai-responses",
+  "baseUrl": "https://api.example.com/v1",
+  "trustLevel": "custom",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": "/responses",
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools"
+  ]
+}

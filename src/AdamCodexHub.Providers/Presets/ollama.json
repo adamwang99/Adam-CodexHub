@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ollama",
+  "name": "Ollama Local",
+  "adapter": "openai-compatible",
+  "baseUrl": "http://127.0.0.1:11434/v1",
+  "trustLevel": "official",
+  "auth": {
+    "type": "none",
+    "headerName": null
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": null,
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "local",
+    "text"
+  ]
+}

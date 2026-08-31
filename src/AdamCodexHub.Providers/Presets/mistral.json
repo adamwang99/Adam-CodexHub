@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "mistral",
+  "name": "Mistral AI",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://api.mistral.ai/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": null,
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools"
+  ]
+}

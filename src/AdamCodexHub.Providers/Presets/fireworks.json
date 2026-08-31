@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "fireworks",
+  "name": "Fireworks AI",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://api.fireworks.ai/inference/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": null,
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming"
+  ]
+}

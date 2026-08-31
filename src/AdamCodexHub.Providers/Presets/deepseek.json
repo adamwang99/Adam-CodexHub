@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "deepseek",
+  "name": "DeepSeek",
+  "adapter": "openai-responses",
+  "baseUrl": "https://api.deepseek.com",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": "/responses",
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools",
+    "reasoning"
+  ],
+  "notes": "Runtime compatibility probing is still required."
+}

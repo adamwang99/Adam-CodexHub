@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "qwen",
+  "name": "Qwen / DashScope",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": "/responses",
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools"
+  ],
+  "notes": "International compatible-mode preset. Region-specific users should review the endpoint."
+}

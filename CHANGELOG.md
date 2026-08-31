@@ -27,3 +27,4 @@
 - API Keys no longer crashes when the password field is first rendered
 - provider/model selectors use a readable dark template across normal, hover, focus and disabled states
 - public MIT licensing and GitHub repository metadata
+- self-contained Windows release packaging with SHA-256 verification

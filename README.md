@@ -74,6 +74,18 @@ Run the CLI:
 dotnet run --project .\src\AdamCodexHub.Cli\AdamCodexHub.Cli.csproj -- providers
 ```
 
+## Download
+
+Download the latest self-contained Windows x64 package from
+[GitHub Releases](https://github.com/adamwang99/Adam-CodexHub/releases/latest).
+
+1. Download `AdamCodexHub-vX.Y.Z-win-x64.zip` and its `.sha256` file.
+2. Verify the SHA-256 checksum.
+3. Extract the full archive and run `AdamCodexHub.App.exe`.
+
+The portable package includes the .NET runtime. Binaries are currently unsigned,
+so Windows SmartScreen may display a warning.
+
 ## Coding-agent entry point
 
 Read:

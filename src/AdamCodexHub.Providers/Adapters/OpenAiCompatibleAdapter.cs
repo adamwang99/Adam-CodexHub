@@ -118,6 +118,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         ProviderProfile provider,
         string modelId,
         string? apiKey,
+        IProgress<ModelTestProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(modelId);
@@ -128,6 +129,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
 
         if (!string.IsNullOrWhiteSpace(provider.ResponsesEndpoint))
         {
+            progress?.Report(new ModelTestProgress("Responses API", ModelTestStepStatus.Running));
             responses = await SendProbeAsync(
                 provider,
                 apiKey,
@@ -145,10 +147,15 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             {
                 notes.Add($"Responses API: {responses.Error}");
             }
+            progress?.Report(new ModelTestProgress(
+                "Responses API",
+                responses.Success ? ModelTestStepStatus.Passed : ModelTestStepStatus.Failed,
+                responses.Success ? null : responses.Error));
         }
 
         if (!string.IsNullOrWhiteSpace(provider.ChatCompletionsEndpoint))
         {
+            progress?.Report(new ModelTestProgress("Chat Completions", ModelTestStepStatus.Running));
             chat = await SendProbeAsync(
                 provider,
                 apiKey,
@@ -169,6 +176,10 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             {
                 notes.Add($"Chat Completions: {chat.Error}");
             }
+            progress?.Report(new ModelTestProgress(
+                "Chat Completions",
+                chat.Success ? ModelTestStepStatus.Passed : ModelTestStepStatus.Failed,
+                chat.Success ? null : chat.Error));
         }
 
         var responsesSupported = responses?.Success == true;
@@ -179,18 +190,21 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             modelId,
             apiKey,
             preferResponses: responsesSupported,
+            progress,
             cancellationToken);
         var toolCalling = text && await TestToolCallingAsync(
             provider,
             modelId,
             apiKey,
             preferResponses: responsesSupported,
+            progress,
             cancellationToken);
         var structuredJson = text && await TestStructuredJsonAsync(
             provider,
             modelId,
             apiKey,
             preferChat: chatSupported,
+            progress,
             cancellationToken);
 
         var score =
@@ -223,6 +237,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         string modelId,
         string? apiKey,
         bool preferResponses,
+        IProgress<ModelTestProgress>? progress,
         CancellationToken cancellationToken)
     {
         var endpoint = preferResponses
@@ -252,10 +267,16 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
                 stream = true
             };
 
+        progress?.Report(new ModelTestProgress("Streaming", ModelTestStepStatus.Running));
         var result = await SendProbeAsync(provider, apiKey, endpoint, payload, cancellationToken);
-        return result.Success &&
+        var ok = result.Success &&
             (result.ContentType?.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase) == true ||
              result.Body?.Contains("data:", StringComparison.OrdinalIgnoreCase) == true);
+        progress?.Report(new ModelTestProgress(
+            "Streaming",
+            ok ? ModelTestStepStatus.Passed : ModelTestStepStatus.Failed,
+            ok ? null : (result.Success ? "No SSE stream detected." : result.Error)));
+        return ok;
     }
 
     private async Task<bool> TestToolCallingAsync(
@@ -263,6 +284,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         string modelId,
         string? apiKey,
         bool preferResponses,
+        IProgress<ModelTestProgress>? progress,
         CancellationToken cancellationToken)
     {
         var endpoint = preferResponses
@@ -326,9 +348,14 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             };
 
         var result = await SendProbeAsync(provider, apiKey, endpoint, payload, cancellationToken);
-        return result.Success &&
+        var ok = result.Success &&
             (result.Body?.Contains("tool_calls", StringComparison.OrdinalIgnoreCase) == true ||
              result.Body?.Contains("function_call", StringComparison.OrdinalIgnoreCase) == true);
+        progress?.Report(new ModelTestProgress(
+            "Tool Calling",
+            ok ? ModelTestStepStatus.Passed : ModelTestStepStatus.Failed,
+            ok ? null : (result.Success ? "No tool call detected." : result.Error)));
+        return ok;
     }
 
     private async Task<bool> TestStructuredJsonAsync(
@@ -336,6 +363,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         string modelId,
         string? apiKey,
         bool preferChat,
+        IProgress<ModelTestProgress>? progress,
         CancellationToken cancellationToken)
     {
         var endpoint = preferChat
@@ -365,7 +393,13 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
                 max_output_tokens = 32
             };
 
-        return (await SendProbeAsync(provider, apiKey, endpoint, payload, cancellationToken)).Success;
+        progress?.Report(new ModelTestProgress("Structured JSON", ModelTestStepStatus.Running));
+        var ok = (await SendProbeAsync(provider, apiKey, endpoint, payload, cancellationToken)).Success;
+        progress?.Report(new ModelTestProgress(
+            "Structured JSON",
+            ok ? ModelTestStepStatus.Passed : ModelTestStepStatus.Failed,
+            ok ? null : "No valid JSON response."));
+        return ok;
     }
 
     private async Task<ProbeResponse> SendProbeAsync(

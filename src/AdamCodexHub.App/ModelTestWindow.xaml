@@ -1,0 +1,142 @@
+<Window x:Class="AdamCodexHub.App.ModelTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Model Compatibility Test"
+        Style="{StaticResource AppWindow}"
+        Width="560"
+        Height="620"
+        ResizeMode="NoResize"
+        WindowStyle="None"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="True">
+
+    <Border Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Model Compatibility Test"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource BrushWhite}" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <TextBlock Text="{Binding ModelName}"
+                               Foreground="{StaticResource BrushAqua}"
+                               FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding ProviderName}"
+                               Foreground="{StaticResource BrushMuted}"
+                               FontSize="12" />
+                </StackPanel>
+                <Button Grid.Column="2" Content="✕" Click="Close_Click"
+                        Style="{StaticResource NavButton}" Padding="10,6" />
+            </Grid>
+
+            <!-- Progress area -->
+            <StackPanel Grid.Row="1" Margin="0,16,0,0">
+                <TextBlock Text="PROBES" Style="{StaticResource SectionLabel}" />
+                <ListBox ItemsSource="{Binding Steps}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         Margin="0,6,0,0"
+                         MaxHeight="220">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="2,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24" />
+                                    <ColumnDefinition Width="160" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="13">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="·" />
+                                            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                    <Setter Property="Text" Value="⟳" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushGold}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Passed}" Value="True">
+                                                    <Setter Property="Text" Value="✓" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushAqua}" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Failed}" Value="True">
+                                                    <Setter Property="Text" Value="✗" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushDanger}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Grid.Column="1" Text="{Binding Stage}" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2" Text="{Binding Detail}"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Foreground="{StaticResource BrushMuted}"
+                                           FontSize="11"
+                                           MaxHeight="60" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+
+            <!-- Score -->
+            <Border Grid.Row="3" Margin="0,20,0,0" Style="{StaticResource CardBorder}">
+                <StackPanel>
+                    <TextBlock Text="RESULT" Style="{StaticResource SectionLabel}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <TextBlock Text="{Binding ScoreText}"
+                                   FontSize="30"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource BrushGold}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Summary}"
+                                   Foreground="{StaticResource BrushCream}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Margin="14,0,0,0" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding Notes}"
+                               Foreground="{StaticResource BrushMuted}"
+                               TextWrapping="Wrap"
+                               Margin="0,10,0,0"
+                               LineHeight="19" />
+                </StackPanel>
+            </Border>
+
+            <!-- Progress bar -->
+            <ProgressBar Grid.Row="4"
+                         Margin="0,20,0,0"
+                         Height="6"
+                         IsIndeterminate="{Binding IsRunning}"
+                         Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         Foreground="{StaticResource BrushGold}" />
+
+            <!-- Close -->
+            <Grid Grid.Row="5" Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="1" Content="Close" Style="{StaticResource PrimaryButton}"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource InverseBooleanConverter}}"
+                        Click="Close_Click" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

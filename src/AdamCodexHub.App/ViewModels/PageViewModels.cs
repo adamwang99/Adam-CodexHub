@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Windows;
 using System.Windows.Input;
 using AdamCodexHub.App.Mvvm;
 using AdamCodexHub.App.Services;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
+using AdamCodexHub.Infrastructure.Paths;
 using AdamCodexHub.Providers;
 
 namespace AdamCodexHub.App.ViewModels;
@@ -24,6 +26,14 @@ public abstract class PageViewModel : ObservableObject
 
     public string Title { get; }
     public string Subtitle { get; }
+
+    private bool _isSelected;
+    /// <summary>True while this page is the one shown in the main window (drives the nav pill).</summary>
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetProperty(ref _isSelected, value);
+    }
 
     public bool IsBusy
     {
@@ -93,6 +103,7 @@ public sealed class HomeViewModel : PageViewModel
     private readonly IProviderActivationService _activation;
     private readonly IAppSettingsService _settings;
     private readonly IUserDialogService _dialogs;
+    private readonly AppPaths _paths;
 
     public HomeViewModel(
         IProviderManager providers,
@@ -101,7 +112,8 @@ public sealed class HomeViewModel : PageViewModel
         IGatewayService gateway,
         IProviderActivationService activation,
         IAppSettingsService settings,
-        IUserDialogService dialogs)
+        IUserDialogService dialogs,
+        AppPaths paths)
         : base("Choose Provider", "Select an AI provider, then activate it to start coding with Codex.")
     {
         _providers = providers;
@@ -111,6 +123,7 @@ public sealed class HomeViewModel : PageViewModel
         _activation = activation;
         _settings = settings;
         _dialogs = dialogs;
+        _paths = paths;
         RefreshCommand = new AsyncRelayCommand(() => RunAsync(RefreshCoreAsync));
         ActivateCommand = new AsyncRelayCommand(ActivateAsync);
         DoubleClickCommand = new AsyncRelayCommand(p => DoubleClickAsync(p as ProviderCard));
@@ -129,10 +142,7 @@ public sealed class HomeViewModel : PageViewModel
         {
             if (SetProperty(ref _showAllProviders, value))
             {
-                if (value)
-                {
-                    _ = RunAsync(RefreshCoreAsync);
-                }
+                _ = RunAsync(RefreshCoreAsync);
             }
         }
     }
@@ -158,6 +168,7 @@ public sealed class HomeViewModel : PageViewModel
         var all = await _providers.GetAllAsync();
 
         var selectedId = SelectedCard?.Id;
+        var selectedTarget = SelectedCard?.Target ?? CodexTarget.Windows;
 
         Providers.Clear();
 
@@ -178,17 +189,41 @@ public sealed class HomeViewModel : PageViewModel
                         not KeyHealth.QuotaEmpty and
                         not KeyHealth.Offline);
 
-            built.Add(new ProviderCard
+            ProviderCard NewCard(CodexTarget target)
             {
-                Id = provider.Id,
-                Name = provider.Name,
-                BaseUrl = provider.BaseUrl,
-                Health = provider.Health,
-                Enabled = provider.Enabled,
-                EnabledModelCount = enabledModels,
-                HasUsableKey = hasUsableKey,
-                IsActive = string.Equals(provider.Id, active?.Id, StringComparison.OrdinalIgnoreCase)
-            });
+                var (hasLogo, logoSource) = ResolveLogo(provider.Id);
+                return new ProviderCard
+                {
+                    Id = provider.Id,
+                    Name = provider.Name,
+                    BaseUrl = provider.BaseUrl,
+                    Health = provider.Health,
+                    Enabled = provider.Enabled,
+                    EnabledModelCount = enabledModels,
+                    HasUsableKey = hasUsableKey,
+                    Target = target,
+                    HasLogo = hasLogo,
+                    LogoSource = logoSource,
+                    IsActive = string.Equals(provider.Id, active?.Id, StringComparison.OrdinalIgnoreCase)
+                };
+            }
+
+            if (provider.Id == ProviderManager.CodexAccountProviderId)
+            {
+                // The native account is a single card.
+                built.Add(NewCard(CodexTarget.Windows));
+            }
+            else if (hasUsableKey)
+            {
+                // A keyed provider offers two cards: Windows Desktop and CLI.
+                built.Add(NewCard(CodexTarget.Windows));
+                built.Add(NewCard(CodexTarget.Cli));
+            }
+            else
+            {
+                // Not configured yet — a single card so the user can set it up.
+                built.Add(NewCard(CodexTarget.Windows));
+            }
         }
 
         // Show only configured/used providers (always Codex Account). Active provider first,
@@ -197,17 +232,18 @@ public sealed class HomeViewModel : PageViewModel
                      .Where(x => ShowAllProviders || x.IsActive || x.IsConfigured || x.Id == ProviderManager.CodexAccountProviderId)
                      .OrderByDescending(x => x.IsActive)
                      .ThenByDescending(x => x.IsConfigured)
-                     .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+                     .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                     .ThenBy(x => x.Target))
         {
             Providers.Add(card);
         }
 
-        SelectedCard = Providers.FirstOrDefault(x => x.Id == selectedId) ??
+        SelectedCard = Providers.FirstOrDefault(x => x.Id == selectedId && x.Target == selectedTarget) ??
                        Providers.FirstOrDefault(x => x.Id == active?.Id) ??
                        Providers.FirstOrDefault();
 
         OnPropertyChanged(nameof(HasProviders));
-        StatusMessage = $"{Providers.Count} provider(s) shown Â· Updated {DateTime.Now:t}.";
+        StatusMessage = $"{Providers.Count} provider(s) shown · Updated {DateTime.Now:t}.";
     }
 
     private async Task ActivateAsync()
@@ -299,7 +335,10 @@ public sealed class HomeViewModel : PageViewModel
         // Only launch Codex when activation actually succeeded (no early return/error).
         if (StatusMessage == $"Activated {card.Name}.")
         {
-            await LaunchCodexAsync(card.Id == "codex-account" && UseDesktopForAccount);
+            var launchDesktop = card.Id == "codex-account"
+                ? UseDesktopForAccount
+                : card.Target == CodexTarget.Windows;
+            await LaunchCodexAsync(launchDesktop);
         }
     }
 
@@ -413,6 +452,42 @@ public sealed class HomeViewModel : PageViewModel
         (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
          string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)) &&
         !uri.IsLoopback;
+
+    /// <summary>
+    /// Resolves the logo for a provider: a user-provided image in the logos folder
+    /// takes priority, then a bundled resource. Returns the availability flag and
+    /// the image URI to bind to.
+    /// </summary>
+    private (bool HasLogo, string Source) ResolveLogo(string providerId)
+    {
+        // 1. User-provided logo (any supported extension) in the logos folder.
+        foreach (var extension in new[] { ".png", ".jpg", ".jpeg" })
+        {
+            var candidate = Path.Combine(_paths.Logos, $"{providerId}{extension}");
+            if (File.Exists(candidate))
+            {
+                return (true, new Uri(candidate, UriKind.Absolute).AbsoluteUri);
+            }
+        }
+
+        // 2. Bundled resource.
+        var packUri = new Uri(
+            $"pack://application:,,,/AdamCodexHub.App;component/Assets/providers/{providerId}.png",
+            UriKind.Absolute);
+        try
+        {
+            if (Application.GetResourceStream(packUri) is not null)
+            {
+                return (true, packUri.AbsoluteUri);
+            }
+        }
+        catch (IOException)
+        {
+        }
+
+        // 3. No image — the card falls back to the two-letter abbreviation.
+        return (false, string.Empty);
+    }
 }
 
 public sealed class ProviderCard : ObservableObject
@@ -424,6 +499,9 @@ public sealed class ProviderCard : ObservableObject
     public bool Enabled { get; init; }
     public int EnabledModelCount { get; init; }
     public bool IsActive { get; init; }
+
+    /// <summary>Which Codex client this card activates: the Windows Desktop app or the CLI.</summary>
+    public CodexTarget Target { get; init; } = CodexTarget.Windows;
 
     /// <summary>Whether a usable API key is present for this provider.</summary>
     public bool HasUsableKey { get; init; }
@@ -437,17 +515,58 @@ public sealed class ProviderCard : ObservableObject
 
     public string StatusLabel => IsValid ? "READY" : "SETUP";
 
+    /// <summary>Small corner badge: "W" for Windows Desktop, "CLI" for the terminal.</summary>
+    public string TargetLabel => Target == CodexTarget.Cli ? "CLI" : "W";
+
+    /// <summary>Hover explanation for the W/CLI corner badge.</summary>
+    public string TargetTooltip =>
+        Target == CodexTarget.Cli
+            ? "CLI — activates this provider for Codex running in the terminal."
+            : "Windows — activates this provider for the Codex Desktop app.";
+
+    /// <summary>Two-letter abbreviation shown when the provider has no logo image.</summary>
+    public string Initials
+    {
+        get
+        {
+            var words = Name.Split(
+                new[] { ' ', '-', '_', '.' },
+                StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length >= 2)
+            {
+                return $"{char.ToUpperInvariant(words[0][0])}{char.ToUpperInvariant(words[1][0])}";
+            }
+
+            var letters = new string(Name
+                .Where(char.IsLetterOrDigit)
+                .Take(2)
+                .ToArray()).ToUpperInvariant();
+            return letters.Length > 0 ? letters : "?";
+        }
+    }
+
+    /// <summary>True when a bundled or user-provided logo image exists for this provider.</summary>
+    public bool HasLogo { get; init; } = true;
+
+    /// <summary>URI of the logo image (bundled pack URI or a user-provided file).</summary>
+    public string LogoSource { get; init; } = string.Empty;
+
     public string KeyLabel => HasUsableKey ? "API key ✓" : "API key needed";
 
     public string TooltipDescription =>
         Id == "codex-account"
             ? "Uses your native Codex sign-in. Double-click to restore the default Codex account."
             : HasUsableKey && EnabledModelCount > 0
-                ? "Ready to use. Double-click to activate this provider with Codex."
+                ? Target == CodexTarget.Cli
+                    ? "Ready to use with Codex CLI (terminal). Double-click to activate and launch the terminal."
+                    : "Ready to use with Codex Desktop (Windows). Double-click to activate and open the desktop app."
                 : "Needs a valid API key and an enabled model before it can be activated.";
+}
 
-    public string LogoSource =>
-        $"pack://application:,,,/AdamCodexHub.App;component/Assets/providers/{Id}.png";
+public enum CodexTarget
+{
+    Windows,
+    Cli
 }
 
 public sealed class ProviderSetupViewModel : PageViewModel
@@ -502,6 +621,7 @@ public sealed class ProviderSetupViewModel : PageViewModel
         TestAllModelsCommand = new AsyncRelayCommand(() => RunAsync(TestAllModelsCoreAsync));
         TestModelCommand = new AsyncRelayCommand(p => RunAsync(() => TestModelCoreAsync(p as ModelDescriptor)));
         ToggleModelCommand = new AsyncRelayCommand(p => RunAsync(() => ToggleModelCoreAsync(p as ModelDescriptor)));
+        ChooseLogoCommand = new AsyncRelayCommand(() => RunAsync(ChooseLogoCoreAsync));
         RefreshCommand = new AsyncRelayCommand(() => RunAsync(LoadAsync));
     }
 
@@ -555,6 +675,7 @@ public sealed class ProviderSetupViewModel : PageViewModel
     public ICommand TestAllModelsCommand { get; }
     public ICommand TestModelCommand { get; }
     public ICommand ToggleModelCommand { get; }
+    public ICommand ChooseLogoCommand { get; }
     public ICommand RefreshCommand { get; }
 
     public override Task InitializeAsync() => RunAsync(LoadAsync);
@@ -672,6 +793,21 @@ public sealed class ProviderSetupViewModel : PageViewModel
         BaseUrl = string.Empty;
         Adapter = "openai-compatible";
         StatusMessage = "Enter a custom provider profile.";
+    }
+
+    private async Task ChooseLogoCoreAsync()
+    {
+        var provider = SelectedProvider
+            ?? throw new InvalidOperationException("Select a provider first.");
+
+        var saved = _dialogs.PickProviderLogo(provider.Id);
+        if (saved is null)
+        {
+            StatusMessage = "Logo selection canceled.";
+            return;
+        }
+
+        StatusMessage = $"Logo updated for '{provider.Name}'. The provider card will refresh on the Choose Provider page.";
     }
 
     // ---- API keys ------------------------------------------------------------
@@ -871,10 +1007,10 @@ public sealed class ProviderSetupViewModel : PageViewModel
             ?? throw new InvalidOperationException("Select a provider first.");
         model ??= SelectedModel
             ?? throw new InvalidOperationException("Select a model first.");
-        var result = await _compatibility.TestAsync(provider.Id, model.RemoteId);
+
+        _dialogs.ShowModelTest(provider.Name, provider.Id, model.DisplayName, model.RemoteId);
         await LoadModelsAsync();
-        SelectedModel = Models.First(x => x.RemoteId == model.RemoteId);
-        StatusMessage = $"Compatibility {result.Score}/100 · Text {YesNo(result.Text)} · Streaming {YesNo(result.Streaming)} · Tools {YesNo(result.ToolCalling)}";
+        SelectedModel = Models.FirstOrDefault(x => x.RemoteId == model.RemoteId);
     }
 
     private async Task ToggleModelCoreAsync(ModelDescriptor? model)

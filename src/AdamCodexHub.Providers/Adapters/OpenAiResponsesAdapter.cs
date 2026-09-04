@@ -30,6 +30,7 @@ public sealed class OpenAiResponsesAdapter : IProviderAdapter
         ProviderProfile provider,
         string modelId,
         string? apiKey,
+        IProgress<ModelTestProgress>? progress = null,
         CancellationToken cancellationToken = default) =>
-        _fallback.TestModelAsync(provider, modelId, apiKey, cancellationToken);
+        _fallback.TestModelAsync(provider, modelId, apiKey, progress, cancellationToken);
 }

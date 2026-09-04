@@ -232,6 +232,12 @@ public sealed class ProviderActivationServiceTests
             string providerId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(true);
+
+        public Task SetHealthAsync(
+            string providerId,
+            ProviderHealth health,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 
     private sealed class FakeModelStore : IModelStore

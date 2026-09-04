@@ -20,5 +20,6 @@ public interface IProviderAdapter
         ProviderProfile provider,
         string modelId,
         string? apiKey,
+        IProgress<ModelTestProgress>? progress = null,
         CancellationToken cancellationToken = default);
 }

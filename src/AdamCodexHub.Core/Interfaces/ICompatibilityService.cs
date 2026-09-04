@@ -7,5 +7,6 @@ public interface ICompatibilityService
     Task<CompatibilityResult> TestAsync(
         string providerId,
         string modelId,
+        IProgress<ModelTestProgress>? progress = null,
         CancellationToken cancellationToken = default);
 }

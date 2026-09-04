@@ -70,7 +70,16 @@ public sealed class MainViewModel : ObservableObject
     public PageViewModel CurrentPage
     {
         get => _currentPage;
-        set => SetProperty(ref _currentPage, value);
+        set
+        {
+            if (SetProperty(ref _currentPage, value))
+            {
+                foreach (var page in Pages)
+                {
+                    page.IsSelected = ReferenceEquals(page, value);
+                }
+            }
+        }
     }
 
     public ProviderProfile? SelectedProvider

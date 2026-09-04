@@ -25,6 +25,7 @@ public sealed class CompatibilityService : ICompatibilityService
     public async Task<CompatibilityResult> TestAsync(
         string providerId,
         string modelId,
+        IProgress<ModelTestProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         var provider = await _providers.GetAsync(providerId, cancellationToken)
@@ -48,7 +49,11 @@ public sealed class CompatibilityService : ICompatibilityService
             ?? throw new NotSupportedException(
                 $"No adapter is registered for '{provider.Adapter}'.");
         var key = await _keys.GetActiveSecretAsync(provider.Id, cancellationToken);
-        var tested = await adapter.TestModelAsync(provider, model.RemoteId, key, cancellationToken);
+        var tested = await adapter.TestModelAsync(provider, model.RemoteId, key, progress, cancellationToken);
+        await _providers.SetHealthAsync(
+            provider.Id,
+            tested.Score > 0 ? ProviderHealth.Healthy : ProviderHealth.Warning,
+            cancellationToken);
         var result = tested with
         {
             ProviderId = provider.Id,

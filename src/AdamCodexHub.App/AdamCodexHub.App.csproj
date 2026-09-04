@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\adam-codexhub-logo.png" />
+    <Resource Include="Assets\adam-codexhub-architecture.png" />
     <Resource Include="Assets\providers\anthropic.png" />
     <Resource Include="Assets\providers\codex-account.png" />
     <Resource Include="Assets\providers\deepseek.png" />

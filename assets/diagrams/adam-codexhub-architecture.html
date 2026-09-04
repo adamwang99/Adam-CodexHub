@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Adam CodexHub — System Architecture</title>
+<style>
+  :root{ color-scheme: dark; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:#0b0d12; color:#e6e9ef; font-family:'Segoe UI Variable','Segoe UI',system-ui,sans-serif;
+        display:flex; justify-content:center; padding:34px 20px 60px; }
+  .wrap{ width:1600px; max-width:100%; }
+  header{ display:flex; align-items:baseline; gap:14px; margin-bottom:6px; }
+  .dot{ width:9px; height:9px; border-radius:50%; background:#d89b2b; align-self:center;
+        animation:pulse 2.2s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:.35; box-shadow:0 0 0 0 rgba(216,155,43,.25);} 50%{ opacity:1; box-shadow:0 0 0 7px rgba(216,155,43,0);} }
+  h1{ font-size:20px; font-weight:650; letter-spacing:.2px; }
+  .sub{ color:#9aa3b2; font-size:12.5px; margin:2px 0 18px 23px; }
+  .card{ border:1px solid rgba(255,255,255,.09); border-radius:16px; overflow:hidden;
+         background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.008));
+         box-shadow:0 22px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.10); }
+  svg{ display:block; width:100%; height:auto; }
+  .note{ color:#7d8694; font-size:11.5px; margin-top:12px; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px; }
+  .mini{ border:1px solid rgba(255,255,255,.08); border-radius:13px; padding:14px 16px;
+         background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+         box-shadow:inset 0 1px 0 rgba(255,255,255,.07); }
+  .mini h3{ font-size:12px; letter-spacing:.4px; margin-bottom:7px; display:flex; align-items:center; gap:8px; }
+  .mini ul{ list-style:none; font-size:11.5px; color:#aab2c0; line-height:1.75; }
+  .cd{ width:8px; height:8px; border-radius:50%; display:inline-block; }
+  footer{ margin-top:16px; color:#5f6774; font-size:11px; display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><span class="dot"></span><h1>Adam CodexHub — System Architecture</h1></header>
+  <div class="sub">Windows-first control hub: multi-provider key pools · loopback gateway · transactional Codex config — .NET 8</div>
+
+  <div class="card">
+  <svg viewBox="0 0 1560 800" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#171c26" stroke-width="1"/>
+      </pattern>
+      <radialGradient id="glowAmber" cx="0.96" cy="0.02" r="0.9">
+        <stop offset="0" stop-color="#d89b2b" stop-opacity=".13"/><stop offset="1" stop-color="#d89b2b" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="glowAqua" cx="0.02" cy="1" r="0.8">
+        <stop offset="0" stop-color="#2fd0c8" stop-opacity=".10"/><stop offset="1" stop-color="#2fd0c8" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="glowViolet" cx="0.55" cy="0.9" r="0.7">
+        <stop offset="0" stop-color="#8a6fd8" stop-opacity=".08"/><stop offset="1" stop-color="#8a6fd8" stop-opacity="0"/>
+      </radialGradient>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+        <path d="M 0 1 L 9 5 L 0 9 z" fill="#9aa3b2"/>
+      </marker>
+      <marker id="arrRose" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse">
+        <path d="M 0 1 L 9 5 L 0 9 z" fill="#fb7185"/>
+      </marker>
+    </defs>
+
+    <rect width="1560" height="800" fill="url(#glowAmber)"/>
+    <rect width="1560" height="800" fill="url(#glowAqua)"/>
+    <rect width="1560" height="800" fill="url(#glowViolet)"/>
+    <rect width="1560" height="800" fill="url(#grid)"/>
+
+    <!-- ============ BOUNDARIES ============ -->
+    <rect x="60" y="130" width="730" height="600" rx="16" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1" stroke-dasharray="8 5"/>
+    <text x="76" y="152" fill="#7d8694" font-size="11" letter-spacing="2.5" font-weight="600">ADAM CODEXHUB — .NET 8 SOLUTION</text>
+
+    <rect x="820" y="250" width="680" height="470" rx="16" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1" stroke-dasharray="8 5"/>
+    <text x="836" y="272" fill="#7d8694" font-size="11" letter-spacing="2.5" font-weight="600">EXTERNAL — PROVIDERS · CODEX · OS</text>
+
+    <!-- ============ ARROWS (behind boxes) ============ -->
+    <!-- App -> Core ; CLI -> Core -->
+    <line x1="255" y1="250" x2="255" y2="300" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <line x1="605" y1="250" x2="380" y2="300" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <!-- Core -> Providers ; Core -> CodexConfig -->
+    <line x1="300" y1="400" x2="300" y2="450" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <line x1="645" y1="400" x2="645" y2="450" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <!-- Core -> DPAPI / Sqlite / Gateway (security dashed rose for vault) -->
+    <line x1="190" y1="400" x2="190" y2="600" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#arrRose)"/>
+    <line x1="415" y1="400" x2="415" y2="600" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <line x1="720" y1="400" x2="720" y2="600" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <!-- Gateway -> Providers (routes through adapters / key pool) -->
+    <line x1="560" y1="600" x2="420" y2="540" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <!-- Providers -> Provider APIs (external, right) -->
+    <line x1="510" y1="540" x2="820" y2="368" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+    <!-- CodexConfig -> Codex Desktop/CLI (writes config.toml) -->
+    <line x1="750" y1="505" x2="820" y2="540" stroke="#9aa3b2" stroke-width="1.3" stroke-dasharray="4 4" marker-end="url(#arr)"/>
+    <!-- Codex Desktop/CLI -> Gateway (base_url points to loopback) -->
+    <line x1="820" y1="630" x2="750" y2="660" stroke="#9aa3b2" stroke-width="1.4" marker-end="url(#arr)"/>
+
+    <!-- ============ BOXES ============ -->
+    <!-- helpers: group = opaque base + translucent card + top highlight -->
+    <g font-family="'Segoe UI Variable','Segoe UI',sans-serif">
+      <!-- App WPF -->
+      <rect x="90" y="170" width="330" height="80" rx="10" fill="#0d1017"/>
+      <rect x="90" y="170" width="330" height="80" rx="10" fill="rgba(8,51,68,.45)" stroke="#22d3ee" stroke-opacity=".8" stroke-width="1.3"/>
+      <rect x="90" y="170" width="330" height="3" rx="1.5" fill="#22d3ee" opacity=".5"/>
+      <text x="108" y="200" fill="#e8f6fb" font-size="13.5" font-weight="600">AdamCodexHub.App</text>
+      <text x="108" y="220" fill="#8fd8ea" font-size="10.5">WPF desktop · MVVM · services via interfaces</text>
+      <text x="108" y="236" fill="#6d98a6" font-size="9.5">Windows 10/11 · DPAPI-protected key entry · model testing UI</text>
+
+      <!-- CLI -->
+      <rect x="450" y="170" width="310" height="80" rx="10" fill="#0d1017"/>
+      <rect x="450" y="170" width="310" height="80" rx="10" fill="rgba(8,51,68,.45)" stroke="#22d3ee" stroke-opacity=".8" stroke-width="1.3"/>
+      <rect x="450" y="170" width="310" height="3" rx="1.5" fill="#22d3ee" opacity=".5"/>
+      <text x="468" y="200" fill="#e8f6fb" font-size="13.5" font-weight="600">AdamCodexHub.Cli</text>
+      <text x="468" y="220" fill="#8fd8ea" font-size="10.5">Companion terminal automation</text>
+      <text x="468" y="236" fill="#6d98a6" font-size="9.5">same core services, headless</text>
+
+      <!-- Core -->
+      <rect x="90" y="310" width="660" height="90" rx="12" fill="#0d1017"/>
+      <rect x="90" y="310" width="660" height="90" rx="12" fill="rgba(23,37,84,.5)" stroke="#818cf8" stroke-opacity=".8" stroke-width="1.3"/>
+      <rect x="90" y="310" width="660" height="3" rx="1.5" fill="#818cf8" opacity=".55"/>
+      <text x="110" y="342" fill="#e4e8fb" font-size="13.5" font-weight="600">AdamCodexHub.Core</text>
+      <text x="110" y="364" fill="#b4bcf5" font-size="10.5">Domain models · provider/key/manager interfaces · gateway contract</text>
+      <text x="110" y="382" fill="#8a93c8" font-size="9.5">single source of truth for behaviour — everything depends on this layer</text>
+
+      <!-- Providers -->
+      <rect x="90" y="460" width="420" height="90" rx="12" fill="#0d1017"/>
+      <rect x="90" y="460" width="420" height="90" rx="12" fill="rgba(6,78,59,.45)" stroke="#34d399" stroke-opacity=".8" stroke-width="1.3"/>
+      <rect x="90" y="460" width="420" height="3" rx="1.5" fill="#34d399" opacity=".55"/>
+      <text x="110" y="490" fill="#e3f7ee" font-size="13.5" font-weight="600">AdamCodexHub.Providers</text>
+      <text x="110" y="511" fill="#8fe0bb" font-size="10.5">OpenAI-compatible &amp; Responses adapters · presets</text>
+      <text x="110" y="528" fill="#5fae8e" font-size="9.5">key health · ordered pools · compatibility probes · model discovery</text>
+
+      <!-- CodexConfig -->
+      <rect x="540" y="460" width="210" height="90" rx="12" fill="#0d1017"/>
+      <rect x="540" y="460" width="210" height="90" rx="12" fill="rgba(6,78,59,.45)" stroke="#34d399" stroke-opacity=".8" stroke-width="1.3"/>
+      <rect x="540" y="460" width="210" height="3" rx="1.5" fill="#34d399" opacity=".55"/>
+      <text x="558" y="490" fill="#e3f7ee" font-size="13" font-weight="600">AdamCodexHub.Codex</text>
+      <text x="558" y="511" fill="#8fe0bb" font-size="10">config.toml editor</text>
+      <text x="558" y="528" fill="#5fae8e" font-size="9.5">validate · atomic write · backup · rollback</text>
+
+      <!-- DPAPI -->
+      <rect x="90" y="610" width="200" height="90" rx="12" fill="#0d1017"/>
+      <rect x="90" y="610" width="200" height="90" rx="12" fill="rgba(136,19,55,.45)" stroke="#fb7185" stroke-opacity=".8" stroke-width="1.3"/>
+      <rect x="90" y="610" width="200" height="3" rx="1.5" fill="#fb7185" opacity=".6"/>
+      <text x="108" y="641" fill="#fde4ea" font-size="13" font-weight="600">DPAPI Key Vault</text>
+      <text x="108" y="663" fill="#f3a6b5" font-size="10">CurrentUser scope</text>
+      <text x="108" y="680" fill="#b56a7c" font-size="9.5">plaintext keys never persisted</text>
+
+      <!-- Sqlite store -->
+      <rect x="320" y="610" width="190" height="90" rx="12" fill="#0d1017"/>
+      <rect x="320" y="610" width="190" height="90" rx="12" fill="rgba(76,29,149,.45)" stroke="#a78bfa" stroke-opacity=".8" stroke-width="1.3"/>
+      <rect x="320" y="610" width="190" height="3" rx="1.5" fill="#a78bfa" opacity=".6"/>
+      <text x="338" y="641" fill="#f0e9fd" font-size="13" font-weight="600">Sqlite Model Store</text>
+      <text x="338" y="663" fill="#cdbaf6" font-size="10">discovered models · scores</text>
+      <text x="338" y="680" fill="#8f7cbe" font-size="9.5">compatibility cache</text>
+
+      <!-- Gateway -->
+      <rect x="540" y="610" width="210" height="90" rx="12" fill="#0d1017"/>
+      <rect x="540" y="610" width="210" height="90" rx="12" fill="rgba(251,146,60,.35)" stroke="#fb923c" stroke-opacity=".85" stroke-width="1.3"/>
+      <rect x="540" y="610" width="210" height="3" rx="1.5" fill="#fb923c" opacity=".6"/>
+      <text x="558" y="641" fill="#fdeee0" font-size="13" font-weight="600">Loopback Gateway</text>
+      <text x="558" y="663" fill="#f8c79c" font-size="10">127.0.0.1 · dynamic token</text>
+      <text x="558" y="680" fill="#b98057" font-size="9.5">bounded 429 failover</text>
+
+      <!-- Provider APIs -->
+      <rect x="830" y="310" width="660" height="110" rx="12" fill="#0f1218"/>
+      <rect x="830" y="310" width="660" height="110" rx="12" fill="rgba(30,41,59,.6)" stroke="#94a3b8" stroke-opacity=".85" stroke-width="1.3"/>
+      <rect x="830" y="310" width="660" height="3" rx="1.5" fill="#94a3b8" opacity=".5"/>
+      <text x="850" y="342" fill="#e8edf5" font-size="13.5" font-weight="600">Provider APIs (OpenAI-compatible)</text>
+      <text x="850" y="366" fill="#aeb8c8" font-size="11">DeepSeek · Qwen · Anthropic · OpenRouter · Ollama · any custom endpoint</text>
+      <text x="850" y="386" fill="#7d8694" font-size="10">each provider = declarative preset + adapter + own key pool</text>
+      <text x="850" y="404" fill="#5f6774" font-size="9.5">native Codex Account mode bypasses the gateway entirely</text>
+
+      <!-- Codex Desktop/CLI -->
+      <rect x="830" y="590" width="660" height="100" rx="12" fill="#0f1218"/>
+      <rect x="830" y="590" width="660" height="100" rx="12" fill="rgba(30,41,59,.6)" stroke="#94a3b8" stroke-opacity=".85" stroke-width="1.3"/>
+      <rect x="830" y="590" width="660" height="3" rx="1.5" fill="#94a3b8" opacity=".5"/>
+      <text x="850" y="622" fill="#e8edf5" font-size="13.5" font-weight="600">Codex Desktop · Codex CLI</text>
+      <text x="850" y="646" fill="#aeb8c8" font-size="10.5">reads ~/.codex/config.toml → base_url = local gateway</text>
+      <text x="850" y="666" fill="#7d8694" font-size="9.5">login preserved · per-provider activation via config switch · restored on demand</text>
+    </g>
+
+    <!-- ============ LEGEND ============ -->
+    <g font-family="'Segoe UI Variable','Segoe UI',sans-serif">
+      <rect x="60" y="748" width="1440" height="40" rx="10" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)"/>
+      <text x="80" y="773" fill="#7d8694" font-size="10.5" letter-spacing="1.5">LEGEND</text>
+      <rect x="150" y="760" width="11" height="11" rx="3" fill="rgba(8,51,68,.7)" stroke="#22d3ee"/>
+      <text x="168" y="770" fill="#aab2c0" font-size="11">App / client</text>
+      <rect x="280" y="760" width="11" height="11" rx="3" fill="rgba(23,37,84,.7)" stroke="#818cf8"/>
+      <text x="298" y="770" fill="#aab2c0" font-size="11">Core / domain</text>
+      <rect x="420" y="760" width="11" height="11" rx="3" fill="rgba(6,78,59,.7)" stroke="#34d399"/>
+      <text x="438" y="770" fill="#aab2c0" font-size="11">Service</text>
+      <rect x="530" y="760" width="11" height="11" rx="3" fill="rgba(136,19,55,.7)" stroke="#fb7185"/>
+      <text x="548" y="770" fill="#aab2c0" font-size="11">Security / keys</text>
+      <rect x="690" y="760" width="11" height="11" rx="3" fill="rgba(76,29,149,.7)" stroke="#a78bfa"/>
+      <text x="708" y="770" fill="#aab2c0" font-size="11">Data store</text>
+      <rect x="820" y="760" width="11" height="11" rx="3" fill="rgba(251,146,60,.6)" stroke="#fb923c"/>
+      <text x="838" y="770" fill="#aab2c0" font-size="11">Gateway</text>
+      <rect x="940" y="760" width="11" height="11" rx="3" fill="rgba(30,41,59,.8)" stroke="#94a3b8"/>
+      <text x="958" y="770" fill="#aab2c0" font-size="11">External</text>
+      <line x1="1050" y1="765" x2="1090" y2="765" stroke="#fb7185" stroke-dasharray="5 4" stroke-width="1.3"/>
+      <text x="1098" y="770" fill="#aab2c0" font-size="11">protected (DPAPI)</text>
+      <line x1="1240" y1="765" x2="1280" y2="765" stroke="#9aa3b2" stroke-width="1.3" marker-end="url(#arr)"/>
+      <text x="1288" y="770" fill="#aab2c0" font-size="11">calls / writes</text>
+    </g>
+  </svg>
+  </div>
+
+  <div class="note">Derived from the actual repo: AdamCodexHub.sln → src/AdamCodexHub.{App, Cli, Core, Infrastructure, Providers, Codex, Gateway} · tests/AdamCodexHub.Core.Tests.</div>
+
+  <div class="grid3">
+    <div class="mini"><h3><span class="cd" style="background:#fb7185"></span>SECURE KEY POOLS</h3>
+      <ul><li>API keys encrypted with Windows DPAPI (CurrentUser)</li><li>Plaintext keys never persisted to disk</li><li>Ordered pools: health, cooldown, bounded failover on 429</li></ul></div>
+    <div class="mini"><h3><span class="cd" style="background:#fb923c"></span>LOOPBACK GATEWAY</h3>
+      <ul><li>Binds only to 127.0.0.1 with a dynamic local token</li><li>Codex Desktop/CLI point base_url at the gateway</li><li>Native Codex Account mode bypasses it entirely</li></ul></div>
+    <div class="mini"><h3><span class="cd" style="background:#34d399"></span>TRANSACTIONAL CODEX CONFIG</h3>
+      <ul><li>config.toml validated &amp; swapped atomically</li><li>Backup + rollback keeps config-ACCOUNT.toml safe</li><li>Activate a provider without breaking the sign-in</li></ul></div>
+  </div>
+
+  <footer><span>Adam CodexHub · research &amp; learning · free forever</span><span>drawn by the draw-project-diagram skill</span></footer>
+</div>
+</body>
+</html>

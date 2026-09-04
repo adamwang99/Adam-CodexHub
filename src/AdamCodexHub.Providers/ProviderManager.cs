@@ -221,6 +221,38 @@ public sealed class ProviderManager : IProviderManager
         }
     }
 
+    public async Task SetHealthAsync(
+        string providerId,
+        ProviderHealth health,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerId);
+
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            await EnsureInitializedAsync(cancellationToken);
+            var provider = Find(providerId);
+            if (provider is null)
+            {
+                return;
+            }
+
+            if (!provider.Enabled)
+            {
+                return;
+            }
+
+            var updated = provider with { Health = health };
+            await _store.UpsertAsync(updated, cancellationToken);
+            ReplaceOrAdd(updated);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
     private async Task EnsureInitializedAsync(CancellationToken cancellationToken)
     {
         if (_initialized)

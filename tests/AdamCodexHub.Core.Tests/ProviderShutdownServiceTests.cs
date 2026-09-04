@@ -109,6 +109,12 @@ public sealed class ProviderShutdownServiceTests
             string providerId,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task SetHealthAsync(
+            string providerId,
+            ProviderHealth health,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     private sealed class ShutdownConfigService : ICodexConfigService

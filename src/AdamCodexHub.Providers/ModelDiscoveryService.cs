@@ -41,6 +41,7 @@ public sealed class ModelDiscoveryService : IModelDiscoveryService
 
         var key = await _keys.GetActiveSecretAsync(provider.Id, cancellationToken);
         var discovered = await adapter.ListModelsAsync(provider, key, cancellationToken);
+        await _providers.SetHealthAsync(provider.Id, ProviderHealth.Healthy, cancellationToken);
         var existing = (await _models.GetAllAsync(provider.Id, cancellationToken))
             .ToDictionary(x => x.RemoteId, StringComparer.OrdinalIgnoreCase);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

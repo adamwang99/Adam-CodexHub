@@ -17,11 +17,13 @@ public sealed class AppPaths
         Logs = Path.Combine(Root, "logs");
         Backups = Path.Combine(Root, "backups");
         Secrets = Path.Combine(Root, "secrets");
+        Logos = Path.Combine(Root, "logos");
 
         Directory.CreateDirectory(Data);
         Directory.CreateDirectory(Logs);
         Directory.CreateDirectory(Backups);
         Directory.CreateDirectory(Secrets);
+        Directory.CreateDirectory(Logos);
     }
 
     public static AppPaths ForRoot(string root)
@@ -35,6 +37,7 @@ public sealed class AppPaths
     public string Logs { get; }
     public string Backups { get; }
     public string Secrets { get; }
+    public string Logos { get; }
 
     public string SettingsFile => Path.Combine(Data, "settings.json");
     public string DatabaseFile => Path.Combine(Data, "adam-codexhub.db");

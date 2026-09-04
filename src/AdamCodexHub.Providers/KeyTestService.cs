@@ -43,6 +43,7 @@ public sealed class KeyTestService : IKeyTestService
         if (result.Success)
         {
             await _keys.MarkSuccessAsync(key.Id, cancellationToken);
+            await _providers.SetHealthAsync(provider.Id, ProviderHealth.Healthy, cancellationToken);
             return result;
         }
 
@@ -53,8 +54,20 @@ public sealed class KeyTestService : IKeyTestService
             result.Summary,
             cooldown,
             cancellationToken);
+        await _providers.SetHealthAsync(provider.Id, ToProviderHealth(health), cancellationToken);
         return result;
     }
+
+    private static ProviderHealth ToProviderHealth(KeyHealth health) => health switch
+    {
+        KeyHealth.RateLimited => ProviderHealth.RateLimited,
+        KeyHealth.QuotaEmpty => ProviderHealth.QuotaEmpty,
+        KeyHealth.Unauthorized => ProviderHealth.Unauthorized,
+        KeyHealth.Offline => ProviderHealth.Offline,
+        KeyHealth.Disabled => ProviderHealth.Disabled,
+        KeyHealth.Cooldown => ProviderHealth.Warning,
+        _ => ProviderHealth.Unknown
+    };
 
     private static (KeyHealth Health, TimeSpan? Cooldown) Classify(string summary)
     {

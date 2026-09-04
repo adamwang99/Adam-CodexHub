@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  A secure Windows control hub for using Codex with multiple AI providers.
+  A local-first Windows control hub for using Codex with multiple AI providers.
 </p>
 
 <p align="center">
@@ -33,19 +33,23 @@
 
 **Adam CodexHub** is a lightweight, Windows-first control hub for managing Codex Desktop and Codex CLI across a native Codex account and compatible third-party AI providers.
 
+It is intended primarily for learning, experimentation and developer evaluation. The MIT License still permits commercial use; this description is not an educational-only restriction.
+
+Adam CodexHub itself is completely free: there are no paid features, subscriptions, advertisements or in-app purchases. Remote AI providers are separate services and may charge for every test, probe, retry or production request made with the user's account.
+
 Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forcing one provider's chat history into another provider, Adam CodexHub gives you one place to:
 
 - manage built-in and custom OpenAI-compatible provider profiles;
 - store provider API keys in encrypted, prioritized key pools;
 - discover models and verify Codex compatibility before enabling them;
-- activate a provider through an authenticated loopback gateway;
+- activate a provider through a token-protected loopback gateway;
 - preserve and restore the native Codex account configuration;
 - prepare provider-safe project handoffs without editing Codex's internal session database;
 - inspect gateway and configuration recovery status from a WPF desktop app;
 - automate basic operations with the companion CLI.
 
 > [!NOTE]
-> Adam CodexHub is an independent open-source project. It is not affiliated with or endorsed by OpenAI or any provider included as a preset. Provider names belong to their respective owners.
+> Adam CodexHub is an independent open-source project. It is not affiliated with, sponsored by or endorsed by OpenAI, Microsoft, GitHub or any provider included as a preset. Provider names and marks belong to their respective owners. See [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Why Adam CodexHub?
 
@@ -57,44 +61,52 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 | `/models` returns a model that Codex cannot actually use | Separate discovery, compatibility testing and explicit enablement |
 | Switching providers leaves stale context | Project-state snapshot plus a provider-specific continuation instruction |
 | A config update fails | Backup, validation, atomic replacement and rollback support |
-| A local proxy is exposed to the network | Gateway binds only to `127.0.0.1` and requires a local token |
+| A local proxy is exposed to the network | Gateway binds only to `127.0.0.1` and uses a new random token on each start |
 
 ## Key capabilities
 
-### Provider control
+```text
+                       ┌─────────────────────────────────────────┐
+                       │              ADAM CODEXHUB              │
+                       └────────────────────┬────────────────────┘
+        ┌───────────────────┬───────────────┴───────────────┬───────────────────┐
+        ▼                   ▼                               ▼                   ▼
+┌───────────────┐   ┌───────────────┐               ┌───────────────┐   ┌───────────────┐
+│   PROVIDER    │   │ API KEY POOL  │               │ LOCAL GATEWAY │   │    SESSION    │
+│  MANAGEMENT   │   │  & FAILOVER   │               │ & ATOMIC TOML │   │  CONTINUITY   │
+└───────────────┘   └───────────────┘               └───────────────┘   └───────────────┘
+```
 
-- Native Codex account mode remains direct and does not use the local gateway.
-- Compatible API providers are routed through a managed loopback gateway.
-- Built-in presets and user-defined OpenAI-compatible providers are supported.
-- Provider-specific behavior stays in adapters and declarative definitions.
+### 1. Provider Management & Auto-Detect
+- **Dual Operating Modes**: Direct native mode for standard Codex Account login; managed loopback gateway for third-party providers.
+- **Rich Presets**: Pre-seeded definitions for DeepSeek, Qwen, OpenRouter, Anthropic, Gemini, Groq, Mistral, Ollama, LM Studio, and more.
+- **Auto-Detect Wizard**: Probe arbitrary custom endpoints (`/models`, `/chat/completions`, `/responses`) to detect protocol dialects automatically.
+- **Declarative Architecture**: Provider behaviors are driven by data schemas and adapters without leaking into UI view models.
 
-### Secure API-key pools
+### 2. Secure API-Key Pools & Smart Failover
+- **OS-Level Secret Protection**: Encrypted using Windows Data Protection API (DPAPI) bound to the `CurrentUser` scope. No plaintext keys in database, config files, or logs.
+- **Ordered Key Pools**: Multiple keys per provider with user-assigned priority rankings.
+- **Automated Health & Cooldown**: Real-time ping tests for latency measurement. Key failover activates automatically upon HTTP 429 (Rate Limit) or exhausted quota.
 
-- Secrets are encrypted with Windows DPAPI using `CurrentUser` scope.
-- Plaintext API keys are not persisted in the database or provider files.
-- Keys can be labeled, prioritized, enabled, disabled, reordered, tested and deleted.
-- Failover is limited to healthy keys belonging to the same provider.
+### 3. Model Discovery & Verification Probes
+- **Automated Catalog Scanning**: Scans `/models` endpoints dynamically.
+- **Four-Stage Verification**: `Discovered -> Tested -> Verified -> Enabled`. Models are never enabled blindly.
+- **Active Capability Probes**: Executes live probes to verify text generation, SSE streaming, function/tool calling, vision inputs, and reasoning capabilities before activation.
 
-### Model lifecycle
+### 4. Local Gateway & Loopback Security
+- **Strict Loopback Binding**: Binds exclusively to `127.0.0.1:<dynamic-port>`, never exposing network interfaces.
+- **Cryptographic Local Token**: Dynamically generates a secure bearer token on every startup to authenticate Codex requests.
+- **High-Performance Streaming**: Proxies SSE streaming responses with minimal overhead and monitors token usage without persisting private prompt or response bodies.
 
-- Scan a provider's advertised model catalog.
-- Test text, streaming and tool-calling behavior.
-- Review a compatibility score and probe history.
-- Explicitly enable only verified models for Codex activation.
+### 5. Session Continuity Engine
+- **Strict Provider Affinity**: Respects that Codex sessions belong to the provider that created them; rejects silent cross-provider hot-swapping.
+- **Monotonic Project Revisions**: Tracks file modifications and Git status under `<project>/.adam-codexhub/`.
+- **Intelligent Stale-State Sync**: Auto-detects revision drift when resuming older sessions and generates structured handoff briefs (`CURRENT_STATE.md`).
 
-### Safer Codex configuration
-
-- Parses and validates TOML before replacing the active config.
-- Captures the native account config before the first gateway activation.
-- Writes timestamped backups under the Codex home directory.
-- Restores the last known-good configuration from Diagnostics.
-
-### Provider-safe project handoffs
-
-- Records Git HEAD and current working-tree changes.
-- Writes `.adam-codexhub/CURRENT_STATE.md` and `project-state.json` in the selected project.
-- Produces a continuation instruction for the target provider session.
-- Treats the current filesystem and Git state as more authoritative than old chat history.
+### 6. Atomic Configuration & Instant Recovery
+- **Safe Transaction Pipeline**: `Read -> Backup -> Candidate -> Tomlyn Validation -> Atomic Replace -> Verify -> Rollback on Error`.
+- **Account Preservation**: Preserves original login state in `config-ACCOUNT.toml`.
+- **Clean Shutdown Restoration**: Restores native account configuration automatically upon application exit.
 
 ## Download
 
@@ -106,6 +118,8 @@ Download the latest self-contained package from **[GitHub Releases](https://gith
 | `AdamCodexHub-vX.Y.Z-win-x64.zip.sha256` | SHA-256 value used to verify the ZIP |
 
 The release package includes the .NET runtime. You do not need to install the .NET runtime separately when using the downloadable ZIP.
+
+Each ZIP also contains privacy, disclaimer and trademark notices, provider disclosures, third-party license notices, a dependency inventory and a CycloneDX SBOM.
 
 ## Important: Read before first use
 
@@ -123,13 +137,19 @@ The release package includes the .NET runtime. You do not need to install the .N
 7. **Scan, test and explicitly enable a model** before attempting to activate it. Model discovery alone is not proof of Codex compatibility.
 8. **Set the real project path on the Sessions page** before switching providers if you want a handoff snapshot and continuation instruction.
 9. **Start a new Codex process or session after activation.** An already-running process may still be using the previous configuration.
-10. **Keep Adam CodexHub running while using an API provider.** Closing the app stops its in-process gateway. After reopening the app, activate the provider again so Codex receives the current gateway port.
+10. **Keep Adam CodexHub running while using an API provider.** A normal app exit stops the gateway and automatically restores the preserved Codex Account configuration. After reopening the app, activate the API provider again to use it. A crash, forced termination or power loss may prevent automatic restoration.
+11. **Review the provider's terms and privacy practices.** Remote providers may receive prompts, code, files, outputs and metadata. Start with [Provider Data Disclosures](docs/PROVIDER-DATA-DISCLOSURES.md).
+12. **Expect real API usage.** Key tests, model discovery, compatibility probes, retries and failover can consume credits or incur charges.
+13. **Use HTTPS for remote custom endpoints.** HTTP is accepted only for `localhost` and loopback addresses used by local providers.
 
 > [!WARNING]
 > Release binaries are currently unsigned. Windows SmartScreen may show an "unrecognized app" warning. Verify the SHA-256 checksum and confirm that the file came from this repository before choosing **More info > Run anyway**.
 
 > [!CAUTION]
 > Do not paste API keys into GitHub issues, screenshots, logs, provider JSON files, `config.toml`, or chat messages. Enter secrets only in the API Keys page. API-key charges, quotas, data handling and provider terms remain your responsibility.
+
+> [!CAUTION]
+> Do not send personal, confidential, proprietary or regulated data to a remote provider unless you are authorized and have confirmed its terms, retention, training and regional processing are appropriate. Adam CodexHub does not accept provider terms on your behalf.
 
 ### The provider-switching rule
 
@@ -230,6 +250,8 @@ The `.adam-codexhub` directory can contain project filenames, Git state and work
 
 To return to the native account, select **Codex Account** and choose **Activate**. The managed gateway stops and the preserved account config is restored.
 
+Closing Adam CodexHub normally performs the same restoration automatically when a preserved account profile is available. After the app closes, Codex can start normally in account mode without the local gateway.
+
 ## Included provider presets
 
 Adam CodexHub currently seeds these profiles:
@@ -252,31 +274,132 @@ Adam CodexHub currently seeds these profiles:
 
 ## How it works
 
-### Native account path
+### System Architecture
 
-```text
-Codex Desktop / Codex CLI
-          |
-          v
-Native Codex account configuration
+```mermaid
+flowchart TD
+    subgraph Client["Codex Client Tier"]
+        CD["Codex Desktop"]
+        CLI["Codex CLI"]
+        CFG["~/.codex/config.toml"]
+    end
+
+    subgraph Hub["Adam CodexHub (Core Engine)"]
+        UI["WPF Desktop App & CLI"]
+        PM["Provider Manager<br/>(Presets & Auto-Detect)"]
+        KP["API Key Pool<br/>(DPAPI Encrypted)"]
+        MD["Model Lifecycle<br/>(Discovery & Capability Probes)"]
+        SC["Session Continuity Engine<br/>(Project State & Handoff)"]
+        CFGE["Codex Config Engine<br/>(Atomic TOML & Backups)"]
+    end
+
+    subgraph Gateway["Local Gateway (127.0.0.1)"]
+        GW["ASP.NET Core Minimal API<br/>Dynamic Loopback Port<br/>Session Token Auth"]
+        SSE["SSE Streaming & Key Failover"]
+    end
+
+    subgraph External["Provider Ecosystem"]
+        ACC["Native Codex Account"]
+        P1["DeepSeek / Qwen / OpenRouter"]
+        P2["Anthropic / Gemini / Groq / Mistral"]
+        P3["Local (Ollama / LM Studio)"]
+    end
+
+    CD -->|Native Mode| ACC
+    CLI -->|Native Mode| ACC
+    CD -->|API Mode| GW
+    CLI -->|API Mode| GW
+
+    UI --> PM & KP & MD & SC & CFGE
+    CFGE -->|Atomic Replace & Rollback| CFG
+    GW --> SSE
+    SSE -->|Decrypted Key & Hot Retry| P1 & P2 & P3
+    SC -->|Writes Context| PS[".adam-codexhub/CURRENT_STATE.md"]
 ```
 
-### Compatible API-provider path
+### End-to-End Operational Flow
 
-```text
-Codex Desktop / Codex CLI
-          |
-          v
-http://127.0.0.1:<dynamic-port>/v1
-          |
-          v
-Adam CodexHub gateway
-          |
-          v
-Selected provider + healthy key + verified model
+The sequence diagram below illustrates the exact runtime lifecycle when developer executes coding tasks via Adam CodexHub:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as Developer
+    participant Hub as Adam CodexHub (App)
+    participant Sec as Windows DPAPI & SQLite
+    participant Cfg as ~/.codex/config.toml
+    participant Gate as Local Gateway (127.0.0.1)
+    participant Codex as Codex Desktop / CLI
+    participant AI as AI Provider (e.g., DeepSeek)
+
+    Dev->>Hub: Select Provider (e.g., DeepSeek) & Enabled Model
+    Hub->>Sec: Fetch encrypted keys & provider profile
+    Hub->>Gate: Start Gateway on dynamic loopback port (generate random token)
+    Hub->>Cfg: Backup config -> Write candidate -> Validate -> Atomic replace
+    Dev->>Codex: Send prompt / trigger coding action
+    Codex->>Gate: HTTP POST /v1/chat/completions (with local token)
+    Gate->>Sec: Decrypt highest priority active API key via DPAPI
+    Gate->>AI: Forward request with Provider Bearer Key
+    alt Provider returns 429 (Rate Limit) or Quota Exhausted
+        AI-->>Gate: HTTP 429 / Insufficient Quota
+        Gate->>Gate: Put failing key in Cooldown -> Pick next priority key
+        Gate->>AI: Retry request with fallback key
+    end
+    AI-->>Gate: Stream response tokens (SSE)
+    Gate-->>Codex: Stream tokens directly to Codex UI
+    Dev->>Hub: Close Adam CodexHub
+    Hub->>Cfg: Automatically restore preserved config-ACCOUNT.toml
+    Hub->>Gate: Stop Local Gateway safely
 ```
 
-The gateway forwards requests and streaming responses, applies the selected provider adapter, and performs bounded same-provider key failover. It does not intentionally expose a LAN or public listener.
+### Model Lifecycle & Compatibility Probes
+
+Advertising a model in `/models` does not guarantee compatibility with Codex tool calling and streaming. Adam CodexHub enforces a strict four-stage verification gate:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Discovered: Scan Provider /models
+    Discovered --> Tested: Basic Schema & Connectivity Check
+    Tested --> Verified: Pass Probes (Text, Stream, Tool Calling, Vision)
+    Verified --> Enabled: User Explicitly Enables for Codex
+    Enabled --> Disabled: User Toggles Off / Deprecated
+    Disabled --> [*]
+```
+
+- **Live Capability Probes**: Tests verify whether a model supports actual JSON function calling (tools), server-sent event (SSE) streaming, reasoning payloads, or multimodal vision inputs.
+- **Explicit Enablement**: Newly scanned models remain disabled by default to prevent cluttering the Codex interface with non-functional or overly expensive models.
+
+### Session Continuity & Source-of-Truth Hierarchy
+
+When switching between providers, Adam CodexHub preserves provider session affinity and updates project context through `.adam-codexhub/CURRENT_STATE.md`. If past chat history conflicts with the current project state, the system follows a strict hierarchy of authority:
+
+```mermaid
+graph TD
+    A["1. Current Filesystem (Highest Authority)"] --> B["2. Git Working Tree & Diff"]
+    B --> C["3. .adam-codexhub/CURRENT_STATE.md"]
+    C --> D["4. Current Project Instructions"]
+    D --> E["5. Older Chat History (Lowest Authority)"]
+```
+
+- **Stale Session Detection**: Calculates revision drift (`staleBy = CurrentRevision - LastSeenRevision`).
+- **Adaptive Sync Levels**:
+  - `Light` (0 drift): Context summary and revision stamp.
+  - `Normal` (1–5 revisions drift): Changed file list, Git working tree status.
+  - `Full` (> 5 revisions drift): Complete Git diff, recent commits, build/test state.
+- **Handoff Generation**: Generates explicit instructions informing the incoming model of changes made by previous providers so it doesn't revert valid work.
+
+### Comparison: Manual TOML Editing vs. Adam CodexHub
+
+| Capability / Workflow | Manual Editing (`config.toml`) | With Adam CodexHub |
+| :--- | :--- | :--- |
+| **Provider Switching** | Open text editor, manually edit TOML; risk syntax breaks | 1-click selection from GUI or CLI presets |
+| **API Key Security** | Stored in plaintext on disk in config files | Encrypted via Windows DPAPI (`CurrentUser` scope) |
+| **Key Failover (429/Quota)** | Fails completely, requires manual key replacement | Automated hot failover to next priority key (max 3 tries) |
+| **Model Verification** | Guess based on advertised name; breaks during tool calls | Automated capability probes (Tools, Stream, Vision, Reasoning) |
+| **Cross-Provider Switching** | Context breaks or model hallucinations occur | Session Continuity Engine creates structured handoff |
+| **Stale Session Recovery** | Old chat history overwrites recent filesystem changes | Auto-detects project revision drift & updates context |
+| **Account Mode Restoration** | Easy to overwrite and lose original account login | Preserves `config-ACCOUNT.toml` & auto-restores on exit |
+| **Network Exposure** | May accidentally expose ports to local LAN | Loopback-only (`127.0.0.1`) with per-session token |
 
 ## Security and local data
 
@@ -285,12 +408,16 @@ The gateway forwards requests and streaming responses, applies the selected prov
 - API keys are encrypted with Windows DPAPI and scoped to the current Windows user.
 - Authorization headers and secret values must not be logged.
 - Prompt and response body logging is off by default.
-- The gateway binds to loopback only.
+- The gateway binds to loopback only and generates a new cryptographically random token on every start.
+- Remote providers require HTTPS; HTTP is accepted only for loopback endpoints.
 - Codex config updates are backed up and validated before activation.
 - Provider definitions cannot store secret-bearing headers.
 
 > [!WARNING]
 > DPAPI-protected keys are not portable to another Windows account or machine. When moving Adam CodexHub, reinstall the app and enter the API keys again instead of copying the encrypted secret files.
+
+> [!IMPORTANT]
+> DPAPI and a loopback token reduce accidental exposure but do not protect against malicious software running as the same Windows user. Monitor provider usage and revoke a key immediately if compromise is suspected.
 
 ### Data locations
 
@@ -305,6 +432,23 @@ The gateway forwards requests and streaming responses, applies the selected prov
 | Project handoff state | `<project>\.adam-codexhub\` |
 
 Read [SECURITY.md](SECURITY.md) before reporting a vulnerability. Never include API keys, authorization headers, prompt contents or private source code in a public issue.
+
+## Privacy, providers and legal notices
+
+Adam CodexHub has no Adam-hosted prompt backend, account system, advertising, payment processing or built-in telemetry. Application data is stored locally unless the user sends it to a selected provider or voluntarily submits it through GitHub or another support channel.
+
+Remote providers operate under their own contracts and privacy practices. Some routing providers may pass requests to additional model operators. Compatibility tests and failover make real requests and can incur charges.
+
+Read these documents before using a remote provider or distributing a modified build:
+
+- [Privacy Notice](PRIVACY.md)
+- [Disclaimer](DISCLAIMER.md)
+- [Provider Data Disclosures](docs/PROVIDER-DATA-DISCLOSURES.md)
+- [Trademark Notice](TRADEMARKS.md)
+- [Third-Party Notices](THIRD-PARTY-NOTICES.md)
+- [Security Policy](SECURITY.md)
+
+Adam CodexHub is not certified for safety-critical, regulated, medical, legal, financial, employment, law-enforcement or other high-risk use. Availability is subject to applicable law, sanctions, export controls and provider restrictions.
 
 ## CLI companion
 
@@ -342,6 +486,7 @@ Open **Models**, scan the provider, test the desired model and explicitly enable
 - Activate the provider again after every app restart so the active config receives the current dynamic gateway port.
 - Check **Diagnostics** for the gateway status.
 - Confirm local security software is not blocking loopback traffic.
+- If Adam CodexHub previously crashed or was force-closed, reopen it, select **Codex Account**, choose **Activate**, then close it normally.
 
 ### The provider rejects authentication
 
@@ -415,7 +560,7 @@ src/
   AdamCodexHub.Infrastructure/  SQLite, DPAPI, settings and paths
   AdamCodexHub.Providers/       provider registry and adapters
   AdamCodexHub.Codex/           Codex config and project/session state
-  AdamCodexHub.Gateway/         authenticated loopback gateway
+  AdamCodexHub.Gateway/         token-protected loopback gateway
   AdamCodexHub.Cli/             command-line companion
 
 tests/
@@ -439,6 +584,9 @@ Contributions must preserve these non-negotiable rules:
 6. Keep provider-specific behavior in adapters or provider definitions, not WPF view models.
 7. Treat model discovery and Codex compatibility as separate states.
 8. Keep the default gateway loopback-only.
+9. Require HTTPS for every non-loopback provider endpoint.
+10. Disclose provider data transfer and billable probes before remote use.
+11. Restore the preserved Codex Account configuration on normal application exit.
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md), [DEVELOPMENT.md](DEVELOPMENT.md) and [AGENTS.md](AGENTS.md). The complete documentation map is available in [docs/INDEX.md](docs/INDEX.md).
 
@@ -453,4 +601,4 @@ Adam CodexHub is an early open-source release. Test with non-critical projects f
 
 ## License
 
-Adam CodexHub is released under the [MIT License](LICENSE). You may use, copy, modify and distribute it under the terms of that license. The software is provided without warranty.
+Adam CodexHub is released under the [MIT License](LICENSE). You may use, copy, modify and distribute it, including commercially, under that license. The software is provided without warranty. The MIT License does not grant rights to third-party trademarks, and mandatory legal rights or liabilities may still apply. See [DISCLAIMER.md](DISCLAIMER.md), [TRADEMARKS.md](TRADEMARKS.md) and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

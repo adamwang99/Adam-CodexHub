@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "anthropic",
+  "name": "Claude / Anthropic",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://openrouter.ai/api/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": "/responses",
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools",
+    "reasoning"
+  ],
+  "notes": "Claude models are served through OpenRouter's OpenAI-compatible API. Add an OpenRouter key and select a claude-* model. Verify compatibility before enabling."
+}

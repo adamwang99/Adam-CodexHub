@@ -3,70 +3,117 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Adam CodexHub — Important"
         Style="{StaticResource AppWindow}"
-        Width="650"
-        SizeToContent="Height"
+        Width="700"
+        Height="700"
         ResizeMode="NoResize"
         WindowStyle="None"
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="True">
 
-    <Border Padding="28">
-        <StackPanel>
-            <TextBlock Text="Important: How Provider Switching Works"
+    <Border Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Important Before First Use"
                        FontSize="24"
                        FontWeight="Bold"
                        Foreground="{StaticResource BrushWhite}" />
 
-            <TextBlock Margin="0,16,0,0"
-                       TextWrapping="Wrap"
-                       Foreground="{StaticResource BrushCream}"
-                       LineHeight="21">
-                Adam CodexHub can use Codex with multiple AI providers. To avoid broken sessions,
-                missing tools, provider mismatches and stale context, the app does not directly
-                convert an existing chat session from one provider into another.
-            </TextBlock>
-
-            <Border Style="{StaticResource CardBorder}"
-                    Margin="0,18,0,18">
-                <StackPanel>
-                    <TextBlock Text="When you switch providers:"
+            <ScrollViewer Grid.Row="1"
+                          Margin="0,16,0,16"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="Provider and session behavior"
                                Foreground="{StaticResource BrushGold}"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,8" />
-
-                    <TextBlock Text="• current work state is saved automatically&#x0a;• an existing target-provider session is resumed when possible&#x0a;• otherwise a new session receives the latest project state&#x0a;• stale sessions are refreshed when you return&#x0a;• API-key rotation inside the same provider does not require a new session"
+                               FontWeight="SemiBold" />
+                    <TextBlock Margin="0,5,0,12"
+                               Text="Adam CodexHub does not convert an existing chat session from one provider into another. Current project files, Git state and synchronized project state take priority over old chat history. Cross-provider use requires a separate session and a project handoff. A normal app exit restores the preserved Codex Account configuration; a crash or forced termination may prevent restoration."
                                TextWrapping="Wrap"
                                Foreground="{StaticResource BrushCream}"
-                               LineHeight="22" />
+                               LineHeight="21" />
+
+                    <TextBlock Text="Remote data transfer and provider terms"
+                               Foreground="{StaticResource BrushGold}"
+                               FontWeight="SemiBold" />
+                    <TextBlock Margin="0,5,0,12"
+                               Text="When you use a remote provider, prompts, source code, files, outputs and metadata may be sent to that provider. Its terms, privacy policy, retention, training and cross-border transfer rules apply. Do not send confidential, personal or regulated data unless you are authorized and the provider is suitable."
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource BrushCream}"
+                               LineHeight="21" />
+
+                    <TextBlock Text="Real requests, charges and local security"
+                               Foreground="{StaticResource BrushGold}"
+                               FontWeight="SemiBold" />
+                    <TextBlock Margin="0,5,0,12"
+                               Text="Key tests, model compatibility probes, retries and failover make real API requests and may consume credits or incur charges. Keys are protected at rest with Windows DPAPI, but no local tool can protect them from malicious software running as the same Windows user. Remote custom endpoints must use HTTPS; HTTP is allowed only for loopback providers."
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource BrushCream}"
+                               LineHeight="21" />
+
+                    <TextBlock Text="Independent experimental software"
+                               Foreground="{StaticResource BrushGold}"
+                               FontWeight="SemiBold" />
+                    <TextBlock Margin="0,5,0,12"
+                               Text="This independent MIT-licensed project is intended for learning, experimentation and developer evaluation. It is not affiliated with or endorsed by OpenAI, Microsoft, GitHub or any provider, and it is not certified for safety-critical, regulated or other high-risk use."
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource BrushCream}"
+                               LineHeight="21" />
+
+                    <TextBlock Margin="0,0,0,16"
+                               Foreground="{StaticResource BrushAqua}"
+                               TextWrapping="Wrap">
+                        <Hyperlink NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/PRIVACY.md"
+                                   RequestNavigate="OpenLink">Privacy</Hyperlink>
+                        <Run Text="  ·  " />
+                        <Hyperlink NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/DISCLAIMER.md"
+                                   RequestNavigate="OpenLink">Disclaimer</Hyperlink>
+                        <Run Text="  ·  " />
+                        <Hyperlink NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/docs/PROVIDER-DATA-DISCLOSURES.md"
+                                   RequestNavigate="OpenLink">Provider disclosures</Hyperlink>
+                    </TextBlock>
+
+                    <CheckBox x:Name="SessionAcknowledgementCheckBox"
+                              Checked="AcknowledgementChanged"
+                              Unchecked="AcknowledgementChanged"
+                              Foreground="{StaticResource BrushCream}"
+                              Margin="0,0,0,10">
+                        <TextBlock Width="590"
+                                   TextWrapping="Wrap"
+                                   Text="I understand that providers may use separate sessions and that project state may be synchronized for handoff." />
+                    </CheckBox>
+
+                    <CheckBox x:Name="DataAcknowledgementCheckBox"
+                              Checked="AcknowledgementChanged"
+                              Unchecked="AcknowledgementChanged"
+                              Foreground="{StaticResource BrushCream}"
+                              Margin="0,0,0,10">
+                        <TextBlock Width="590"
+                                   TextWrapping="Wrap"
+                                   Text="I understand that remote providers may receive my data and apply their own terms and privacy practices." />
+                    </CheckBox>
+
+                    <CheckBox x:Name="ResponsibilityAcknowledgementCheckBox"
+                              Checked="AcknowledgementChanged"
+                              Unchecked="AcknowledgementChanged"
+                              Foreground="{StaticResource BrushCream}">
+                        <TextBlock Width="590"
+                                   TextWrapping="Wrap"
+                                   Text="I understand that probes and retries may cost money, and that I am responsible for provider charges, credentials, data and lawful use." />
+                    </CheckBox>
                 </StackPanel>
-            </Border>
+            </ScrollViewer>
 
-            <TextBlock Text="Source of truth"
-                       Foreground="{StaticResource BrushGold}"
-                       FontWeight="SemiBold" />
-            <TextBlock Margin="0,5,0,18"
-                       Text="Current project files, Git state and synchronized project state take priority over old chat history."
-                       TextWrapping="Wrap"
-                       Foreground="{StaticResource BrushCream}" />
-
-            <CheckBox x:Name="AcknowledgementCheckBox"
-                      Checked="AcknowledgementChanged"
-                      Unchecked="AcknowledgementChanged"
-                      Foreground="{StaticResource BrushCream}">
-                <TextBlock Width="545"
-                           TextWrapping="Wrap"
-                           Text="I understand that each provider may use a separate session and that Adam CodexHub may automatically synchronize or refresh project state when switching or resuming sessions." />
-            </CheckBox>
-
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="0,24,0,0">
-                <Button x:Name="ContinueButton"
-                        Style="{StaticResource PrimaryButton}"
-                        IsEnabled="False"
-                        Click="Continue_Click"
-                        Content="I Understand — Continue" />
-            </StackPanel>
-        </StackPanel>
+            <Button Grid.Row="2"
+                    x:Name="ContinueButton"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalAlignment="Right"
+                    IsEnabled="False"
+                    Click="Continue_Click"
+                    Content="I Understand — Continue" />
+        </Grid>
     </Border>
 </Window>

@@ -37,6 +37,31 @@ public sealed class AppSettingsService : IAppSettingsService
         await WriteAsync(settings, cancellationToken);
     }
 
+    public async Task<bool> HasAcknowledgedProviderDisclosureAsync(
+        string providerId,
+        int requiredVersion,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerId);
+        var settings = await ReadAsync(cancellationToken);
+        return settings.ProviderDisclosureAckVersions.TryGetValue(
+                   providerId.Trim(),
+                   out var acknowledgedVersion) &&
+               acknowledgedVersion >= requiredVersion;
+    }
+
+    public async Task AcknowledgeProviderDisclosureAsync(
+        string providerId,
+        int version,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerId);
+        var settings = await ReadAsync(cancellationToken);
+        settings.ProviderDisclosureAckVersions[providerId.Trim()] = version;
+        settings.ProviderDisclosureAcknowledgedAt[providerId.Trim()] = DateTimeOffset.UtcNow;
+        await WriteAsync(settings, cancellationToken);
+    }
+
     private async Task<AppSettingsDocument> ReadAsync(CancellationToken cancellationToken)
     {
         if (!File.Exists(_paths.SettingsFile))
@@ -70,5 +95,9 @@ public sealed class AppSettingsService : IAppSettingsService
         public bool SessionMechanismAcknowledged { get; set; }
         public int SessionMechanismAckVersion { get; set; }
         public DateTimeOffset? SessionMechanismAcknowledgedAt { get; set; }
+        public Dictionary<string, int> ProviderDisclosureAckVersions { get; set; }
+            = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, DateTimeOffset> ProviderDisclosureAcknowledgedAt { get; set; }
+            = new(StringComparer.OrdinalIgnoreCase);
     }
 }

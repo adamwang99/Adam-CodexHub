@@ -94,6 +94,78 @@ public sealed class ProviderPersistenceTests
         await Assert.ThrowsAsync<ArgumentException>(() => manager.SaveAsync(provider));
     }
 
+    [Fact]
+    public async Task RemoteHttpProviderIsRejected()
+    {
+        await using var fixture = new ProviderFixture();
+        var manager = fixture.CreateManager();
+        var provider = CreateCustomProvider() with
+        {
+            BaseUrl = "http://api.example.test/v1"
+        };
+
+        var error = await Assert.ThrowsAsync<ArgumentException>(() => manager.SaveAsync(provider));
+        Assert.Contains("must use HTTPS", error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("http://127.0.0.1:11434/v1")]
+    [InlineData("http://localhost:1234/v1")]
+    [InlineData("http://[::1]:8080/v1")]
+    public async Task LoopbackHttpProviderIsAllowed(string baseUrl)
+    {
+        await using var fixture = new ProviderFixture();
+        var manager = fixture.CreateManager();
+        var provider = CreateCustomProvider() with { BaseUrl = baseUrl };
+
+        await manager.SaveAsync(provider);
+
+        Assert.Equal(baseUrl, (await manager.GetAsync(provider.Id))?.BaseUrl);
+    }
+
+    [Fact]
+    public async Task CredentialsEmbeddedInProviderUrlAreRejected()
+    {
+        await using var fixture = new ProviderFixture();
+        var manager = fixture.CreateManager();
+        var provider = CreateCustomProvider() with
+        {
+            BaseUrl = "https://user:secret@api.example.test/v1"
+        };
+
+        var error = await Assert.ThrowsAsync<ArgumentException>(() => manager.SaveAsync(provider));
+        Assert.Contains("must not be embedded", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LegacyRemoteHttpProviderIsSkippedWithWarningOnStartup()
+    {
+        await using var fixture = new ProviderFixture();
+
+        // Seed a provider that was valid under older versions (remote HTTP) directly
+        // into the store, bypassing SaveAsync validation, then start the manager.
+        var store = fixture.CreateStore();
+        await store.UpsertAsync(new ProviderProfile
+        {
+            Id = "legacy-http-provider",
+            Name = "Legacy HTTP Provider",
+            Adapter = "openai-compatible",
+            BaseUrl = "http://api.example.test/v1",
+            TrustLevel = ProviderTrustLevel.Custom
+        });
+
+        var manager = fixture.CreateManager();
+        await manager.InitializeAsync();
+
+        Assert.Null(await manager.GetAsync("legacy-http-provider"));
+        var all = await manager.GetAllAsync();
+        Assert.DoesNotContain(all, p => p.Id == "legacy-http-provider");
+        Assert.Contains(all, p => p.Id == "preset-provider");
+
+        var warning = Assert.Single(manager.StartupWarnings);
+        Assert.Contains("legacy-http-provider", warning, StringComparison.Ordinal);
+    }
+
     private static ProviderProfile CreateCustomProvider() => new()
     {
         Id = "custom-provider",
@@ -118,6 +190,8 @@ public sealed class ProviderPersistenceTests
 
         public ProviderManager CreateManager() =>
             new(new FakeRegistry(), new SqliteProviderStore(_database));
+
+        public SqliteProviderStore CreateStore() => new(_database);
 
         public ValueTask DisposeAsync()
         {

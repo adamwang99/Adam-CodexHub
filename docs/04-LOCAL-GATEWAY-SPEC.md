@@ -85,14 +85,28 @@ Default excluded:
 ## 7. Gateway security
 
 - loopback only
-- optional per-install local gateway token
+- cryptographically random token generated on every gateway start
+- constant-time token verification
 - reject external host access
 - no CORS wildcard
 - redact secrets in logs
 - enforce request size limits
 - configurable timeout
 
-## 8. Model mapping
+The token is written to the active Codex configuration for the current gateway process. It is local access control, not protection against malicious software running as the same Windows user.
+
+## 8. Application shutdown
+
+On a normal desktop application exit:
+
+1. restore the preserved Codex Account configuration when available;
+2. mark Codex Account as the active provider after successful restoration;
+3. stop the in-process gateway;
+4. stop and dispose the application host.
+
+Gateway shutdown must still occur if account restoration fails. A crash, forced process termination, operating-system failure or power loss may bypass this sequence, so recovery through Codex Account activation and last-known-good backups remains necessary.
+
+## 9. Model mapping
 
 Support logical aliases:
 

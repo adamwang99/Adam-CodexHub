@@ -10,6 +10,7 @@ public interface ICodexConfigService
     Task ActivateGatewayAsync(
         string modelId,
         int gatewayPort,
+        string gatewayToken,
         CancellationToken cancellationToken = default);
 
     Task<string?> BackupCurrentAsync(CancellationToken cancellationToken = default);

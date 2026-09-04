@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
@@ -19,6 +21,7 @@ public sealed class LocalGatewayService : IGatewayService
     private readonly IModelStore _models;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
+    private string _localToken = CreateLocalToken();
     private WebApplication? _app;
 
     public LocalGatewayService(
@@ -35,7 +38,7 @@ public sealed class LocalGatewayService : IGatewayService
 
     public bool IsRunning => _app is not null;
     public int Port { get; private set; }
-    public string LocalToken => "adam-codexhub-local";
+    public string LocalToken => _localToken;
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
@@ -47,6 +50,7 @@ public sealed class LocalGatewayService : IGatewayService
                 return;
             }
 
+            _localToken = CreateLocalToken();
             var builder = WebApplication.CreateSlimBuilder();
             builder.WebHost.UseUrls("http://127.0.0.1:0");
             builder.WebHost.ConfigureKestrel(options =>
@@ -359,12 +363,7 @@ public sealed class LocalGatewayService : IGatewayService
             return false;
         }
 
-        var authorization = context.Request.Headers.Authorization.ToString();
-        if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(
-                authorization["Bearer ".Length..].Trim(),
-                LocalToken,
-                StringComparison.Ordinal))
+        if (!HasValidLocalToken(context.Request.Headers.Authorization.ToString()))
         {
             context.Response.Headers.WWWAuthenticate = "Bearer";
             await WriteErrorAsync(
@@ -377,6 +376,27 @@ public sealed class LocalGatewayService : IGatewayService
 
         return true;
     }
+
+    private bool HasValidLocalToken(string authorization)
+    {
+        if (!authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var providedToken = authorization["Bearer ".Length..].Trim();
+        if (providedToken.Length == 0)
+        {
+            return false;
+        }
+
+        var providedHash = SHA256.HashData(Encoding.UTF8.GetBytes(providedToken));
+        var expectedHash = SHA256.HashData(Encoding.UTF8.GetBytes(_localToken));
+        return CryptographicOperations.FixedTimeEquals(providedHash, expectedHash);
+    }
+
+    private static string CreateLocalToken() =>
+        Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
 
     private static bool IsLoopback(HttpContext context) =>
         context.Connection.RemoteIpAddress is { } address && IPAddress.IsLoopback(address);

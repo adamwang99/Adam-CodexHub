@@ -22,6 +22,7 @@ public sealed class ProviderManager : IProviderManager
     private readonly IProviderStore _store;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly List<ProviderProfile> _providers = new();
+    private readonly List<string> _startupWarnings = new();
     private readonly HashSet<string> _builtInProviderIds = new(StringComparer.OrdinalIgnoreCase);
     private string? _activeProviderId;
     private bool _initialized;
@@ -31,6 +32,8 @@ public sealed class ProviderManager : IProviderManager
         _registry = registry;
         _store = store;
     }
+
+    public IReadOnlyList<string> StartupWarnings => _startupWarnings;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -250,9 +253,18 @@ public sealed class ProviderManager : IProviderManager
             persisted.Remove(definition.Id);
         }
 
-        foreach (var customProvider in persisted.Values.Select(NormalizeAndValidate))
+        foreach (var customProvider in persisted.Values)
         {
-            _providers.Add(customProvider);
+            try
+            {
+                _providers.Add(NormalizeAndValidate(customProvider));
+            }
+            catch (ArgumentException ex)
+            {
+                _startupWarnings.Add(
+                    $"Provider '{customProvider.Id}' was skipped because it no longer "
+                    + $"meets current security rules: {ex.Message}");
+            }
         }
 
         var savedActiveId = await _store.GetActiveProviderIdAsync(cancellationToken);
@@ -315,10 +327,26 @@ public sealed class ProviderManager : IProviderManager
         }
 
         var baseUrl = provider.BaseUrl.Trim().TrimEnd('/');
-        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri) ||
-            (id != CodexAccountProviderId && uri.Scheme is not "http" and not "https"))
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri))
         {
-            throw new ArgumentException("Provider base URL must be an absolute HTTP or HTTPS URI.", nameof(provider));
+            throw new ArgumentException("Provider base URL must be an absolute URI.", nameof(provider));
+        }
+
+        if (id != CodexAccountProviderId &&
+            !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+            !(string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
+              uri.IsLoopback))
+        {
+            throw new ArgumentException(
+                "Remote provider base URLs must use HTTPS. HTTP is allowed only for localhost or loopback providers.",
+                nameof(provider));
+        }
+
+        if (!string.IsNullOrEmpty(uri.UserInfo))
+        {
+            throw new ArgumentException(
+                "Provider credentials must not be embedded in the base URL.",
+                nameof(provider));
         }
 
         var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

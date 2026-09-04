@@ -9,6 +9,7 @@
 - no hidden remote telemetry
 - safe configuration rollback
 - loopback-only gateway
+- HTTPS-only remote provider transport
 
 ## 2. API keys
 
@@ -22,11 +23,17 @@ Never store plaintext secrets in:
 
 Use Windows secure storage.
 
+DPAPI protects secrets at rest but does not protect against malicious software running as the same Windows user.
+
 ## 3. Gateway privacy
 
 Default metadata logging is permitted.
 
 Request/response body logging is OFF.
+
+Remote providers may receive prompts, source code, files, outputs and metadata. Display a provider-specific disclosure before first activation and link to the provider's current terms and privacy resources.
+
+Key tests, compatibility probes, retries and failover make real requests and may incur charges. This must be disclosed before remote use.
 
 If user enables diagnostic body logging:
 
@@ -72,3 +79,7 @@ Before modifying Codex configuration:
 - verify
 
 Maintain last-known-good state.
+
+## 8. Provider transport
+
+Require HTTPS for every remote provider URL. Permit HTTP only when `Uri.IsLoopback` is true for a local endpoint. Reject credentials embedded in provider URLs.

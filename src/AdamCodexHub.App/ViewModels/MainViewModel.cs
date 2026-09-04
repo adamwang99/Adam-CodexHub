@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using AdamCodexHub.App.Mvvm;
+using AdamCodexHub.App.Services;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
 
@@ -8,10 +9,13 @@ namespace AdamCodexHub.App.ViewModels;
 
 public sealed class MainViewModel : ObservableObject
 {
+    private const int ProviderDisclosureVersion = 1;
     private readonly IProviderManager _providerManager;
     private readonly IModelStore _modelStore;
     private readonly IProviderActivationService _activation;
     private readonly IGatewayService _gateway;
+    private readonly IAppSettingsService _settings;
+    private readonly IUserDialogService _dialogs;
     private readonly SessionsViewModel _sessions;
     private PageViewModel _currentPage;
     private ProviderProfile? _selectedProvider;
@@ -28,10 +32,10 @@ public sealed class MainViewModel : ObservableObject
         IModelStore modelStore,
         IProviderActivationService activation,
         IGatewayService gateway,
+        IAppSettingsService appSettings,
+        IUserDialogService dialogs,
         HomeViewModel home,
-        ProvidersViewModel providersPage,
-        ApiKeysViewModel apiKeys,
-        ModelsViewModel models,
+        ProviderSetupViewModel providers,
         SessionsViewModel sessions,
         DiagnosticsViewModel diagnostics,
         SettingsViewModel settings)
@@ -40,14 +44,14 @@ public sealed class MainViewModel : ObservableObject
         _modelStore = modelStore;
         _activation = activation;
         _gateway = gateway;
+        _settings = appSettings;
+        _dialogs = dialogs;
         _sessions = sessions;
 
         Pages = new ObservableCollection<PageViewModel>
         {
             home,
-            providersPage,
-            apiKeys,
-            models,
+            providers,
             sessions,
             diagnostics,
             settings
@@ -180,6 +184,27 @@ public sealed class MainViewModel : ObservableObject
     {
         var provider = SelectedProvider
             ?? throw new InvalidOperationException("Select a provider first.");
+
+        if (UsesRemoteEndpoint(provider) &&
+            !await _settings.HasAcknowledgedProviderDisclosureAsync(
+                provider.Id,
+                ProviderDisclosureVersion))
+        {
+            var confirmed = _dialogs.Confirm(
+                "Remote provider data and cost notice",
+                $"Using {provider.Name} may send prompts, source code, files, outputs and metadata to that provider. Compatibility tests, retries and failover make real API requests and may incur charges. The provider's terms, privacy policy, retention rules and regional restrictions apply.",
+                $"Continue with {provider.Name}");
+            if (!confirmed)
+            {
+                OperationMessage = "Provider activation canceled.";
+                return;
+            }
+
+            await _settings.AcknowledgeProviderDisclosureAsync(
+                provider.Id,
+                ProviderDisclosureVersion);
+        }
+
         var result = await _activation.ActivateAsync(
             provider.Id,
             provider.Id == "codex-account" ? null : SelectedModel?.RemoteId,
@@ -202,6 +227,19 @@ public sealed class MainViewModel : ObservableObject
             await home.InitializeAsync();
         }
     });
+
+    private static bool UsesRemoteEndpoint(ProviderProfile provider)
+    {
+        if (!Uri.TryCreate(provider.BaseUrl, UriKind.Absolute, out var uri))
+        {
+            return false;
+        }
+
+        var isHttpOrHttps =
+            string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
+        return isHttpOrHttps && !uri.IsLoopback;
+    }
 
     private async Task LoadModelsAsync(ProviderProfile? provider)
     {

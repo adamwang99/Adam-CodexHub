@@ -93,7 +93,11 @@ public sealed class ProviderActivationService : IProviderActivationService
         try
         {
             await _providers.SetActiveAsync(target.Id, cancellationToken);
-            await _config.ActivateGatewayAsync(model.RemoteId, _gateway.Port, cancellationToken);
+            await _config.ActivateGatewayAsync(
+                model.RemoteId,
+                _gateway.Port,
+                _gateway.LocalToken,
+                cancellationToken);
         }
         catch
         {

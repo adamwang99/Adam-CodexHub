@@ -79,9 +79,11 @@ public sealed class CodexConfigService : ICodexConfigService
     public async Task ActivateGatewayAsync(
         string modelId,
         int gatewayPort,
+        string gatewayToken,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(modelId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayToken);
         if (gatewayPort is < 1 or > 65535)
         {
             throw new ArgumentOutOfRangeException(nameof(gatewayPort));
@@ -97,8 +99,16 @@ public sealed class CodexConfigService : ICodexConfigService
                 ? new TomlTable()
                 : ParseToml(current);
 
-            var candidate = BuildGatewayCandidate(model, modelId.Trim(), gatewayPort);
-            ValidateGatewayCandidate(candidate, modelId.Trim(), gatewayPort);
+            var candidate = BuildGatewayCandidate(
+                model,
+                modelId.Trim(),
+                gatewayPort,
+                gatewayToken.Trim());
+            ValidateGatewayCandidate(
+                candidate,
+                modelId.Trim(),
+                gatewayPort,
+                gatewayToken.Trim());
 
             var backup = await BackupCurrentCoreAsync(cancellationToken);
             try
@@ -164,7 +174,8 @@ public sealed class CodexConfigService : ICodexConfigService
     private static string BuildGatewayCandidate(
         TomlTable model,
         string modelId,
-        int gatewayPort)
+        int gatewayPort,
+        string gatewayToken)
     {
         model["model"] = modelId;
         model["model_provider"] = ManagedProviderId;
@@ -182,7 +193,7 @@ public sealed class CodexConfigService : ICodexConfigService
             ["name"] = "Adam CodexHub Local Gateway",
             ["base_url"] = $"http://127.0.0.1:{gatewayPort}/v1",
             ["wire_api"] = "responses",
-            ["experimental_bearer_token"] = "adam-codexhub-local"
+            ["experimental_bearer_token"] = gatewayToken
         };
 
         return Toml.FromModel(model);
@@ -191,7 +202,8 @@ public sealed class CodexConfigService : ICodexConfigService
     private static void ValidateGatewayCandidate(
         string candidate,
         string modelId,
-        int gatewayPort)
+        int gatewayPort,
+        string gatewayToken)
     {
         var model = ParseToml(candidate);
         if (!string.Equals(model["model"] as string, modelId, StringComparison.Ordinal) ||
@@ -201,6 +213,10 @@ public sealed class CodexConfigService : ICodexConfigService
             !string.Equals(
                 gateway["base_url"] as string,
                 $"http://127.0.0.1:{gatewayPort}/v1",
+                StringComparison.Ordinal) ||
+            !string.Equals(
+                gateway["experimental_bearer_token"] as string,
+                gatewayToken,
                 StringComparison.Ordinal))
         {
             throw new InvalidDataException("Candidate Codex gateway configuration failed validation.");

@@ -31,6 +31,9 @@
 - Candidate config is validated.
 - Failure restores last known good config.
 - Codex account profile can be restored.
+- Normal application exit restores the preserved Codex account profile before stopping the gateway.
+- Missing account profile does not cause a fabricated native configuration.
+- Gateway shutdown continues even when account restoration fails.
 
 ## Sessions
 
@@ -45,9 +48,15 @@
 - Session explanation is mandatory.
 - Continue is disabled before acknowledgement.
 - Acknowledgement version is stored.
+- Remote data transfer, provider terms and billable requests are acknowledged.
+- The first activation of each remote provider shows a provider-specific notice.
 
 ## Security
 
 - Keys are not stored plaintext in SQLite.
 - Logs redact Authorization header.
 - Gateway binds to loopback by default.
+- Gateway token is random and rotates on each gateway start.
+- Gateway token comparison is constant-time.
+- Remote provider URLs require HTTPS.
+- HTTP provider URLs are accepted only for loopback endpoints.

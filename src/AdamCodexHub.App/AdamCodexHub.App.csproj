@@ -15,5 +15,20 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets\adam-codexhub-logo.png" />
+    <Resource Include="Assets\providers\anthropic.png" />
+    <Resource Include="Assets\providers\codex-account.png" />
+    <Resource Include="Assets\providers\deepseek.png" />
+    <Resource Include="Assets\providers\fireworks.png" />
+    <Resource Include="Assets\providers\gemini.png" />
+    <Resource Include="Assets\providers\groq.png" />
+    <Resource Include="Assets\providers\lmstudio.png" />
+    <Resource Include="Assets\providers\mistral.png" />
+    <Resource Include="Assets\providers\nvidia.png" />
+    <Resource Include="Assets\providers\ollama.png" />
+    <Resource Include="Assets\providers\openai.png" />
+    <Resource Include="Assets\providers\openrouter.png" />
+    <Resource Include="Assets\providers\qwen.png" />
+    <Resource Include="Assets\providers\together.png" />
+    <Resource Include="Assets\providers\xai.png" />
   </ItemGroup>
 </Project>

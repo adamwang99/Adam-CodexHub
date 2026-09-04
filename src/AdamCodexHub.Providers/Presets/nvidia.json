@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "nvidia",
+  "name": "NVIDIA NIM",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://integrate.api.nvidia.com/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": null,
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools"
+  ],
+  "notes": "NVIDIA NIM endpoints expose hostable models through an OpenAI-compatible API. Verify compatibility before enabling."
+}

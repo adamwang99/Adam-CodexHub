@@ -99,15 +99,122 @@ Copy-Item -LiteralPath (Join-Path $repositoryRoot 'LICENSE') -Destination $stagi
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'README.md') -Destination $stagingDirectory
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'SECURITY.md') -Destination $stagingDirectory
 
+foreach ($file in @(
+    'PRIVACY.md',
+    'DISCLAIMER.md',
+    'TRADEMARKS.md',
+    'THIRD-PARTY-NOTICES.md'
+)) {
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot $file) -Destination $stagingDirectory
+}
+
+$packageDocsDirectory = Join-Path $stagingDirectory 'docs'
+$packageLicensesDirectory = Join-Path $stagingDirectory 'licenses'
+New-Item -ItemType Directory -Path $packageDocsDirectory -Force | Out-Null
+New-Item -ItemType Directory -Path $packageLicensesDirectory -Force | Out-Null
+Copy-Item `
+    -LiteralPath (Join-Path $repositoryRoot 'docs\PROVIDER-DATA-DISCLOSURES.md') `
+    -Destination $packageDocsDirectory
+Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'licenses') -File |
+    Copy-Item -Destination $packageLicensesDirectory
+
+$dotnetCommand = Get-Command dotnet -ErrorAction Stop
+$dotnetNoticesPath = Join-Path (Split-Path -Parent $dotnetCommand.Source) 'ThirdPartyNotices.txt'
+if (-not (Test-Path -LiteralPath $dotnetNoticesPath)) {
+    throw "The .NET third-party notices file was not found beside $($dotnetCommand.Source)."
+}
+
+Copy-Item `
+    -LiteralPath $dotnetNoticesPath `
+    -Destination (Join-Path $stagingDirectory 'DOTNET-THIRD-PARTY-NOTICES.txt')
+
+$dependencyInventory = [System.Collections.Generic.List[string]]::new()
+foreach ($project in @(
+    'src\AdamCodexHub.App\AdamCodexHub.App.csproj',
+    'src\AdamCodexHub.Cli\AdamCodexHub.Cli.csproj'
+)) {
+    $dependencyInventory.Add("## $project")
+    $packageList = & dotnet list (Join-Path $repositoryRoot $project) package --include-transitive 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "Dependency inventory failed for $project with exit code $LASTEXITCODE."
+    }
+
+    foreach ($line in $packageList) {
+        $dependencyInventory.Add($line.ToString())
+    }
+    $dependencyInventory.Add('')
+}
+
+$dependencyInventory | Set-Content `
+    -LiteralPath (Join-Path $stagingDirectory 'THIRD-PARTY-PACKAGES.txt') `
+    -Encoding utf8
+
+$sbomComponents = [System.Collections.Generic.List[object]]::new()
+$sbomReferences = [System.Collections.Generic.HashSet[string]]::new(
+    [System.StringComparer]::OrdinalIgnoreCase)
+
+foreach ($depsPath in @(
+    (Join-Path $stagingDirectory 'AdamCodexHub.App.deps.json'),
+    (Join-Path $cliDirectory 'AdamCodexHub.Cli.deps.json')
+)) {
+    $deps = Get-Content -LiteralPath $depsPath -Raw | ConvertFrom-Json
+    foreach ($library in $deps.libraries.PSObject.Properties) {
+        if ($library.Value.type -notin @('package', 'runtimepack')) {
+            continue
+        }
+
+        $name, $packageVersion = $library.Name -split '/', 2
+        if ($library.Value.type -eq 'runtimepack') {
+            $name = $name -replace '^runtimepack\.', ''
+        }
+
+        $packageUrl = "pkg:nuget/$([Uri]::EscapeDataString($name))@$packageVersion"
+        if (-not $sbomReferences.Add($packageUrl)) {
+            continue
+        }
+
+        $sbomComponents.Add([ordered]@{
+            type = 'library'
+            'bom-ref' = $packageUrl
+            name = $name
+            version = $packageVersion
+            purl = $packageUrl
+            scope = 'required'
+        })
+    }
+}
+
+$sbom = [ordered]@{
+    bomFormat = 'CycloneDX'
+    specVersion = '1.5'
+    serialNumber = "urn:uuid:$([Guid]::NewGuid())"
+    version = 1
+    metadata = [ordered]@{
+        timestamp = [DateTimeOffset]::UtcNow.ToString('O')
+        component = [ordered]@{
+            type = 'application'
+            name = 'Adam CodexHub'
+            version = $Version
+        }
+    }
+    components = @($sbomComponents | Sort-Object name, version)
+}
+
+$sbom | ConvertTo-Json -Depth 10 |
+    Set-Content -LiteralPath (Join-Path $stagingDirectory 'SBOM.cdx.json') -Encoding utf8
+
 @(
     "Adam CodexHub $Version ($RuntimeIdentifier)",
     '',
     '1. Extract the entire ZIP archive.',
     '2. Run AdamCodexHub.App.exe.',
     '3. The CLI is available at cli\AdamCodexHub.Cli.exe.',
+    '4. Read PRIVACY.md, DISCLAIMER.md and docs\PROVIDER-DATA-DISCLOSURES.md before using a remote provider.',
+    '5. SBOM.cdx.json and THIRD-PARTY-PACKAGES.txt describe bundled dependencies.',
     '',
     'This package includes the .NET runtime and does not require a separate .NET installation.',
-    'The binaries are currently unsigned, so Windows SmartScreen may display a warning.'
+    'The binaries are currently unsigned, so Windows SmartScreen may display a warning.',
+    'Compatibility probes, retries and failover make real provider requests and may incur charges.'
 ) | Set-Content -LiteralPath (Join-Path $stagingDirectory 'README-FIRST.txt') -Encoding utf8
 
 $Version | Set-Content -LiteralPath (Join-Path $stagingDirectory 'VERSION') -Encoding ascii

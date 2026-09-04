@@ -7,6 +7,9 @@ namespace AdamCodexHub.Core.Tests;
 
 public sealed class CodexConfigServiceTests
 {
+    private const string TestGatewayToken =
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
     [Fact]
     public async Task ActivateGatewayPreservesLegacyProvidersAndCapturesAccountProfile()
     {
@@ -23,7 +26,7 @@ public sealed class CodexConfigServiceTests
             """;
         await fixture.WriteConfigAsync(original);
 
-        await fixture.Service.ActivateGatewayAsync("remote-model", 18771);
+        await fixture.Service.ActivateGatewayAsync("remote-model", 18771, TestGatewayToken);
 
         var current = Toml.ToModel(await fixture.ReadConfigAsync());
         Assert.Equal("remote-model", current["model"]);
@@ -34,6 +37,7 @@ public sealed class CodexConfigServiceTests
         Assert.True(providers.ContainsKey("legacy"));
         var gateway = Assert.IsType<TomlTable>(providers["adam_codexhub"]);
         Assert.Equal("http://127.0.0.1:18771/v1", gateway["base_url"]);
+        Assert.Equal(TestGatewayToken, gateway["experimental_bearer_token"]);
 
         Assert.True(await fixture.Service.HasAccountProfileAsync());
         Assert.Equal(original, await File.ReadAllTextAsync(fixture.AccountPath));
@@ -45,7 +49,7 @@ public sealed class CodexConfigServiceTests
         await using var fixture = new ConfigFixture();
         const string original = "model = \"gpt-account\"\nmodel_provider = \"openai\"\n";
         await fixture.WriteConfigAsync(original);
-        await fixture.Service.ActivateGatewayAsync("remote-model", 18771);
+        await fixture.Service.ActivateGatewayAsync("remote-model", 18771, TestGatewayToken);
         await fixture.WriteConfigAsync("model = \"manually-changed\"\n");
 
         await fixture.Service.RestoreLastKnownGoodAsync();
@@ -61,7 +65,7 @@ public sealed class CodexConfigServiceTests
         await fixture.WriteConfigAsync(invalid);
 
         await Assert.ThrowsAsync<InvalidDataException>(() =>
-            fixture.Service.ActivateGatewayAsync("remote-model", 18771));
+            fixture.Service.ActivateGatewayAsync("remote-model", 18771, TestGatewayToken));
 
         Assert.Equal(invalid, await fixture.ReadConfigAsync());
         Assert.False(await fixture.Service.HasAccountProfileAsync());

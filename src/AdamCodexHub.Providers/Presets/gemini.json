@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "gemini",
+  "name": "Google Gemini",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": "/responses",
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools",
+    "vision"
+  ],
+  "notes": "Gemini is exposed through Google's OpenAI-compatible endpoint. Add an API key and verify compatibility before enabling."
+}

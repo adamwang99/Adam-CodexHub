@@ -14,216 +14,336 @@
 
     <Window.Resources>
         <DataTemplate DataType="{x:Type vm:HomeViewModel}">
-            <StackPanel>
-                <Button Content="Refresh status"
-                        Command="{Binding RefreshCommand}"
-                        HorizontalAlignment="Left"
-                        Margin="0,0,0,16"
-                        automation:AutomationProperties.Name="Refresh overview status" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,0,8,8">
-                        <StackPanel>
-                            <TextBlock Text="ACTIVE PROVIDER" Style="{StaticResource SectionLabel}" />
-                            <TextBlock Text="{Binding ProviderSummary}" FontSize="18" FontWeight="SemiBold" Margin="0,10,0,0" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource CardBorder}" Margin="8,0,0,8">
-                        <StackPanel>
-                            <TextBlock Text="MODEL READY" Style="{StaticResource SectionLabel}" />
-                            <TextBlock Text="{Binding ModelSummary}" FontSize="18" FontWeight="SemiBold" Margin="0,10,0,0" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource CardBorder}" Margin="0,8,8,0">
-                        <StackPanel>
-                            <TextBlock Text="KEY POOL" Style="{StaticResource SectionLabel}" />
-                            <TextBlock Text="{Binding KeySummary}" FontSize="16" FontWeight="SemiBold" Margin="0,10,0,0" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource CardBorder}" Margin="8,8,0,0">
-                        <StackPanel>
-                            <TextBlock Text="LOCAL GATEWAY" Style="{StaticResource SectionLabel}" />
-                            <TextBlock Text="{Binding GatewaySummary}" FontSize="16" FontWeight="SemiBold" Margin="0,10,0,0" TextWrapping="Wrap" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </StackPanel>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                    <Button Content="Codex Account"
+                            Style="{StaticResource PrimaryButton}"
+                            Command="{Binding RestoreAccountCommand}"
+                            Margin="0,0,12,0"
+                            automation:AutomationProperties.Name="Restore Codex Account">
+                        <Button.ToolTip>
+                            <TextBlock>Restore the default Codex sign-in account. Your per-provider API keys and models are kept.</TextBlock>
+                        </Button.ToolTip>
+                    </Button>
+                    <CheckBox Content="Open Desktop app"
+                              IsChecked="{Binding UseDesktopForAccount, Mode=TwoWay}"
+                              VerticalAlignment="Center"
+                              Margin="0,0,12,0"
+                              Foreground="{StaticResource BrushCream}"
+                              automation:AutomationProperties.Name="Open Codex Desktop for Codex Account">
+                        <CheckBox.ToolTip>
+                            <TextBlock>When ticked, Codex Account opens in the Desktop app. Unticked opens the Codex CLI instead.</TextBlock>
+                        </CheckBox.ToolTip>
+                    </CheckBox>
+                    <Button Content="Refresh providers"
+                            Command="{Binding RefreshCommand}"
+                            Margin="0,0,12,0"
+                            automation:AutomationProperties.Name="Refresh provider list">
+                        <Button.ToolTip>
+                            <TextBlock>Reload the provider list and refresh health, key and model state.</TextBlock>
+                        </Button.ToolTip>
+                    </Button>
+                    <ToggleButton Content="Show all providers"
+                                  IsChecked="{Binding ShowAllProviders, Mode=TwoWay}"
+                                  automation:AutomationProperties.Name="Show or hide unconfigured providers">
+                        <ToggleButton.ToolTip>
+                            <TextBlock>When off, only Codex Account and providers you have set up are shown. Turn on to see every preset, including unused ones.</TextBlock>
+                        </ToggleButton.ToolTip>
+                    </ToggleButton>
+                </StackPanel>
+
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding Providers}"
+                         SelectedItem="{Binding SelectedCard, Mode=TwoWay}"
+                         MouseDoubleClick="OnProviderDoubleClick"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         automation:AutomationProperties.Name="Provider selection grid">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="4" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="6"
+                                    Padding="14"
+                                    CornerRadius="{StaticResource CardRadius}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{StaticResource BrushCard}" />
+                                        <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+                                        <Setter Property="BorderThickness" Value="1" />
+                                        <Setter Property="Opacity" Value="0.42" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsValid}" Value="True">
+                                                <Setter Property="Opacity" Value="1" />
+                                                <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                                                <Setter Property="BorderThickness" Value="2" />
+                                                <Setter Property="Background" Value="{StaticResource BrushCardHover}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Border.ToolTip>
+                                    <StackPanel MaxWidth="280">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding TooltipDescription}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                        <TextBlock Text="Double-click to activate with Codex." Foreground="{StaticResource BrushMuted}" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                </Border.ToolTip>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Grid>
+                                        <Border Width="72" Height="72" CornerRadius="12"
+                                                Background="{StaticResource BrushPanel}"
+                                                HorizontalAlignment="Center">
+                                            <Image Source="{Binding LogoSource}"
+                                                   Stretch="Uniform"
+                                                   Margin="10" />
+                                        </Border>
+                                        <Border HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                CornerRadius="6" Padding="5,2"
+                                                Margin="0,-6,-6,0">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{StaticResource BrushBorder}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsValid}" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource BrushGold}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding StatusLabel}"
+                                                       FontSize="8"
+                                                       FontWeight="Bold"
+                                                       Foreground="{StaticResource BrushBackground}" />
+                                        </Border>
+                                    </Grid>
+                                    <TextBlock Text="{Binding Name}"
+                                               FontWeight="SemiBold"
+                                               FontSize="14"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,12,0,2"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding Health}"
+                                                   Foreground="{StaticResource BrushAqua}"
+                                                   FontSize="11" />
+                                        <TextBlock Text=" Â· "
+                                                   Foreground="{StaticResource BrushMuted}"
+                                                   FontSize="11" />
+                                        <TextBlock Text="{Binding EnabledModelCount, StringFormat={}{0} model(s)}"
+                                                   Foreground="{StaticResource BrushMuted}"
+                                                   FontSize="11" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding KeyLabel}"
+                                               Foreground="{StaticResource BrushMuted}"
+                                               FontSize="10"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,3,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <TextBlock Grid.Row="2"
+                           Text="Double-click a provider card to activate it with Codex. Codex Account returns to the default sign-in. For third-party providers, add an API key and verify a model first."
+                           Foreground="{StaticResource BrushMuted}"
+                           TextWrapping="Wrap"
+                           Margin="0,14,0,0" />
+            </Grid>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:ProvidersViewModel}">
+        <DataTemplate DataType="{x:Type vm:ProviderSetupViewModel}">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300" />
+                    <ColumnDefinition Width="280" />
                     <ColumnDefinition Width="24" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <DockPanel Grid.Column="0">
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
                         <Button Content="New" Command="{Binding NewCommand}" Margin="0,0,8,0" />
                         <Button Content="Refresh" Command="{Binding RefreshCommand}" />
                     </StackPanel>
-                    <ListBox ItemsSource="{Binding Items}"
-                             SelectedItem="{Binding SelectedProvider, Mode=TwoWay}"
-                             automation:AutomationProperties.Name="Provider profiles">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding Id}" Foreground="{StaticResource BrushMuted}" FontSize="11" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" Text="{Binding Health}" Foreground="{StaticResource BrushAqua}" VerticalAlignment="Center" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </DockPanel>
-
-                <StackPanel Grid.Column="2" MaxWidth="620" HorizontalAlignment="Left">
-                    <TextBlock Text="Provider ID" Style="{StaticResource FieldLabel}" />
-                    <TextBox Text="{Binding ProviderId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider ID" />
-                    <TextBlock Text="Display name" Style="{StaticResource FieldLabel}" />
-                    <TextBox Text="{Binding ProviderName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider display name" />
-                    <TextBlock Text="Base URL" Style="{StaticResource FieldLabel}" />
-                    <TextBox Text="{Binding BaseUrl, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider base URL" />
-                    <TextBlock Text="Adapter" Style="{StaticResource FieldLabel}" />
-                    <ComboBox Text="{Binding Adapter, UpdateSourceTrigger=PropertyChanged}"
-                              IsEditable="True"
-                              Margin="0,0,0,18"
-                              automation:AutomationProperties.Name="Provider adapter">
-                        <ComboBoxItem Content="openai-compatible" />
-                        <ComboBoxItem Content="openai-responses" />
-                    </ComboBox>
-                    <WrapPanel>
-                        <Button Content="Save provider" Style="{StaticResource PrimaryButton}" Command="{Binding SaveCommand}" Margin="0,0,8,8" />
-                        <Button Content="Enable / Disable" Command="{Binding ToggleEnabledCommand}" Margin="0,0,8,8" />
-                        <Button Content="Delete provider" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}" Margin="0,0,0,8" />
-                    </WrapPanel>
-                </StackPanel>
-            </Grid>
-        </DataTemplate>
-
-        <DataTemplate DataType="{x:Type vm:ApiKeysViewModel}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
-                    <TextBlock Text="Provider" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource BrushMuted}" />
-                    <ComboBox ItemsSource="{Binding Providers}"
-                              SelectedItem="{Binding SelectedProvider, Mode=TwoWay}"
-                              DisplayMemberPath="Name"
-                              Width="260"
-                              automation:AutomationProperties.Name="API key provider" />
-                    <Button Content="Refresh" Command="{Binding RefreshCommand}" Margin="8,0,0,0" />
-                </StackPanel>
-
-                <Grid Grid.Row="1" Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*" />
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="110" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                        <TextBlock Text="Label" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding NewLabel, UpdateSourceTrigger=PropertyChanged}" automation:AutomationProperties.Name="API key label" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Margin="0,0,8,0">
-                        <TextBlock Text="API key" Style="{StaticResource FieldLabel}" />
-                        <PasswordBox mvvm:PasswordBoxAssistant.BindPassword="True"
-                                     mvvm:PasswordBoxAssistant.BoundPassword="{Binding NewSecret, Mode=TwoWay}"
-                                     automation:AutomationProperties.Name="API key secret" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2" Margin="0,0,8,0">
-                        <TextBlock Text="Priority" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding NewPriority, UpdateSourceTrigger=PropertyChanged}" automation:AutomationProperties.Name="API key priority" />
-                    </StackPanel>
-                    <Button Grid.Column="3"
-                            Content="Add key"
-                            Style="{StaticResource PrimaryButton}"
-                            Command="{Binding AddCommand}"
-                            VerticalAlignment="Bottom" />
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ListBox ItemsSource="{Binding Providers}"
+                                 SelectedItem="{Binding SelectedProvider, Mode=TwoWay}"
+                                 automation:AutomationProperties.Name="Provider profiles">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding Id}" Foreground="{StaticResource BrushMuted}" FontSize="11" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding Health}" Foreground="{StaticResource BrushAqua}" VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </ScrollViewer>
                 </Grid>
 
-                <DataGrid Grid.Row="2"
-                          ItemsSource="{Binding Keys}"
-                          SelectedItem="{Binding SelectedKey, Mode=TwoWay}"
-                          automation:AutomationProperties.Name="API key pool">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="2*" />
-                        <DataGridTextColumn Header="Masked" Binding="{Binding MaskedDisplay}" Width="*" />
-                        <DataGridTextColumn Header="Priority" Binding="{Binding Priority}" Width="90" />
-                        <DataGridTextColumn Header="Health" Binding="{Binding Health}" Width="130" />
-                        <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="90" />
-                        <DataGridTextColumn Header="Cooldown until" Binding="{Binding CooldownUntil, StringFormat={}{0:t}}" Width="130" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                    <StackPanel MaxWidth="720" HorizontalAlignment="Left">
 
-                <WrapPanel Grid.Row="3" Margin="0,14,0,0">
-                    <Button Content="Test selected" Command="{Binding TestCommand}" Margin="0,0,8,0" />
-                    <Button Content="Enable / Disable" Command="{Binding ToggleEnabledCommand}" Margin="0,0,8,0" />
-                    <Button Content="Move up" Command="{Binding MoveUpCommand}" Margin="0,0,8,0" />
-                    <Button Content="Move down" Command="{Binding MoveDownCommand}" Margin="0,0,8,0" />
-                    <Button Content="Delete key" Style="{StaticResource DangerButton}" Command="{Binding DeleteCommand}" />
-                </WrapPanel>
-            </Grid>
-        </DataTemplate>
+                        <!-- PROFIL U003 -->
+                        <TextBlock Text="PROVIDER PROFILE" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="Provider ID" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding ProviderId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider ID" />
+                        <TextBlock Text="Display name" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding ProviderName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider display name" />
+                        <TextBlock Text="Base URL" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding BaseUrl, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider base URL" />
+                        <TextBlock Text="Adapter" Style="{StaticResource FieldLabel}" />
+                        <ComboBox Text="{Binding Adapter, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEditable="True"
+                                  Margin="0,0,0,12"
+                                  automation:AutomationProperties.Name="Provider adapter">
+                            <ComboBoxItem Content="openai-compatible" />
+                            <ComboBoxItem Content="openai-responses" />
+                        </ComboBox>
+                        <WrapPanel Margin="0,0,0,20">
+                            <Button Content="Save provider" Style="{StaticResource PrimaryButton}" Command="{Binding SaveProviderCommand}" Margin="0,0,8,8" />
+                            <Button Content="Enable / Disable" Command="{Binding ToggleProviderCommand}" Margin="0,0,8,8" />
+                            <Button Content="Delete provider" Style="{StaticResource DangerButton}" Command="{Binding DeleteProviderCommand}" Margin="0,0,0,8" />
+                        </WrapPanel>
 
-        <DataTemplate DataType="{x:Type vm:ModelsViewModel}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                        <!-- API KEYS U003 -->
+                        <TextBlock Text="API KEY POOL" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="Paste an API key for the selected provider (encrypted per-provider)." Foreground="{StaticResource BrushMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,6" />
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding NewKey, UpdateSourceTrigger=PropertyChanged}" automation:AutomationProperties.Name="Paste provider API key" Margin="0,0,8,0" />
+                            <Button Grid.Column="1" Content="Add key" Style="{StaticResource PrimaryButton}" Command="{Binding AddKeyCommand}" VerticalAlignment="Center" />
+                        </Grid>
 
-                <WrapPanel Grid.Row="0" Margin="0,0,0,14">
-                    <ComboBox ItemsSource="{Binding Providers}"
-                              SelectedItem="{Binding SelectedProvider, Mode=TwoWay}"
-                              DisplayMemberPath="Name"
-                              Width="260"
-                              Margin="0,0,8,0"
-                              automation:AutomationProperties.Name="Model provider" />
-                    <Button Content="Scan models" Style="{StaticResource PrimaryButton}" Command="{Binding ScanCommand}" Margin="0,0,8,0" />
-                    <Button Content="Refresh" Command="{Binding RefreshCommand}" />
-                </WrapPanel>
+                        <DataGrid ItemsSource="{Binding Keys}"
+                                  SelectedItem="{Binding SelectedKey, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  Margin="0,0,0,10"
+                                  automation:AutomationProperties.Name="API key pool">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="2*" />
+                                <DataGridTextColumn Header="Masked" Binding="{Binding MaskedDisplay}" Width="*" />
+                                <DataGridTextColumn Header="Priority" Binding="{Binding Priority}" Width="90" />
+                                <DataGridTextColumn Header="Health" Binding="{Binding Health}" Width="130" />
+                                <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="90" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <WrapPanel Margin="0,0,0,20">
+                            <Button Content="Test selected" Command="{Binding TestKeyCommand}" Margin="0,0,8,0">
+                                <Button.ToolTip>
+                                    <TextBlock>Test the currently selected API key against the provider.</TextBlock>
+                                </Button.ToolTip>
+                            </Button>
+                            <Button Content="Test all keys" Command="{Binding TestAllKeysCommand}" Margin="0,0,8,0" automation:AutomationProperties.Name="Test all API keys">
+                                <Button.ToolTip>
+                                    <TextBlock>Test every stored API key for the selected provider in one go.</TextBlock>
+                                </Button.ToolTip>
+                            </Button>
+                            <Button Content="Enable / Disable" Command="{Binding ToggleKeyCommand}" Margin="0,0,8,0" />
+                            <Button Content="Move up" Command="{Binding MoveUpKeyCommand}" Margin="0,0,8,0" />
+                            <Button Content="Move down" Command="{Binding MoveDownKeyCommand}" Margin="0,0,8,0" />
+                            <Button Content="Delete key" Style="{StaticResource DangerButton}" Command="{Binding DeleteKeyCommand}" />
+                        </WrapPanel>
 
-                <DataGrid Grid.Row="1"
-                          ItemsSource="{Binding Models}"
-                          SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
-                          automation:AutomationProperties.Name="Discovered models">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Model" Binding="{Binding DisplayName}" Width="3*" />
-                        <DataGridTextColumn Header="State" Binding="{Binding State}" Width="120" />
-                        <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="90" />
-                        <DataGridTextColumn Header="Score" Binding="{Binding CompatibilityScore}" Width="80" />
-                        <DataGridTextColumn Header="Last seen" Binding="{Binding LastSeenAt, StringFormat={}{0:g}}" Width="160" />
-                        <DataGridTextColumn Header="Last verified" Binding="{Binding LastVerifiedAt, StringFormat={}{0:g}}" Width="160" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                        <!-- MODELS U003 -->
+                        <TextBlock Text="MODELS" Style="{StaticResource SectionLabel}" />
+                        <WrapPanel Margin="0,0,0,10">
+                            <Button Content="Scan models" Style="{StaticResource PrimaryButton}" Command="{Binding ScanModelsCommand}" Margin="0,0,8,0" />
+                            <Button Content="Test all models" Command="{Binding TestAllModelsCommand}" Margin="0,0,8,0" automation:AutomationProperties.Name="Test all models">
+                                <Button.ToolTip>
+                                    <TextBlock>Run compatibility probes on every model in this list.</TextBlock>
+                                </Button.ToolTip>
+                            </Button>
+                            <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                        </WrapPanel>
+                        <DataGrid ItemsSource="{Binding Models}"
+                                  SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  Margin="0,0,0,10"
+                                  automation:AutomationProperties.Name="Discovered models">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Model" Binding="{Binding DisplayName}" Width="2.4*" />
+                                <DataGridTemplateColumn Header="Status" Width="90">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding State}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding State}" Value="Enabled">
+                                                                <Setter Property="Foreground" Value="{StaticResource BrushAqua}" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding State}" Value="Verified">
+                                                                <Setter Property="Foreground" Value="{StaticResource BrushAqua}" />
+                                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding State}" Value="Failed">
+                                                                <Setter Property="Foreground" Value="{StaticResource BrushDanger}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Score" Binding="{Binding CompatibilityScore}" Width="70" />
+                                <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="80" />
+                                <DataGridTemplateColumn Header="Actions" Width="150">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Test" Command="{Binding DataContext.TestModelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Margin="0,0,6,0" Padding="8,3" FontSize="11">
+                                                    <Button.ToolTip>
+                                                        <TextBlock>Run compatibility probes on this model (text, streaming, tool calling).</TextBlock>
+                                                    </Button.ToolTip>
+                                                </Button>
+                                                <Button Content="Enable" Command="{Binding DataContext.ToggleModelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="8,3" FontSize="11">
+                                                    <Button.ToolTip>
+                                                        <TextBlock>Enable / disable this model for Codex.</TextBlock>
+                                                    </Button.ToolTip>
+                                                </Button>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <WrapPanel>
+                            <Button Content="Test compatibility" Command="{Binding TestModelCommand}" Margin="0,0,8,0" />
+                            <Button Content="Enable / Disable" Command="{Binding ToggleModelCommand}" />
+                        </WrapPanel>
 
-                <WrapPanel Grid.Row="2" Margin="0,14,0,0">
-                    <Button Content="Test compatibility" Command="{Binding TestCommand}" Margin="0,0,8,0" />
-                    <Button Content="Enable / Disable" Command="{Binding ToggleEnabledCommand}" />
-                </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </Grid>
         </DataTemplate>
 
@@ -292,6 +412,24 @@
                         <Button Grid.Column="1" Content="Restore last good" Command="{Binding RestoreConfigCommand}" />
                     </Grid>
                 </Border>
+                <Border Margin="0,0,0,12">
+                    <Border.Style>
+                        <Style TargetType="Border" BasedOn="{StaticResource CardBorder}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ProviderWarnings}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ProviderWarnings}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel>
+                        <TextBlock Text="PROVIDER STARTUP WARNINGS" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushGold}" />
+                        <TextBlock Text="{Binding ProviderWarnings}" FontSize="13" Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource BrushCream}" />
+                    </StackPanel>
+                </Border>
                 <Button Content="Refresh diagnostics" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" />
             </StackPanel>
         </DataTemplate>
@@ -326,27 +464,28 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Image Source="Assets/adam-codexhub-logo.png" Width="154" HorizontalAlignment="Left" Stretch="Uniform" />
+                <Image Source="Assets/adam-codexhub-logo.png" Width="154" HorizontalAlignment="Left" Stretch="Uniform">
+                    <Image.ToolTip>
+                        <TextBlock>Adam CodexHub â€” control hub for switching Codex between AI providers.
+Double-click a provider in the grid to activate it.</TextBlock>
+                    </Image.ToolTip>
+                </Image>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <ComboBox ItemsSource="{Binding Providers}"
-                              SelectedItem="{Binding SelectedProvider, Mode=TwoWay}"
-                              DisplayMemberPath="Name"
-                              Width="210"
-                              Margin="0,0,8,0"
-                              automation:AutomationProperties.Name="Active provider selection" />
-                    <ComboBox ItemsSource="{Binding EnabledModels}"
-                              SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
-                              DisplayMemberPath="DisplayName"
-                              Width="230"
-                              Margin="0,0,8,0"
-                              automation:AutomationProperties.Name="Enabled model selection" />
-                    <Button Content="Activate" Style="{StaticResource PrimaryButton}" Command="{Binding ActivateCommand}" />
-                </StackPanel>
+                <TextBlock Grid.Column="1" VerticalAlignment="Center" Foreground="{StaticResource BrushMuted}" FontSize="12"
+                           Text="Select and double-click a provider below (or on the Choose Provider page) to activate it with Codex."
+                           TextWrapping="Wrap" Margin="24,0" />
 
                 <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding ActiveProvider}" HorizontalAlignment="Right" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding GatewayStatus}" HorizontalAlignment="Right" Foreground="{StaticResource BrushAqua}" FontSize="12" Margin="0,3,0,0" />
+                    <TextBlock Text="{Binding ActiveProvider}" HorizontalAlignment="Right" FontWeight="SemiBold">
+                        <TextBlock.ToolTip>
+                            <TextBlock>Provider currently active for Codex.</TextBlock>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
+                    <TextBlock Text="{Binding GatewayStatus}" HorizontalAlignment="Right" Foreground="{StaticResource BrushAqua}" FontSize="12" Margin="0,3,0,0">
+                        <TextBlock.ToolTip>
+                            <TextBlock>Status of the local Adam CodexHub gateway.</TextBlock>
+                        </TextBlock.ToolTip>
+                    </TextBlock>
                 </StackPanel>
             </Grid>
         </Border>

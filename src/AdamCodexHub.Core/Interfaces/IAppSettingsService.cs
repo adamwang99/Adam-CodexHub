@@ -9,4 +9,14 @@ public interface IAppSettingsService
     Task AcknowledgeSessionMechanismAsync(
         int version,
         CancellationToken cancellationToken = default);
+
+    Task<bool> HasAcknowledgedProviderDisclosureAsync(
+        string providerId,
+        int requiredVersion,
+        CancellationToken cancellationToken = default);
+
+    Task AcknowledgeProviderDisclosureAsync(
+        string providerId,
+        int version,
+        CancellationToken cancellationToken = default);
 }

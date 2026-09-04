@@ -69,6 +69,20 @@ public sealed class LocalGatewayServiceTests
         Assert.DoesNotContain("disabled-model", body, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task GatewayRotatesLocalTokenWhenRestarted()
+    {
+        await using var fixture = new GatewayFixture();
+        await fixture.InitializeAsync();
+        var firstToken = fixture.Gateway.LocalToken;
+
+        await fixture.Gateway.StopAsync();
+        await fixture.Gateway.StartAsync();
+
+        Assert.NotEqual(firstToken, fixture.Gateway.LocalToken);
+        Assert.Equal(64, fixture.Gateway.LocalToken.Length);
+    }
+
     private sealed class GatewayFixture : IAsyncDisposable
     {
         private readonly string _root = Path.Combine(

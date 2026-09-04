@@ -12,4 +12,11 @@ public interface IProviderManager
     Task<bool> DeleteAsync(string providerId, CancellationToken cancellationToken = default);
     Task SetActiveAsync(string providerId, CancellationToken cancellationToken = default);
     Task<ProviderProfile?> GetActiveAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Messages recorded while loading persisted providers. A provider that no
+    /// longer satisfies current validation rules is skipped so startup can
+    /// continue, and the reason is reported here.
+    /// </summary>
+    IReadOnlyList<string> StartupWarnings { get; }
 }

@@ -22,7 +22,7 @@ namespace AdamCodexHub.App;
 
 public partial class App : Application
 {
-    private const int RequiredSessionAcknowledgementVersion = 1;
+    private const int RequiredSessionAcknowledgementVersion = 2;
     private IHost? _host;
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -61,14 +61,13 @@ public partial class App : Application
                 services.AddSingleton<IProjectStateService, FileProjectStateService>();
                 services.AddSingleton<ISessionContinuityService, SessionContinuityService>();
                 services.AddSingleton<IProviderActivationService, ProviderActivationService>();
+                services.AddSingleton<ProviderShutdownService>();
 
                 services.AddSingleton<IGatewayService, LocalGatewayService>();
                 services.AddSingleton<IUserDialogService, UserDialogService>();
 
                 services.AddSingleton<HomeViewModel>();
-                services.AddSingleton<ProvidersViewModel>();
-                services.AddSingleton<ApiKeysViewModel>();
-                services.AddSingleton<ModelsViewModel>();
+                services.AddSingleton<ProviderSetupViewModel>();
                 services.AddSingleton<SessionsViewModel>();
                 services.AddSingleton<DiagnosticsViewModel>();
                 services.AddSingleton<SettingsViewModel>();
@@ -112,6 +111,7 @@ public partial class App : Application
             LogStartup("Main window shown");
             await window.ViewModel.InitializeAsync();
             LogStartup("Main view model initialized");
+            LogProviderStartupWarnings(_host);
         }
         catch (Exception ex)
         {
@@ -125,18 +125,72 @@ public partial class App : Application
         }
     }
 
-    protected override async void OnExit(ExitEventArgs e)
+    protected override void OnExit(ExitEventArgs e)
     {
-        if (_host is not null)
-        {
-            var gateway = _host.Services.GetRequiredService<IGatewayService>();
-            await gateway.StopAsync();
+        var host = _host;
+        _host = null;
 
-            await _host.StopAsync();
-            _host.Dispose();
+        if (host is not null)
+        {
+            Task.Run(() => ShutdownHostAsync(host)).GetAwaiter().GetResult();
+            host.Dispose();
         }
 
         base.OnExit(e);
+    }
+
+    private static async Task ShutdownHostAsync(IHost host)
+    {
+        try
+        {
+            var shutdown = host.Services.GetRequiredService<ProviderShutdownService>();
+            var status = await shutdown.RestoreAccountAsync();
+            LogStartup($"Shutdown account restore: {status}");
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Shutdown account restore failed", ex);
+        }
+
+        try
+        {
+            var gateway = host.Services.GetRequiredService<IGatewayService>();
+            await gateway.StopAsync();
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Gateway shutdown failed", ex);
+        }
+
+        try
+        {
+            await host.StopAsync();
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Host shutdown failed", ex);
+        }
+    }
+
+    private static void LogProviderStartupWarnings(IHost? host)
+    {
+        if (host is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var providers = host.Services.GetRequiredService<IProviderManager>();
+            foreach (var warning in providers.StartupWarnings)
+            {
+                LogStartup($"Provider startup warning: {warning}");
+            }
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Provider startup warning check failed", ex);
+        }
     }
 
     private static void LogStartup(string stage, Exception? exception = null)

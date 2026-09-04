@@ -22,3 +22,7 @@ publish/
 .adam-codexhub/
 Thumbs.db
 .DS_Store
+
+# Local build artifacts
+/Adam-CodexHub.exe
+/Adam-CodexHub.exe.sha256

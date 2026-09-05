@@ -131,6 +131,7 @@
     <sys:String x:Key="L10n_Guide_ResetTip">Đặt lại tỷ lệ 100%</sys:String>
     <sys:String x:Key="L10n_Guide_FitTip">Vừa khung sơ đồ theo chiều rộng cửa sổ</sys:String>
     <sys:String x:Key="L10n_Guide_FitLabel">Vừa khung</sys:String>
+    <sys:String x:Key="L10n_Guide_ScreenshotTitle">Ảnh minh họa 1 · Các vị trí chính trên màn hình Choose Provider</sys:String>
     <sys:String x:Key="L10n_About_WindowTitle">Giới thiệu Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Tagline">trung tâm điều khiển đa nhà cung cấp cho Codex — miễn phí vĩnh viễn</sys:String>
     <sys:String x:Key="L10n_About_SecMission">XÂY DỰNG CHO NGHIÊN CỨU &amp; HỌC TẬP</sys:String>

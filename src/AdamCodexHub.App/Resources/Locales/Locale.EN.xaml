@@ -131,6 +131,7 @@
     <sys:String x:Key="L10n_Guide_ResetTip">Reset zoom to 100%</sys:String>
     <sys:String x:Key="L10n_Guide_FitTip">Fit the diagram to the window width</sys:String>
     <sys:String x:Key="L10n_Guide_FitLabel">Fit</sys:String>
+    <sys:String x:Key="L10n_Guide_ScreenshotTitle">Illustration 1 · Key positions on the Choose Provider screen</sys:String>
     <sys:String x:Key="L10n_About_WindowTitle">About Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Tagline">multi-provider control hub for Codex — free forever</sys:String>
     <sys:String x:Key="L10n_About_SecMission">BUILT FOR RESEARCH &amp; LEARNING</sys:String>

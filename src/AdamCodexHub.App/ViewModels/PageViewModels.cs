@@ -970,12 +970,30 @@ public sealed class ProviderSetupViewModel : PageViewModel
             }
         }
 
+        // KeyTestService updates provider health behind the scenes — reload the provider
+        // rows so the status dot / health no longer shows a stale "Unknown".
+        await RefreshProviderRowsAsync();
         await LoadKeysAsync();
         StatusMessage = L10n.F("L10n_Setup_KeySummary", provider.Name, ok, fail, keys.Length);
         if (notes.Count > 0 && fail > 0)
         {
             StatusMessage += " " + L10n.F("L10n_Setup_NextNote", notes[0]);
         }
+    }
+
+    /// <summary>
+    /// Re-reads provider profiles (health may have been updated by key/model tests) and
+    /// refreshes the provider list while keeping the current selection.
+    /// </summary>
+    private async Task RefreshProviderRowsAsync()
+    {
+        var selectedId = SelectedProvider?.Id;
+        var fresh = (await _providers.GetAllAsync())
+            .Where(x => x.Id != "codex-account")
+            .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        Replace(Providers, fresh);
+        SelectedProvider = Providers.FirstOrDefault(x => x.Id == selectedId) ?? Providers.FirstOrDefault();
     }
 
     private async Task ToggleKeyCoreAsync()
@@ -1085,6 +1103,9 @@ public sealed class ProviderSetupViewModel : PageViewModel
             }
         }
 
+        // CompatibilityService updates provider health — reload rows so the list dot /
+        // any health badge stops showing a stale "Unknown" after the run.
+        await RefreshProviderRowsAsync();
         await LoadModelsAsync();
         StatusMessage = L10n.F("L10n_Setup_ModelsTested", provider.Name, verified, models.Length);
         if (notes.Count > 0)

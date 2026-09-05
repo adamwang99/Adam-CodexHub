@@ -649,22 +649,55 @@
                                            Margin="0,16,0,3"
                                            TextWrapping="Wrap"
                                            TextAlignment="Center" />
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <TextBlock Text="{Binding Health}"
-                                               Foreground="{StaticResource BrushAqua}"
-                                               FontSize="10" />
-                                    <TextBlock Text=" · "
+                                <!-- Account card (codex-account) shows a plain default-app note;
+                                     keyed providers show health · models + key label. -->
+                                <StackPanel HorizontalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Id}" Value="codex-account">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding Health}"
+                                                   Foreground="{StaticResource BrushAqua}"
+                                                   FontSize="10" />
+                                        <TextBlock Text=" · "
+                                                   Foreground="{StaticResource BrushMuted}"
+                                                   FontSize="10" />
+                                        <TextBlock Text="{Binding EnabledModelLabel}"
+                                                   Foreground="{StaticResource BrushMuted}"
+                                                   FontSize="10" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding KeyLabel}"
                                                Foreground="{StaticResource BrushMuted}"
-                                               FontSize="10" />
-                                    <TextBlock Text="{Binding EnabledModelLabel}"
-                                               Foreground="{StaticResource BrushMuted}"
-                                               FontSize="10" />
+                                               FontSize="10"
+                                               HorizontalAlignment="Center"
+                                               Margin="0,4,0,0" />
                                 </StackPanel>
-                                <TextBlock Text="{Binding KeyLabel}"
-                                           Foreground="{StaticResource BrushMuted}"
+                                <TextBlock Text="{DynamicResource L10n_Card_AccountDefault}"
+                                           Foreground="{StaticResource BrushAqua}"
                                            FontSize="10"
+                                           FontWeight="Regular"
                                            HorizontalAlignment="Center"
-                                           Margin="0,4,0,0" />
+                                           Margin="0,6,0,0"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Id}" Value="codex-account">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

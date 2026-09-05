@@ -57,6 +57,7 @@
     <sys:String x:Key="L10n_Card_KeyPresent">Có API key ✓</sys:String>
     <sys:String x:Key="L10n_Card_KeyNeeded">Cần API key</sys:String>
     <sys:String x:Key="L10n_Card_Desc_Account">Dùng đăng nhập Codex gốc của bạn. Nhấp đúp để khôi phục tài khoản Codex mặc định.</sys:String>
+    <sys:String x:Key="L10n_Card_AccountDefault">Ứng dụng Codex mặc định</sys:String>
     <sys:String x:Key="L10n_Card_Desc_CliReady">Sẵn sàng dùng với Codex CLI (terminal). Nhấp đúp để kích hoạt và mở terminal.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_WinReady">Sẵn sàng dùng với Codex Desktop (Windows). Nhấp đúp để kích hoạt và mở ứng dụng desktop.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_WinKeyedReady">Sẵn sàng — nhấp đúp để kích hoạt và mở ứng dụng Codex Desktop định tuyến qua gateway nội bộ bằng API key của bạn (không bao giờ trừ quota tài khoản ChatGPT).</sys:String>

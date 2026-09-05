@@ -57,6 +57,7 @@
     <sys:String x:Key="L10n_Card_KeyPresent">API key ✓</sys:String>
     <sys:String x:Key="L10n_Card_KeyNeeded">API key needed</sys:String>
     <sys:String x:Key="L10n_Card_Desc_Account">Uses your native Codex sign-in. Double-click to restore the default Codex account.</sys:String>
+    <sys:String x:Key="L10n_Card_AccountDefault">Default Codex app</sys:String>
     <sys:String x:Key="L10n_Card_Desc_CliReady">Ready to use with Codex CLI (terminal). Double-click to activate and launch the terminal.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_WinReady">Ready to use with Codex Desktop (Windows). Double-click to activate and open the desktop app.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_WinKeyedReady">Ready — double-click to activate and open the Codex Desktop app routed through the local gateway on your API key (never the ChatGPT account quota).</sys:String>

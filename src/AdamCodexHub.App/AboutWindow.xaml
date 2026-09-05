@@ -47,8 +47,14 @@
             <!-- Body -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,20,0,0">
                 <StackPanel>
+                    <TextBlock Text="{DynamicResource L10n_About_CreatorTitle}"
+                               Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
+                    <TextBlock Text="{DynamicResource L10n_About_CreatorBody}"
+                               TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushCream}"
+                               Margin="0,8,0,0" LineHeight="21" />
+
                     <TextBlock Text="{DynamicResource L10n_About_SecMission}"
-                               Style="{StaticResource SectionLabel}" />
+                               Style="{StaticResource SectionLabel}" Margin="0,18,0,0" />
                     <TextBlock Text="{DynamicResource L10n_About_MissionBody}"
                                TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushCream}"
                                Margin="0,8,0,0" LineHeight="21" />
@@ -65,46 +71,27 @@
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <StackPanel Margin="0,10,0,0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,9">
-                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"
-                                    HorizontalAlignment="Left">
-                                <TextBlock Text="1" Foreground="{StaticResource BrushBackground}" FontWeight="Bold"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
-                            </Border>
-                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480">
-                                <Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step1Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step1Rest}" />
-                            </TextBlock>
+                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"><TextBlock Text="1" Foreground="{StaticResource BrushBackground}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" /></Border>
+                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480"><Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step1Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step1Rest}" /></TextBlock>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,9">
-                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"
-                                    HorizontalAlignment="Left">
-                                <TextBlock Text="2" Foreground="{StaticResource BrushBackground}" FontWeight="Bold"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
-                            </Border>
-                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480">
-                                <Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step2Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step2Rest}" />
-                            </TextBlock>
+                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"><TextBlock Text="2" Foreground="{StaticResource BrushBackground}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" /></Border>
+                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480"><Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step2Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step2Rest}" /></TextBlock>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,9">
-                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"
-                                    HorizontalAlignment="Left">
-                                <TextBlock Text="3" Foreground="{StaticResource BrushBackground}" FontWeight="Bold"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
-                            </Border>
-                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480">
-                                <Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step3Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step3Rest}" />
-                            </TextBlock>
+                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"><TextBlock Text="3" Foreground="{StaticResource BrushBackground}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" /></Border>
+                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480"><Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step3Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step3Rest}" /></TextBlock>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"
-                                    HorizontalAlignment="Left">
-                                <TextBlock Text="4" Foreground="{StaticResource BrushBackground}" FontWeight="Bold"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" />
-                            </Border>
-                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480">
-                                <Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step4Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step4Rest}" />
-                            </TextBlock>
+                            <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource BrushAqua}"><TextBlock Text="4" Foreground="{StaticResource BrushBackground}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11" /></Border>
+                            <TextBlock TextWrapping="Wrap" Margin="10,1,0,0" FontSize="12.5" Foreground="{StaticResource BrushCream}" MaxWidth="480"><Run FontWeight="SemiBold" Text="{DynamicResource L10n_About_Step4Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_About_Step4Rest}" /></TextBlock>
                         </StackPanel>
                     </StackPanel>
+
+                    <TextBlock Text="{DynamicResource L10n_About_PrivacyTitle}" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" Margin="0,18,0,0" />
+                    <TextBlock Text="{DynamicResource L10n_About_PrivacyBody}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" Margin="0,8,0,0" LineHeight="20" />
+                    <TextBlock Text="{DynamicResource L10n_About_LimitsTitle}" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" Margin="0,18,0,0" />
+                    <TextBlock Text="{DynamicResource L10n_About_LimitsBody}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" Margin="0,8,0,0" LineHeight="20" />
 
                     <Border Height="1" Background="{StaticResource BrushHairlineSoft}" Margin="0,16" />
 

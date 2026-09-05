@@ -131,6 +131,16 @@
     <sys:String x:Key="L10n_Guide_ResetTip">Reset zoom to 100%</sys:String>
     <sys:String x:Key="L10n_Guide_FitTip">Fit the diagram to the window width</sys:String>
     <sys:String x:Key="L10n_Guide_FitLabel">Fit</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab1Title">1 · CHOOSE PROVIDER</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab1Legend">① Shared menu: switch between tabs. ② Provider and gateway status. ③ Refresh all. ④ Refresh providers. ⑤ Show or hide all providers. ⑥ Codex Account, Codex CLI, DeepSeek and TTMAPI cards: double-click to activate. ⑦ API key → gateway → Codex diagram. ⑧ Open About or Guide.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab2Title">2 · PROVIDERS</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab2Legend">① Select a provider on the left. ② Edit its ID, name, URL and adapter. ③ Save, enable/disable, choose a logo or delete it. ④ Paste an API key and choose Add key. ⑤ Check, enable/disable and reorder keys. ⑥ Scan, test and enable the models you want.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab3Title">3 · SESSIONS</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab3Legend">① Choose the project directory. ② Choose the target provider. ③ Refresh project status. ④ Prepare a provider handoff. ⑤ Read or copy the continuation instruction on the right. Create a new Codex thread when changing providers.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab4Title">4 · DIAGNOSTICS</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab4Legend">① Check the local gateway status. ② Start or stop the gateway. ③ Check Codex configuration and account profile. ④ Restore the best known configuration. ⑤ Refresh diagnostics.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab5Title">5 · SETTINGS</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab5Legend">① Review security defaults. ② Keep the gateway loopback-only. ③ Enable/disable automatic fallback-key switching. ④ Enable/disable automatic old-session refresh. ⑤ Control request/response logging.</sys:String>
     <sys:String x:Key="L10n_Guide_NumberLegendTitle">NUMBERED GUIDE</sys:String>
     <sys:String x:Key="L10n_Guide_Legend1">Navigation menu between CodexHub areas.</sys:String>
     <sys:String x:Key="L10n_Guide_Legend2">Current page and configuration status.</sys:String>

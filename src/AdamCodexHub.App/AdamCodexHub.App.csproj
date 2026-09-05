@@ -29,7 +29,11 @@
     <Resource Include="Assets\adam-codexhub-logo.png" />
     <Resource Include="Assets\adam-codexhub.ico" />
     <Resource Include="Assets\adam-codexhub-architecture.png" />
-    <Resource Include="Assets\guide-choose-provider-annotated.png" />
+    <Resource Include="Assets\guide-tab1-choose-provider.png" />
+    <Resource Include="Assets\guide-tab2-providers.png" />
+    <Resource Include="Assets\guide-tab3-sessions.png" />
+    <Resource Include="Assets\guide-tab4-diagnostics.png" />
+    <Resource Include="Assets\guide-tab5-settings.png" />
     <Resource Include="Assets\Fonts\Barlow-Regular.ttf" />
     <Resource Include="Assets\Fonts\Barlow-Medium.ttf" />
     <Resource Include="Assets\Fonts\Barlow-SemiBold.ttf" />

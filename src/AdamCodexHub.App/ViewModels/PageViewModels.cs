@@ -225,13 +225,13 @@ public sealed class HomeViewModel : PageViewModel
                         not KeyHealth.QuotaEmpty and
                         not KeyHealth.Offline);
 
-            ProviderCard NewCard(CodexTarget target)
+            ProviderCard NewCard(CodexTarget target, string? nameOverride = null)
             {
                 var (hasLogo, logoSource) = ResolveLogo(provider.Id);
                 return new ProviderCard
                 {
                     Id = provider.Id,
-                    Name = provider.Name,
+                    Name = nameOverride ?? provider.Name,
                     BaseUrl = provider.BaseUrl,
                     Health = provider.Health,
                     Enabled = provider.Enabled,
@@ -246,8 +246,11 @@ public sealed class HomeViewModel : PageViewModel
 
             if (provider.Id == ProviderManager.CodexAccountProviderId)
             {
-                // The native account is a single card.
+                // The native OpenAI sign-in offers two cards: Desktop (opens the ChatGPT-signed
+                // app) and CLI (opens the stock OpenAI Codex CLI in a terminal using the same
+                // sign-in — no API key needed).
                 built.Add(NewCard(CodexTarget.Windows));
+                built.Add(NewCard(CodexTarget.Cli, "Codex CLI"));
             }
             else if (hasUsableKey)
             {

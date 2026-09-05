@@ -161,6 +161,8 @@
             <Setter Property="UseLayoutRounding" Value="True" />
             <Setter Property="WindowStyle" Value="None" />
             <Setter Property="ResizeMode" Value="CanResize" />
+            <!-- Real window/taskbar icon (fixes the black generic blob). -->
+            <Setter Property="Icon" Value="Assets/adam-codexhub.ico" />
         </Style>
 
         <!-- ============ Buttons ============ -->

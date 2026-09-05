@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
 using System.Windows.Input;
 using AdamCodexHub.App.Mvvm;
 using AdamCodexHub.App.Services;
@@ -10,6 +11,17 @@ namespace AdamCodexHub.App.ViewModels;
 public sealed class MainViewModel : ObservableObject
 {
     private const int ProviderDisclosureVersion = 1;
+
+    /// <summary>Short display version, e.g. "v1.0.2", read from the assembly.</summary>
+    public string AppVersion
+    {
+        get
+        {
+            var v = Assembly.GetExecutingAssembly().GetName().Version;
+            return v is null ? "v1.0.0" : $"v{v.Major}.{v.Minor}.{v.Build}";
+        }
+    }
+
     private readonly IProviderManager _providerManager;
     private readonly IModelStore _modelStore;
     private readonly IProviderActivationService _activation;

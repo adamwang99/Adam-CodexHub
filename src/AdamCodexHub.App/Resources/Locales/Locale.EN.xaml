@@ -5,7 +5,8 @@
     <sys:String x:Key="L10n_AppName">Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_Title_ControlHub">control hub</sys:String>
     <sys:String x:Key="L10n_Title_ActivePrefix">Active: </sys:String>
-    <sys:String x:Key="L10n_Title_StatusTag">ADAM CODEXHUB · LOCAL GATEWAY</sys:String>
+    <sys:String x:Key="L10n_Sidebar_Tagline">Adam uses AI</sys:String>
+    <sys:String x:Key="L10n_Title_VersionTip">Application version</sys:String>
     <sys:String x:Key="L10n_Toggle_Tooltip">Switch the interface language (English / Vietnamese).</sys:String>
     <sys:String x:Key="L10n_Common_New">New</sys:String>
     <sys:String x:Key="L10n_Common_Refresh">Refresh</sys:String>

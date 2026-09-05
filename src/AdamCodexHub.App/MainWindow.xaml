@@ -1366,7 +1366,7 @@
                                 </Button>
                             </Grid>
                             <Border Height="1" Background="{StaticResource BrushHairlineSoft}" Margin="0,0,0,12" />
-                            <TextBlock Text="ADAM DUNG AI" Foreground="{StaticResource BrushGold}" FontSize="10" FontWeight="SemiBold"
+                            <TextBlock Text="{DynamicResource L10n_Sidebar_Tagline}" Foreground="{StaticResource BrushGold}" FontSize="10" FontWeight="Regular"
                                        HorizontalAlignment="Left" />
                         </StackPanel>
                     </Grid>
@@ -1461,8 +1461,9 @@
                 <Grid Margin="14,0">
                     <TextBlock VerticalAlignment="Center" Foreground="{StaticResource BrushMuted}" FontSize="11"
                                Text="{Binding OperationMessage}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource BrushGold}"
-                               FontSize="10" FontWeight="SemiBold" Text="{DynamicResource L10n_Title_StatusTag}" />
+                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource BrushMuted}"
+                               FontSize="9" FontWeight="Regular" Text="{Binding AppVersion}"
+                               ToolTip="{DynamicResource L10n_Title_VersionTip}" />
                 </Grid>
             </Border>
         </Grid>

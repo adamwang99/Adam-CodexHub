@@ -29,6 +29,7 @@
     <Resource Include="Assets\adam-codexhub-logo.png" />
     <Resource Include="Assets\adam-codexhub.ico" />
     <Resource Include="Assets\adam-codexhub-architecture.png" />
+    <Resource Include="Assets\adam-wang-about.png" />
     <Resource Include="Assets\guide-tab1-choose-provider.png" />
     <Resource Include="Assets\guide-tab2-providers.png" />
     <Resource Include="Assets\guide-tab3-sessions.png" />

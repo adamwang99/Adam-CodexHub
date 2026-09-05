@@ -49,9 +49,16 @@
                 <StackPanel>
                     <TextBlock Text="{DynamicResource L10n_About_CreatorTitle}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
-                    <TextBlock Text="{DynamicResource L10n_About_CreatorBody}"
-                               TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushCream}"
-                               Margin="0,8,0,0" LineHeight="21" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Image Source="Assets/adam-wang-about.png" Width="84" Height="84" Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.45" Color="#000000" /></Image.Effect>
+                        </Image>
+                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Adam Wang" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" />
+                            <TextBlock Text="{DynamicResource L10n_About_CreatorBody}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" LineHeight="20" MaxWidth="430" Margin="0,5,0,0" />
+                        </StackPanel>
+                    </StackPanel>
 
                     <TextBlock Text="{DynamicResource L10n_About_SecMission}"
                                Style="{StaticResource SectionLabel}" Margin="0,18,0,0" />

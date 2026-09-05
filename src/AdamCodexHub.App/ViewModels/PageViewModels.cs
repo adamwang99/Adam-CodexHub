@@ -367,10 +367,11 @@ public sealed class HomeViewModel : PageViewModel
         // Only launch Codex when activation actually succeeded (no early return/error).
         if (StatusMessage == L10n.F("L10n_Home_Activated", card.Name))
         {
-            // Codex Account always opens the Desktop app; keyed providers open Desktop or CLI
-            // depending on the card's target badge.
-            var launchDesktop = card.Id == "codex-account" ||
-                                card.Target == CodexTarget.Windows;
+            // Codex Account opens the real Desktop app (ChatGPT sign-in). Keyed third-party
+            // providers ALWAYS run through the sandboxed Codex CLI: the Codex Desktop app
+            // (AppX, ChatGPT cloud) has no way to consume third-party model_providers and
+            // would silently bill the ChatGPT account quota instead.
+            var launchDesktop = card.Id == ProviderManager.CodexAccountProviderId;
 
             // Managed providers use a private sandboxed Codex home; the native Codex Account
             // keeps the real ~/.codex (no CODEX_HOME override).
@@ -378,6 +379,13 @@ public sealed class HomeViewModel : PageViewModel
                 ? null
                 : _config.GetGatewayHomePath(card.Id);
             await LaunchCodexAsync(launchDesktop, codexHome);
+
+            // Be explicit when a "Desktop (W)" card had to launch the CLI instead, so the user
+            // never mistakes the sandboxed terminal for the ChatGPT-signed Desktop app.
+            if (!launchDesktop && card.Target == CodexTarget.Windows)
+            {
+                StatusMessage = L10n.F("L10n_Home_ManagedWLaunchedAsCli", card.Name);
+            }
         }
     }
 
@@ -578,7 +586,9 @@ public sealed class ProviderCard : ObservableObject
     public string TargetTooltip =>
         Target == CodexTarget.Cli
             ? L10n.T("L10n_Card_Tip_Cli")
-            : L10n.T("L10n_Card_Tip_Win");
+            : Id == ProviderManager.CodexAccountProviderId
+                ? L10n.T("L10n_Card_Tip_Win")
+                : L10n.T("L10n_Card_Tip_WinKeyed");
 
     /// <summary>Enabled-model counter line under the logo (localized "{0} model(s)").</summary>
     public string EnabledModelLabel => L10n.F("L10n_Card_ModelCount", EnabledModelCount);
@@ -615,12 +625,12 @@ public sealed class ProviderCard : ObservableObject
         : L10n.T("L10n_Card_KeyNeeded");
 
     public string TooltipDescription =>
-        Id == "codex-account"
+        Id == ProviderManager.CodexAccountProviderId
             ? L10n.T("L10n_Card_Desc_Account")
             : HasUsableKey && EnabledModelCount > 0
                 ? Target == CodexTarget.Cli
                     ? L10n.T("L10n_Card_Desc_CliReady")
-                    : L10n.T("L10n_Card_Desc_WinReady")
+                    : L10n.T("L10n_Card_Desc_WinKeyedReady")
                 : L10n.T("L10n_Card_Desc_SetupNeeded");
 
     /// <summary>

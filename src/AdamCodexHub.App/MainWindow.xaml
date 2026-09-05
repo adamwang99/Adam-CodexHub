@@ -906,7 +906,6 @@
                                                 <ControlTemplate TargetType="ListBoxItem">
                                                     <Border x:Name="Row"
                                                             Background="Transparent"
-                                                            CornerRadius="{StaticResource PillRadius}"
                                                             Padding="{TemplateBinding Padding}"
                                                             Margin="0,1">
                                                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"

@@ -53,6 +53,12 @@
                                TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushCream}"
                                Margin="0,8,0,0" LineHeight="21" />
 
+                    <TextBlock Text="{DynamicResource L10n_About_UseTitle}"
+                               Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" Margin="0,18,0,0" />
+                    <TextBlock Text="{DynamicResource L10n_About_UseBody}"
+                               TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}"
+                               Margin="0,8,0,0" LineHeight="20" />
+
                     <Border Height="1" Background="{StaticResource BrushHairlineSoft}" Margin="0,16" />
 
                     <TextBlock Text="{DynamicResource L10n_About_SecPath}"

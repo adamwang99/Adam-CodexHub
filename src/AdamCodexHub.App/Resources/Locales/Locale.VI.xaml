@@ -131,10 +131,18 @@
     <sys:String x:Key="L10n_Guide_ResetTip">Đặt lại tỷ lệ 100%</sys:String>
     <sys:String x:Key="L10n_Guide_FitTip">Vừa khung sơ đồ theo chiều rộng cửa sổ</sys:String>
     <sys:String x:Key="L10n_Guide_FitLabel">Vừa khung</sys:String>
+    <sys:String x:Key="L10n_Guide_TabsTitle">HƯỚNG DẪN THEO TỪNG TAB</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab1Lead">1 · Chọn Nhà Cung Cấp:</sys:String><sys:String x:Key="L10n_Guide_Tab1Rest">Chọn card Codex Account, Codex CLI, DeepSeek hoặc TTMAPI. Nhấp đúp card để kích hoạt; W mở Desktop, CLI mở Codex CLI.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab2Lead">2 · Nhà Cung Cấp:</sys:String><sys:String x:Key="L10n_Guide_Tab2Rest">Chọn provider ở cột trái, thêm API key, bấm Test key, Quét mô hình, rồi bật các model muốn dùng.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab3Lead">3 · Phiên Làm Việc:</sys:String><sys:String x:Key="L10n_Guide_Tab3Rest">Chọn thư mục dự án và provider đích để tạo thông tin bàn giao. Khi đổi provider, nên tạo thread Codex mới.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab4Lead">4 · Chẩn Đoán:</sys:String><sys:String x:Key="L10n_Guide_Tab4Rest">Kiểm tra gateway, cấu hình Codex và cảnh báo khởi động. Dùng tab này khi Codex không kết nối hoặc vẫn dùng kênh cũ.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab5Lead">5 · Cài Đặt:</sys:String><sys:String x:Key="L10n_Guide_Tab5Rest">Kiểm tra các mặc định bảo mật, tự lưu, khôi phục cấu hình và chuyển key dự phòng.</sys:String>
     <sys:String x:Key="L10n_Guide_ScreenshotTitle">Ảnh minh họa 1 · Các vị trí chính trên màn hình Choose Provider</sys:String>
     <sys:String x:Key="L10n_About_WindowTitle">Giới thiệu Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Tagline">trung tâm điều khiển đa nhà cung cấp cho Codex — miễn phí vĩnh viễn</sys:String>
     <sys:String x:Key="L10n_About_SecMission">XÂY DỰNG CHO NGHIÊN CỨU &amp; HỌC TẬP</sys:String>
+    <sys:String x:Key="L10n_About_UseTitle">DÙNG CODEX THEO CÁCH BẠN CHỌN</sys:String>
+    <sys:String x:Key="L10n_About_UseBody">Chọn Codex Account để dùng đăng nhập OpenAI mặc định. Chọn Codex Desktop hoặc Codex CLI của một provider để dùng API đã cấu hình. Model, key và trạng thái được kiểm tra ngay trong CodexHub; CodexHub không thay thế Codex và không cung cấp quota cho provider.</sys:String>
     <sys:String x:Key="L10n_About_SecPath">MỘT LỘ TRÌNH HỌC TẬP, KHÔNG CHỈ LÀ CÔNG CỤ</sys:String>
     <sys:String x:Key="L10n_About_FreeTitle">MIỄN PHÍ VĨNH VIỄN</sys:String>
     <sys:String x:Key="L10n_About_OpenGuide">Mở hướng dẫn</sys:String>
@@ -163,7 +171,7 @@
     <sys:String x:Key="L10n_FR_LinkPrivacy">Quyền riêng tư</sys:String>
     <sys:String x:Key="L10n_FR_LinkDisclaimer">Tuyên bố miễn trừ</sys:String>
     <sys:String x:Key="L10n_FR_LinkDisclosures">Công bố dữ liệu nhà cung cấp</sys:String>
-    <sys:String x:Key="L10n_About_MissionBody">Adam CodexHub là một dự án mã nguồn mở (MIT) độc lập, được tạo ra cho những ai muốn hiểu cách Codex có thể làm việc cùng nhiều nhà cung cấp AI — không phá vỡ đăng nhập chính thức, không để lộ key, và không có tường phí.</sys:String>
+    <sys:String x:Key="L10n_About_MissionBody">Adam CodexHub là trung tâm điều khiển Windows cho Codex Desktop và Codex CLI. Ứng dụng giúp bạn chọn nhà cung cấp AI, chọn mô hình chủ động, kiểm tra trước khi sử dụng và chuyển đổi giữa tài khoản Codex mặc định với các API provider như DeepSeek và TTMAPI mà không phải sửa thủ công config.toml.</sys:String>
     <sys:String x:Key="L10n_About_Step1Lead">Khám phá các nhà cung cấp.</sys:String>
     <sys:String x:Key="L10n_About_Step1Rest">Mở trung tâm và xem mọi nhà cung cấp như công dân hạng nhất — preset, key, sức khỏe, mô hình.</sys:String>
     <sys:String x:Key="L10n_About_Step2Lead">Kiểm tra trước khi tin dùng.</sys:String>

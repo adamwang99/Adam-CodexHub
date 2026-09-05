@@ -131,10 +131,18 @@
     <sys:String x:Key="L10n_Guide_ResetTip">Reset zoom to 100%</sys:String>
     <sys:String x:Key="L10n_Guide_FitTip">Fit the diagram to the window width</sys:String>
     <sys:String x:Key="L10n_Guide_FitLabel">Fit</sys:String>
+    <sys:String x:Key="L10n_Guide_TabsTitle">GUIDE BY TAB</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab1Lead">1 · Choose Provider:</sys:String><sys:String x:Key="L10n_Guide_Tab1Rest">Choose Codex Account, Codex CLI, DeepSeek or TTMAPI. Double-click a card to activate it; W opens Desktop and CLI opens Codex CLI.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab2Lead">2 · Providers:</sys:String><sys:String x:Key="L10n_Guide_Tab2Rest">Select a provider on the left, add an API key, test the key, scan models, then enable the models you want.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab3Lead">3 · Sessions:</sys:String><sys:String x:Key="L10n_Guide_Tab3Rest">Choose a project folder and target provider to prepare a handoff. Create a new Codex thread when changing providers.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab4Lead">4 · Diagnostics:</sys:String><sys:String x:Key="L10n_Guide_Tab4Rest">Check the gateway, Codex configuration and startup warnings when Codex cannot connect or keeps using the old channel.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab5Lead">5 · Settings:</sys:String><sys:String x:Key="L10n_Guide_Tab5Rest">Review security defaults, automatic saving, configuration recovery and key failover options.</sys:String>
     <sys:String x:Key="L10n_Guide_ScreenshotTitle">Illustration 1 · Key positions on the Choose Provider screen</sys:String>
     <sys:String x:Key="L10n_About_WindowTitle">About Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Tagline">multi-provider control hub for Codex — free forever</sys:String>
     <sys:String x:Key="L10n_About_SecMission">BUILT FOR RESEARCH &amp; LEARNING</sys:String>
+    <sys:String x:Key="L10n_About_UseTitle">USE CODEX YOUR WAY</sys:String>
+    <sys:String x:Key="L10n_About_UseBody">Choose Codex Account to use the default OpenAI sign-in. Choose a provider's Codex Desktop or Codex CLI card to use its configured API. Model, key and health status are checked inside CodexHub; CodexHub does not replace Codex or provide provider quota.</sys:String>
     <sys:String x:Key="L10n_About_SecPath">A LEARNING PATH, NOT JUST A TOOL</sys:String>
     <sys:String x:Key="L10n_About_FreeTitle">FREE FOR LIFE</sys:String>
     <sys:String x:Key="L10n_About_OpenGuide">Open the guide</sys:String>
@@ -163,7 +171,7 @@
     <sys:String x:Key="L10n_FR_LinkPrivacy">Privacy</sys:String>
     <sys:String x:Key="L10n_FR_LinkDisclaimer">Disclaimer</sys:String>
     <sys:String x:Key="L10n_FR_LinkDisclosures">Provider disclosures</sys:String>
-    <sys:String x:Key="L10n_About_MissionBody">Adam CodexHub is an independent, open-source project (MIT) created for everyone who wants to understand how Codex can work with many AI providers — without breaking the official sign-in, without exposing keys, and without a paywall.</sys:String>
+    <sys:String x:Key="L10n_About_MissionBody">Adam CodexHub is a Windows control hub for Codex Desktop and Codex CLI. Choose an AI provider, select a model deliberately, test it before use, and switch between the default Codex account and API providers such as DeepSeek and TTMAPI without manually editing config.toml.</sys:String>
     <sys:String x:Key="L10n_About_Step1Lead">Explore providers.</sys:String>
     <sys:String x:Key="L10n_About_Step1Rest">Open the hub and see every provider as a first-class citizen — presets, keys, health, models.</sys:String>
     <sys:String x:Key="L10n_About_Step2Lead">Test before you trust.</sys:String>

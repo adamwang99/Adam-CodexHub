@@ -894,7 +894,40 @@
                         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                             <ListBox ItemsSource="{Binding Providers}"
                                      SelectedItem="{Binding SelectedProvider, Mode=TwoWay}"
+                                     AlternationCount="2"
                                      automation:AutomationProperties.Name="Provider profiles">
+                                <ListBox.ItemContainerStyle>
+                                    <!-- Glass rows with alternating shade so each line reads clearly. -->
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="8,6" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="Row"
+                                                            Background="Transparent"
+                                                            CornerRadius="{StaticResource PillRadius}"
+                                                            Padding="{TemplateBinding Padding}"
+                                                            Margin="0,1">
+                                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                          VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                                            <Setter TargetName="Row" Property="Background" Value="#10FFFFFF" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Row" Property="Background" Value="#14FFFFFF" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="Row" Property="Background" Value="#26D89B2B" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid>

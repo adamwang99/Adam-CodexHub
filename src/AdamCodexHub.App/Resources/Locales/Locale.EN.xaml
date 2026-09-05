@@ -131,6 +131,18 @@
     <sys:String x:Key="L10n_Guide_ResetTip">Reset zoom to 100%</sys:String>
     <sys:String x:Key="L10n_Guide_FitTip">Fit the diagram to the window width</sys:String>
     <sys:String x:Key="L10n_Guide_FitLabel">Fit</sys:String>
+    <sys:String x:Key="L10n_Guide_NumberLegendTitle">NUMBERED GUIDE</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend1">Navigation menu between CodexHub areas.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend2">Current page and configuration status.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend3">Refresh all data.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend4">Refresh the provider list.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend5">Show or hide all available providers.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend6">Configured providers and their status.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend7">API key → gateway → Codex flow diagram.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend8">Open About or Guide.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend9">Provider, key and model management area.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend10">Operation and status information.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend11">Buttons for documentation and app information.</sys:String>
     <sys:String x:Key="L10n_Guide_TabsTitle">GUIDE BY TAB</sys:String>
     <sys:String x:Key="L10n_Guide_Tab1Lead">1 · Choose Provider:</sys:String><sys:String x:Key="L10n_Guide_Tab1Rest">Choose Codex Account, Codex CLI, DeepSeek or TTMAPI. Double-click a card to activate it; W opens Desktop and CLI opens Codex CLI.</sys:String>
     <sys:String x:Key="L10n_Guide_Tab2Lead">2 · Providers:</sys:String><sys:String x:Key="L10n_Guide_Tab2Rest">Select a provider on the left, add an API key, test the key, scan models, then enable the models you want.</sys:String>

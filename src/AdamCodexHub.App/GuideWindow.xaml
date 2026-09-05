@@ -59,17 +59,28 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Tab-by-tab operating instructions -->
-                    <TextBlock Text="{DynamicResource L10n_Guide_TabsTitle}"
-                               Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
-                    <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushCream}"
-                               Margin="0,8,0,16" LineHeight="21">
-                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Tab1Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_Tab1Rest}" /><LineBreak />
-                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Tab2Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_Tab2Rest}" /><LineBreak />
-                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Tab3Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_Tab3Rest}" /><LineBreak />
-                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Tab4Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_Tab4Rest}" /><LineBreak />
-                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Tab5Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_Tab5Rest}" />
-                    </TextBlock>
+                    <!-- Number legend: text is outside the screenshot so the UI remains readable. -->
+                    <Border Padding="12" Background="#0AFFFFFF"
+                            BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1" Margin="0,0,0,18">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource L10n_Guide_NumberLegendTitle}"
+                                       Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
+                            <TextBlock TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}"
+                                       Margin="0,9,0,0" LineHeight="21">
+                                <Run FontWeight="SemiBold" Text="1 · " /><Run Text="{DynamicResource L10n_Guide_Legend1}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="2 · " /><Run Text="{DynamicResource L10n_Guide_Legend2}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="3 · " /><Run Text="{DynamicResource L10n_Guide_Legend3}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="4 · " /><Run Text="{DynamicResource L10n_Guide_Legend4}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="5 · " /><Run Text="{DynamicResource L10n_Guide_Legend5}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="6 · " /><Run Text="{DynamicResource L10n_Guide_Legend6}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="7 · " /><Run Text="{DynamicResource L10n_Guide_Legend7}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="8 · " /><Run Text="{DynamicResource L10n_Guide_Legend8}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="9 · " /><Run Text="{DynamicResource L10n_Guide_Legend9}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="10 · " /><Run Text="{DynamicResource L10n_Guide_Legend10}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="11 · " /><Run Text="{DynamicResource L10n_Guide_Legend11}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
 
                     <!-- Architecture diagram: fit-width by default, zoomable + pannable -->
                     <Border CornerRadius="14" Padding="10" Background="#0AFFFFFF"

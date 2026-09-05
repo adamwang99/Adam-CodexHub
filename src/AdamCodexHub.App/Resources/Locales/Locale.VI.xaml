@@ -131,6 +131,18 @@
     <sys:String x:Key="L10n_Guide_ResetTip">Đặt lại tỷ lệ 100%</sys:String>
     <sys:String x:Key="L10n_Guide_FitTip">Vừa khung sơ đồ theo chiều rộng cửa sổ</sys:String>
     <sys:String x:Key="L10n_Guide_FitLabel">Vừa khung</sys:String>
+    <sys:String x:Key="L10n_Guide_NumberLegendTitle">CHÚ THÍCH THEO SỐ</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend1">Menu điều hướng giữa các khu vực của CodexHub.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend2">Tên trang và trạng thái cấu hình đang mở.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend3">Làm mới toàn bộ dữ liệu.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend4">Làm mới danh sách provider.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend5">Bật/tắt hiển thị toàn bộ provider có sẵn.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend6">Các provider đã được cấu hình và trạng thái của chúng.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend7">Sơ đồ luồng API key → gateway → Codex.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend8">Mở phần Giới thiệu hoặc Hướng dẫn.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend9">Khu vực quản lý provider, key và model.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend10">Thông tin thao tác và trạng thái.</sys:String>
+    <sys:String x:Key="L10n_Guide_Legend11">Nút mở tài liệu và thông tin ứng dụng.</sys:String>
     <sys:String x:Key="L10n_Guide_TabsTitle">HƯỚNG DẪN THEO TỪNG TAB</sys:String>
     <sys:String x:Key="L10n_Guide_Tab1Lead">1 · Chọn Nhà Cung Cấp:</sys:String><sys:String x:Key="L10n_Guide_Tab1Rest">Chọn card Codex Account, Codex CLI, DeepSeek hoặc TTMAPI. Nhấp đúp card để kích hoạt; W mở Desktop, CLI mở Codex CLI.</sys:String>
     <sys:String x:Key="L10n_Guide_Tab2Lead">2 · Nhà Cung Cấp:</sys:String><sys:String x:Key="L10n_Guide_Tab2Rest">Chọn provider ở cột trái, thêm API key, bấm Test key, Quét mô hình, rồi bật các model muốn dùng.</sys:String>

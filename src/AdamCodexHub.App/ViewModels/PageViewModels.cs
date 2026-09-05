@@ -328,9 +328,24 @@ public sealed class HomeViewModel : PageViewModel
                     ProviderDisclosureVersion);
             }
 
-            await _activation.ActivateAsync(
-                SelectedCard.Id,
-                SelectedCard.Id == "codex-account" ? null : SelectedModelRemoteId);
+            if (SelectedCard.Id == "codex-account")
+            {
+                await _activation.ActivateAsync(SelectedCard.Id, null);
+            }
+            else if (SelectedCard.Target == CodexTarget.Windows)
+            {
+                // Windows card of a keyed provider: also overlay ~/.codex/config.toml with the
+                // gateway so the Codex Desktop app runs on the provider's API key.
+                await _activation.ActivateDesktopAsync(
+                    SelectedCard.Id,
+                    SelectedModelRemoteId);
+            }
+            else
+            {
+                await _activation.ActivateAsync(
+                    SelectedCard.Id,
+                    SelectedModelRemoteId);
+            }
 
             await RefreshCoreAsync();
             StatusMessage = SelectedCard is null
@@ -367,25 +382,18 @@ public sealed class HomeViewModel : PageViewModel
         // Only launch Codex when activation actually succeeded (no early return/error).
         if (StatusMessage == L10n.F("L10n_Home_Activated", card.Name))
         {
-            // Codex Account opens the real Desktop app (ChatGPT sign-in). Keyed third-party
-            // providers ALWAYS run through the sandboxed Codex CLI: the Codex Desktop app
-            // (AppX, ChatGPT cloud) has no way to consume third-party model_providers and
-            // would silently bill the ChatGPT account quota instead.
-            var launchDesktop = card.Id == ProviderManager.CodexAccountProviderId;
+            // Windows (W) cards: the Codex DESKTOP app is launched. For keyed providers the
+            // config overlay (ActivateDesktopAsync) points the Desktop app at our gateway so it
+            // runs on the provider's API key — never the ChatGPT account quota. CLI cards run in
+            // the sandboxed CODEX_HOME. Codex Account always opens the Desktop app.
+            var launchDesktop = card.Target == CodexTarget.Windows;
 
-            // Managed providers use a private sandboxed Codex home; the native Codex Account
-            // keeps the real ~/.codex (no CODEX_HOME override).
+            // Managed providers use either the config overlay (Desktop) or a private sandboxed
+            // home (CLI). The native Codex Account keeps the real ~/.codex with no override.
             var codexHome = card.Id == ProviderManager.CodexAccountProviderId
                 ? null
                 : _config.GetGatewayHomePath(card.Id);
             await LaunchCodexAsync(launchDesktop, codexHome);
-
-            // Be explicit when a "Desktop (W)" card had to launch the CLI instead, so the user
-            // never mistakes the sandboxed terminal for the ChatGPT-signed Desktop app.
-            if (!launchDesktop && card.Target == CodexTarget.Windows)
-            {
-                StatusMessage = L10n.F("L10n_Home_ManagedWLaunchedAsCli", card.Name);
-            }
         }
     }
 

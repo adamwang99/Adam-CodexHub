@@ -156,6 +156,24 @@ public partial class App : Application
                 }
             }
 
+            // Heal after an abnormal exit: if the real ~/.codex/config.toml still carries the
+            // desktop gateway overlay (app was killed while a Windows-card provider was active),
+            // restore the Codex Account profile so the Desktop app never points at a dead port.
+            try
+            {
+                var healConfig = _host.Services.GetRequiredService<ICodexConfigService>();
+                if (await healConfig.RestoreAccountIfGatewayOverlayAsync())
+                {
+                    var healProviders = _host.Services.GetRequiredService<IProviderManager>();
+                    await healProviders.SetActiveAsync("codex-account");
+                    LogStartup("Startup heal: restored ~/.codex account config (stale gateway overlay).");
+                }
+            }
+            catch (Exception healEx)
+            {
+                LogStartup("Startup heal failed", healEx);
+            }
+
             var window = _host.Services.GetRequiredService<MainWindow>();
             LogStartup("Main window resolved");
             MainWindow = window;

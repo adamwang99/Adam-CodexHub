@@ -49,10 +49,10 @@
     <sys:String x:Key="L10n_Card_Desc_Account">Dùng đăng nhập Codex gốc của bạn. Nhấp đúp để khôi phục tài khoản Codex mặc định.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_CliReady">Sẵn sàng dùng với Codex CLI (terminal). Nhấp đúp để kích hoạt và mở terminal.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_WinReady">Sẵn sàng dùng với Codex Desktop (Windows). Nhấp đúp để kích hoạt và mở ứng dụng desktop.</sys:String>
-    <sys:String x:Key="L10n_Card_Desc_WinKeyedReady">Sẵn sàng — nhấp đúp để kích hoạt và mở Codex CLI sandbox chạy bằng API key của bạn (ứng dụng Codex Desktop chỉ chạy tài khoản ChatGPT nên không mở được).</sys:String>
+    <sys:String x:Key="L10n_Card_Desc_WinKeyedReady">Sẵn sàng — nhấp đúp để kích hoạt và mở ứng dụng Codex Desktop định tuyến qua gateway nội bộ bằng API key của bạn (không bao giờ trừ quota tài khoản ChatGPT).</sys:String>
     <sys:String x:Key="L10n_Card_Desc_SetupNeeded">Cần một API key hợp lệ và một mô hình đã bật trước khi có thể kích hoạt.</sys:String>
-    <sys:String x:Key="L10n_Card_Tip_Win">Windows — Codex Account mở ứng dụng Desktop; provider có key chạy qua Codex CLI sandbox (ứng dụng Desktop chỉ dùng tài khoản ChatGPT của bạn).</sys:String>
-    <sys:String x:Key="L10n_Card_Tip_WinKeyed">Huy hiệu Windows — mở Codex CLI sandbox chạy bằng API key của bạn. Ứng dụng Codex Desktop chỉ chạy được tài khoản ChatGPT (trừ quota tài khoản) nên provider có key không bao giờ mở nó.</sys:String>
+    <sys:String x:Key="L10n_Card_Tip_Win">Windows — Codex Account chạy trong ứng dụng Desktop bằng đăng nhập ChatGPT của bạn.</sys:String>
+    <sys:String x:Key="L10n_Card_Tip_WinKeyed">Windows — mở ứng dụng Codex Desktop định tuyến qua gateway nội bộ bằng API key của bạn (không bao giờ trừ quota tài khoản ChatGPT).</sys:String>
     <sys:String x:Key="L10n_Card_Tip_Cli">CLI — kích hoạt nhà cung cấp này cho Codex chạy trong terminal.</sys:String>
     <sys:String x:Key="L10n_Card_ModelCount">{0} mô hình</sys:String>
     <sys:String x:Key="L10n_Setup_Title">Nhà Cung Cấp</sys:String>
@@ -242,7 +242,6 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Home_NoEnabledModel">Không có mô hình đã bật cho {0}. Hãy mở Models, quét và bật một mô hình trước.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Đã hoàn tất kích hoạt.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Đã kích hoạt {0}.</sys:String>
-    <sys:String x:Key="L10n_Home_ManagedWLaunchedAsCli">{0} đang chạy qua Codex CLI sandbox (CODEX_HOME) — ứng dụng Codex Desktop chỉ chạy tài khoản ChatGPT của bạn và sẽ trừ quota tài khoản. Hãy dùng cửa sổ terminal vừa mở.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Kích hoạt thất bại: {0}</sys:String>
     <sys:String x:Key="L10n_Home_AccountRestored">Đã khôi phục Codex Account. API key và mô hình của từng nhà cung cấp vẫn được giữ nguyên.</sys:String>
     <sys:String x:Key="L10n_Home_RestoreFailed">Không thể khôi phục Codex Account: {0}</sys:String>

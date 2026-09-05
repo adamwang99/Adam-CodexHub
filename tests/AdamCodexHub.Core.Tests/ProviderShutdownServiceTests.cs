@@ -11,7 +11,7 @@ public sealed class ProviderShutdownServiceTests
     public async Task RemoteProviderResetsActiveToCodexAccountOnShutdown()
     {
         var providers = new ShutdownProviderManager(CreateProvider("openrouter"));
-        var service = new ProviderShutdownService(providers);
+        var service = new ProviderShutdownService(providers, new ShutdownConfig());
 
         var status = await service.RestoreAccountAsync();
 
@@ -22,10 +22,10 @@ public sealed class ProviderShutdownServiceTests
     [Fact]
     public async Task RestoreAccountDoesNotRequireAnAccountProfileOnDisk()
     {
-        // Managed providers live in a sandboxed CODEX_HOME, so shutting down never needs a
-        // captured ~/.codex profile: the app only resets its internal active state.
+        // CLI sandbox activations never touch ~/.codex, so shutting down only resets the
+        // internal active state when no gateway overlay is present.
         var providers = new ShutdownProviderManager(CreateProvider("openrouter"));
-        var service = new ProviderShutdownService(providers);
+        var service = new ProviderShutdownService(providers, new ShutdownConfig());
 
         var status = await service.RestoreAccountAsync();
 
@@ -37,7 +37,7 @@ public sealed class ProviderShutdownServiceTests
     public async Task ActiveAccountDoesNotRewriteConfiguration()
     {
         var providers = new ShutdownProviderManager(CreateProvider("codex-account"));
-        var service = new ProviderShutdownService(providers);
+        var service = new ProviderShutdownService(providers, new ShutdownConfig());
 
         var status = await service.RestoreAccountAsync();
 
@@ -111,5 +111,47 @@ public sealed class ProviderShutdownServiceTests
             ProviderHealth health,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+    }
+
+    /// <summary>Minimal config stub: never reports an active desktop gateway overlay.</summary>
+    private sealed class ShutdownConfig : ICodexConfigService
+    {
+        public string CodexHome => "test-codex-home";
+
+        public Task<bool> HasAccountProfileAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task ActivateAccountAsync(CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task ActivateGatewayAsync(
+            string modelId,
+            int gatewayPort,
+            string gatewayToken,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<string?> BackupCurrentAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
+
+        public Task RestoreLastKnownGoodAsync(CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<string> PrepareGatewayHomeAsync(
+            string providerId,
+            string modelId,
+            int gatewayPort,
+            string gatewayToken,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(Path.Combine("test-homes", providerId));
+
+        public string GetGatewayHomePath(string providerId) =>
+            Path.Combine("test-homes", providerId);
+
+        public Task<bool> HasGatewayOverlayAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task<bool> RestoreAccountIfGatewayOverlayAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
     }
 }

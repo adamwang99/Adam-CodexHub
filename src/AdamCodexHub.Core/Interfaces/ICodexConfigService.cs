@@ -35,4 +35,18 @@ public interface ICodexConfigService
     /// launching Codex for that provider.
     /// </summary>
     string GetGatewayHomePath(string providerId);
+
+    /// <summary>
+    /// True when the real <c>~/.codex/config.toml</c> currently carries the desktop gateway
+    /// overlay (model_provider "adam_codexhub" pointing at the in-process gateway). Used by the
+    /// Windows/Desktop activation path and by startup healing after an abnormal exit.
+    /// </summary>
+    Task<bool> HasGatewayOverlayAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// If the real <c>~/.codex/config.toml</c> is overlaid by the desktop gateway, restores the
+    /// saved Codex Account profile and returns true. No-op (false) when the file is already the
+    /// native account configuration.
+    /// </summary>
+    Task<bool> RestoreAccountIfGatewayOverlayAsync(CancellationToken cancellationToken = default);
 }

@@ -304,11 +304,13 @@ public sealed class ProviderActivationServiceTests
     {
         private readonly bool _hasAccountProfile;
         private readonly bool _failGatewayWrite;
+        private readonly bool _overlayActive;
 
-        public FakeConfig(bool hasAccountProfile, bool failGatewayWrite = false)
+        public FakeConfig(bool hasAccountProfile, bool failGatewayWrite = false, bool overlayActive = false)
         {
             _hasAccountProfile = hasAccountProfile;
             _failGatewayWrite = failGatewayWrite;
+            _overlayActive = overlayActive;
         }
 
         public string CodexHome => "test-codex-home";
@@ -363,6 +365,20 @@ public sealed class ProviderActivationServiceTests
             ActivateGatewayCalls++;
             LastGatewayModelId = modelId;
             return Task.CompletedTask;
+        }
+
+        public Task<bool> HasGatewayOverlayAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(_overlayActive);
+
+        public Task<bool> RestoreAccountIfGatewayOverlayAsync(CancellationToken cancellationToken = default)
+        {
+            if (!_overlayActive)
+            {
+                return Task.FromResult(false);
+            }
+
+            ActivateAccountCalls++;
+            return Task.FromResult(true);
         }
 
         public Task<string?> BackupCurrentAsync(CancellationToken cancellationToken = default) =>

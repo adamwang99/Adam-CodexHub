@@ -49,10 +49,10 @@
     <sys:String x:Key="L10n_Card_Desc_Account">Uses your native Codex sign-in. Double-click to restore the default Codex account.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_CliReady">Ready to use with Codex CLI (terminal). Double-click to activate and launch the terminal.</sys:String>
     <sys:String x:Key="L10n_Card_Desc_WinReady">Ready to use with Codex Desktop (Windows). Double-click to activate and open the desktop app.</sys:String>
-    <sys:String x:Key="L10n_Card_Desc_WinKeyedReady">Ready — double-click to activate and open the sandboxed Codex CLI running on your API key (the Codex Desktop app only runs your ChatGPT account, so it is never opened for keyed providers).</sys:String>
+    <sys:String x:Key="L10n_Card_Desc_WinKeyedReady">Ready — double-click to activate and open the Codex Desktop app routed through the local gateway on your API key (never the ChatGPT account quota).</sys:String>
     <sys:String x:Key="L10n_Card_Desc_SetupNeeded">Needs a valid API key and an enabled model before it can be activated.</sys:String>
-    <sys:String x:Key="L10n_Card_Tip_Win">Windows — Codex Account opens the Desktop app; keyed providers run through the sandboxed Codex CLI (the Desktop app only uses your ChatGPT account).</sys:String>
-    <sys:String x:Key="L10n_Card_Tip_WinKeyed">Windows badge — launches the sandboxed Codex CLI on your API key. The Codex Desktop app can only run your ChatGPT account (bills its quota), so keyed providers never open it.</sys:String>
+    <sys:String x:Key="L10n_Card_Tip_Win">Windows — Codex Account runs in the Desktop app with your ChatGPT sign-in.</sys:String>
+    <sys:String x:Key="L10n_Card_Tip_WinKeyed">Windows — opens the Codex Desktop app routed through the local gateway on your API key (never the ChatGPT account quota).</sys:String>
     <sys:String x:Key="L10n_Card_Tip_Cli">CLI — activates this provider for Codex running in the terminal.</sys:String>
     <sys:String x:Key="L10n_Card_ModelCount">{0} model(s)</sys:String>
     <sys:String x:Key="L10n_Setup_Title">Providers</sys:String>
@@ -242,7 +242,6 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Home_NoEnabledModel">No enabled model for {0}. Open Models, scan and enable one first.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Activation completed.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Activated {0}.</sys:String>
-    <sys:String x:Key="L10n_Home_ManagedWLaunchedAsCli">{0} is running through the sandboxed Codex CLI (CODEX_HOME) — the Codex Desktop app only runs your ChatGPT account and would bill its quota. Use the terminal window that just opened.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Activation failed: {0}</sys:String>
     <sys:String x:Key="L10n_Home_AccountRestored">Codex Account restored. Per-provider API keys and models are preserved.</sys:String>
     <sys:String x:Key="L10n_Home_RestoreFailed">Could not restore Codex Account: {0}</sys:String>

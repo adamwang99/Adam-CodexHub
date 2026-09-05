@@ -10,18 +10,24 @@ public enum ProviderShutdownStatus
 }
 
 /// <summary>
-/// Runs when the app exits. Because managed providers now live in a sandboxed CODEX_HOME that is
-/// separate from the user's real ~/.codex, shutting down never rewrites any file on disk: it only
-/// resets the app's internal active-provider state back to the native Codex Account.
+/// Runs when the app exits (tray Exit / session end). The CLI activation path lives in a
+/// sandboxed CODEX_HOME and never touches the real ~/.codex. The Windows/Desktop activation path
+/// overlays ~/.codex/config.toml with the gateway (model_provider "adam_codexhub"); shutting down
+/// restores the saved Codex Account profile when that overlay is present, so the Desktop app goes
+/// back to the native ChatGPT sign-in and never points at a dead gateway port after we exit.
 /// </summary>
 public sealed class ProviderShutdownService
 {
     private const string CodexAccountProviderId = "codex-account";
     private readonly IProviderManager _providers;
+    private readonly ICodexConfigService _config;
 
-    public ProviderShutdownService(IProviderManager providers)
+    public ProviderShutdownService(
+        IProviderManager providers,
+        ICodexConfigService config)
     {
         _providers = providers;
+        _config = config;
     }
 
     public async Task<ProviderShutdownStatus> RestoreAccountAsync(
@@ -31,12 +37,19 @@ public sealed class ProviderShutdownService
         if (string.Equals(
                 active?.Id,
                 CodexAccountProviderId,
-                StringComparison.OrdinalIgnoreCase))
+                StringComparison.OrdinalIgnoreCase) &&
+            !await _config.HasGatewayOverlayAsync(cancellationToken))
         {
             return ProviderShutdownStatus.AlreadyUsingAccount;
         }
 
         await _providers.SetActiveAsync(CodexAccountProviderId, cancellationToken);
-        return ProviderShutdownStatus.AccountRestored;
+
+        var restored = await _config.RestoreAccountIfGatewayOverlayAsync(cancellationToken);
+        return restored
+            ? ProviderShutdownStatus.AccountRestored
+            : active?.Id == CodexAccountProviderId
+                ? ProviderShutdownStatus.AlreadyUsingAccount
+                : ProviderShutdownStatus.AccountRestored;
     }
 }

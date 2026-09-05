@@ -51,7 +51,8 @@ public sealed class ProviderActivationService : IProviderActivationService
 
         if (target.Id == CodexAccountProviderId)
         {
-            if (source?.Id == CodexAccountProviderId)
+            if (source?.Id == CodexAccountProviderId &&
+                !await _config.HasGatewayOverlayAsync(cancellationToken))
             {
                 return new ProviderActivationResult(
                     target,
@@ -60,16 +61,20 @@ public sealed class ProviderActivationService : IProviderActivationService
                     "Codex Account is already active.");
             }
 
-            // Codex Account is the native, immutable configuration: activation only flips the
-            // app's internal active state. Nothing is ever written to ~/.codex and the in-process
-            // gateway keeps running (the app now lives in the tray between window closures).
+            // Native Codex Account: flip the app's internal active state AND, when the real
+            // ~/.codex/config.toml still carries the desktop gateway overlay (e.g. from an
+            // earlier Windows-card activation or an abnormal exit), restore the saved account
+            // profile so the Desktop app goes back to the ChatGPT sign-in.
+            var restored = await _config.RestoreAccountIfGatewayOverlayAsync(cancellationToken);
             await _providers.SetActiveAsync(target.Id, cancellationToken);
             return new ProviderActivationResult(
                 target,
                 null,
                 plan,
                 plan is null
-                    ? "Codex Account restored. No project handoff was generated."
+                    ? restored
+                        ? "Codex Account restored (config returned to the native sign-in)."
+                        : "Codex Account restored. No project handoff was generated."
                     : "Codex Account restored and project handoff state refreshed.");
         }
 
@@ -125,5 +130,34 @@ public sealed class ProviderActivationService : IProviderActivationService
             plan is null
                 ? $"{target.Name} / {model.DisplayName} activated. Set a project path to generate handoff state."
                 : $"{target.Name} / {model.DisplayName} activated with {plan.RecommendedSyncLevel} project sync.");
+    }
+
+    /// <summary>
+    /// Desktop (Windows) activation for a keyed provider: runs the regular sandboxed activation
+    /// and THEN overlays the real <c>~/.codex/config.toml</c> with a gateway provider block
+    /// (model_provider "adam_codexhub" + base_url pointing at the in-process gateway). The Codex
+    /// Desktop app reads that file on startup and routes model traffic through our gateway to the
+    /// provider's own API — never the ChatGPT account quota. The previous config is preserved as
+    /// the account profile and restored when the user switches back to Codex Account or exits.
+    /// </summary>
+    public async Task<ProviderActivationResult> ActivateDesktopAsync(
+        string providerId,
+        string? modelId,
+        string? projectPath = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await ActivateAsync(providerId, modelId, projectPath, cancellationToken);
+        if (result.Model is null)
+        {
+            // Codex Account — nothing to overlay.
+            return result;
+        }
+
+        await _config.ActivateGatewayAsync(
+            result.Model.RemoteId,
+            _gateway.Port,
+            _gateway.LocalToken,
+            cancellationToken);
+        return result;
     }
 }

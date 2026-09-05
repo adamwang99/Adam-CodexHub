@@ -133,7 +133,10 @@ public sealed class CodexConfigService : ICodexConfigService
             var backup = await BackupCurrentCoreAsync(cancellationToken);
             try
             {
-                if (!File.Exists(_accountPath) && !string.IsNullOrWhiteSpace(current))
+                // Always refresh the saved account profile with the CURRENT native config before
+                // overlaying, so restoring later returns to exactly what the user had (plugins,
+                // marketplaces, manual provider blocks…), not a stale first-ever snapshot.
+                if (!string.IsNullOrWhiteSpace(current))
                 {
                     await AtomicWriteFileAsync(_accountPath, current, cancellationToken);
                 }
@@ -164,6 +167,44 @@ public sealed class CodexConfigService : ICodexConfigService
         {
             _gate.Release();
         }
+    }
+
+    public async Task<bool> HasGatewayOverlayAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (!File.Exists(_configPath))
+            {
+                return false;
+            }
+
+            var text = await File.ReadAllTextAsync(_configPath, cancellationToken);
+            return text.Contains(ManagedProviderId, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task<bool> RestoreAccountIfGatewayOverlayAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (!await HasGatewayOverlayAsync(cancellationToken))
+        {
+            return false;
+        }
+
+        if (!File.Exists(_accountPath))
+        {
+            // Overlay exists but no account profile was saved — nothing safe to restore to.
+            return false;
+        }
+
+        await ActivateAccountAsync(cancellationToken);
+        return true;
     }
 
     public async Task RestoreLastKnownGoodAsync(

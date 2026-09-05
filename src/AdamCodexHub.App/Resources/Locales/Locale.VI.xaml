@@ -228,6 +228,12 @@
     <sys:String x:Key="L10n_MT_None">không</sys:String>
     <sys:String x:Key="L10n_Msg_Cancelled">Thao tác đã bị hủy.</sys:String>
     <sys:String x:Key="L10n_Msg_NoProviderSelected">Hãy chọn một nhà cung cấp trước.</sys:String>
+    <sys:String x:Key="L10n_Msg_CliMissingTitle">Không tìm thấy Codex CLI</sys:String>
+    <sys:String x:Key="L10n_Msg_CliMissingStatus">Codex CLI chưa được cài trên máy — bấm vào thẻ nhà cung cấp để xem cách tải về.</sys:String>
+    <sys:String x:Key="L10n_Msg_CliMissingBody">Ứng dụng này không kèm sẵn Codex — nó dùng Codex CLI đã cài trên máy của bạn. Để dùng nhà cung cấp qua CLI (terminal), bạn cần cài Codex trước.
+
+Mở trang tải chính thức ngay bây giờ?</sys:String>
+    <sys:String x:Key="L10n_Msg_OpenDownload">Mở trang tải về</sys:String>
     <sys:String x:Key="L10n_Msg_SelectKeyFirst">Hãy chọn một API key trước.</sys:String>
     <sys:String x:Key="L10n_Msg_SelectModelFirst">Hãy chọn một mô hình trước.</sys:String>
     <sys:String x:Key="L10n_Msg_NoActiveProvider">Không có nhà cung cấp nào đang hoạt động.</sys:String>

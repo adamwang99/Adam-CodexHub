@@ -228,6 +228,12 @@
     <sys:String x:Key="L10n_MT_None">none</sys:String>
     <sys:String x:Key="L10n_Msg_Cancelled">Operation cancelled.</sys:String>
     <sys:String x:Key="L10n_Msg_NoProviderSelected">Select a provider first.</sys:String>
+    <sys:String x:Key="L10n_Msg_CliMissingTitle">Codex CLI not found</sys:String>
+    <sys:String x:Key="L10n_Msg_CliMissingStatus">Codex CLI is not installed on this machine — open a provider card to see how to get it.</sys:String>
+    <sys:String x:Key="L10n_Msg_CliMissingBody">This app does not bundle Codex — it uses the Codex CLI already installed on your machine. To use a provider through the CLI (terminal), please install Codex first.
+
+Open the official download page now?</sys:String>
+    <sys:String x:Key="L10n_Msg_OpenDownload">Open download page</sys:String>
     <sys:String x:Key="L10n_Msg_SelectKeyFirst">Select an API key first.</sys:String>
     <sys:String x:Key="L10n_Msg_SelectModelFirst">Select a model first.</sys:String>
     <sys:String x:Key="L10n_Msg_NoActiveProvider">No active provider exists.</sys:String>

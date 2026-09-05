@@ -115,6 +115,10 @@ public abstract class PageViewModel : ObservableObject
 public sealed class HomeViewModel : PageViewModel
 {
     private const int ProviderDisclosureVersion = 1;
+
+    /// <summary>Official Codex download page — offered when the Codex CLI is not installed.</summary>
+    private const string CodexCliDownloadUrl = "https://openai.com/codex";
+
     private readonly IProviderManager _providers;
     private readonly IModelStore _models;
     private readonly IKeyPoolService _keys;
@@ -474,6 +478,28 @@ public sealed class HomeViewModel : PageViewModel
 
         if (codexPath is null)
         {
+            // No Codex CLI on this machine (the app never bundles one): tell the user and offer
+            // to open the official download page instead of silently doing nothing.
+            try
+            {
+                StatusMessage = L10n.T("L10n_Msg_CliMissingStatus");
+                var openDownload = _dialogs.Confirm(
+                    L10n.T("L10n_Msg_CliMissingTitle"),
+                    L10n.T("L10n_Msg_CliMissingBody"),
+                    L10n.T("L10n_Msg_OpenDownload"));
+                if (openDownload)
+                {
+                    Process.Start(new ProcessStartInfo(CodexCliDownloadUrl)
+                    {
+                        UseShellExecute = true
+                    });
+                }
+            }
+            catch
+            {
+                // Best-effort notification only; never throw from a launch helper.
+            }
+
             return Task.CompletedTask;
         }
 

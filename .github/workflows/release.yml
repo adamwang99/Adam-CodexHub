@@ -39,6 +39,7 @@ jobs:
           path: |
             artifacts/*.zip
             artifacts/*.sha256
+            artifacts/*-Setup-*.exe
           if-no-files-found: error
 
       - name: Create GitHub release
@@ -47,11 +48,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $assets = Get-ChildItem -LiteralPath artifacts -File |
-            Where-Object { $_.Name -match '\.(zip|sha256)$' } |
+            Where-Object { $_.Name -match '\.(zip|sha256|exe)$' } |
             Select-Object -ExpandProperty FullName
 
-          if ($assets.Count -ne 2) {
-            throw "Expected ZIP and SHA-256 assets, found $($assets.Count)."
+          if ($assets.Count -ne 4) {
+            throw "Expected 4 assets (ZIP, ZIP checksum, Setup.exe, Setup checksum), found $($assets.Count)."
           }
 
           gh release create '${{ github.ref_name }}' `

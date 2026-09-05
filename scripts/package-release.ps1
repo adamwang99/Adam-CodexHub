@@ -225,8 +225,50 @@ $hash = (Get-FileHash -LiteralPath $zipPath -Algorithm SHA256).Hash.ToLowerInvar
 "$hash *$(Split-Path $zipPath -Leaf)" |
     Set-Content -LiteralPath $checksumPath -Encoding ascii
 
+# --- Windows installer (Inno Setup 6) -------------------------------------
+# Present on GitHub Actions windows-latest runners; optional when running locally.
+$installerCandidates = @(
+    "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+    "${env:ProgramFiles}\Inno Setup 6\ISCC.exe",
+    "${env:LOCALAPPDATA}\Programs\Inno Setup 6\ISCC.exe"
+)
+$iscc = $installerCandidates |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_) } |
+    Select-Object -First 1
+
+$setupBaseName = "AdamCodexHub-Setup-v$Version-$RuntimeIdentifier"
+$setupPath = Join-Path $artifactsRoot "$setupBaseName.exe"
+$setupChecksumPath = "$setupPath.sha256"
+
+if ($iscc) {
+    & $iscc `
+        (Join-Path $repositoryRoot 'installer\adam-codexhub.iss') `
+        "/DMyAppVersion=$Version" `
+        "/DStagingDir=$stagingDirectory" `
+        "/DOutputDir=$artifactsRoot" `
+        "/DRepoRoot=$repositoryRoot" `
+        "/DOutputBaseName=$setupBaseName"
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Inno Setup compile failed with exit code $LASTEXITCODE."
+    }
+
+    if (-not (Test-Path -LiteralPath $setupPath)) {
+        throw "Inno Setup reported success but $setupPath was not created."
+    }
+
+    $setupHash = (Get-FileHash -LiteralPath $setupPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    "$setupHash *$(Split-Path $setupPath -Leaf)" |
+        Set-Content -LiteralPath $setupChecksumPath -Encoding ascii
+}
+else {
+    Write-Warning 'Inno Setup 6 not found — installer skipped, ZIP-only package produced.'
+}
+
 [pscustomobject]@{
-    Package = $zipPath
+    Package  = $zipPath
     Checksum = $checksumPath
-    Sha256 = $hash
+    Sha256   = $hash
+    Installer = if ($iscc) { $setupPath } else { $null }
+    InstallerChecksum = if ($iscc) { $setupChecksumPath } else { $null }
 }

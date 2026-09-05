@@ -750,12 +750,12 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Flow connector 1: dual arrows — aqua → sends up, amber ← returns below -->
-                            <Grid Grid.Column="1" Width="44" Margin="2,0">
-                                <TextBlock Style="{StaticResource FlowArrowSend}"
-                                           VerticalAlignment="Top" Margin="0,12,0,0" />
-                                <TextBlock Style="{StaticResource FlowArrowRecv}"
-                                           VerticalAlignment="Bottom" Margin="0,0,0,12" />
+                            <!-- Flow connector 1: dual arrows — aqua → sends, amber ← returns, close pair -->
+                            <Grid Grid.Column="1" Width="40" Margin="2,0">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Style="{StaticResource FlowArrowSend}" Margin="0,0,0,2" />
+                                    <TextBlock Style="{StaticResource FlowArrowRecv}" />
+                                </StackPanel>
                             </Grid>
 
                             <!-- 2 · Internal gateway (aqua hero accent) -->
@@ -784,12 +784,12 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Flow connector 2: dual arrows — aqua → sends up, amber ← returns below -->
-                            <Grid Grid.Column="3" Width="44" Margin="2,0">
-                                <TextBlock Style="{StaticResource FlowArrowSend}"
-                                           VerticalAlignment="Top" Margin="0,12,0,0" />
-                                <TextBlock Style="{StaticResource FlowArrowRecv}"
-                                           VerticalAlignment="Bottom" Margin="0,0,0,12" />
+                            <!-- Flow connector 2: dual arrows — aqua → sends, amber ← returns, close pair -->
+                            <Grid Grid.Column="3" Width="40" Margin="2,0">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Style="{StaticResource FlowArrowSend}" Margin="0,0,0,2" />
+                                    <TextBlock Style="{StaticResource FlowArrowRecv}" />
+                                </StackPanel>
                             </Grid>
 
                             <!-- 3 · Codex Desktop / CLI -->

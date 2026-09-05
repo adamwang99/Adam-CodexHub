@@ -31,9 +31,20 @@ public partial class MainWindow : Window
         ViewModel = viewModel;
         DataContext = viewModel;
         SourceInitialized += OnSourceInitialized;
+        _viewModel.CodexLaunched += OnCodexLaunched;
     }
 
-    /// <summary>EN / VI segmented toggle in the title bar (checked = Vietnamese).
+    private void OnCodexLaunched(object? sender, EventArgs e)
+    {
+        var app = System.Windows.Application.Current;
+        var mainWindow = this;
+        mainWindow.ShowInTaskbar = false;
+        mainWindow.Hide();
+        if (app is App typedApp)
+        {
+            typedApp.NotifyCodexLaunched();
+        }
+    }
     /// Handled via Checked/Unchecked (not Click) so any state change — mouse,
     /// keyboard space, UI Automation Toggle — applies the language immediately.</summary>
     private void LanguageToggle_Checked(object sender, RoutedEventArgs e)
@@ -61,6 +72,7 @@ public partial class MainWindow : Window
         }
 
         e.Cancel = true;
+        ShowInTaskbar = false;
         Hide();
     }
 

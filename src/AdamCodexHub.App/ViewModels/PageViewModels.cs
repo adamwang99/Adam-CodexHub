@@ -129,6 +129,8 @@ public sealed class HomeViewModel : PageViewModel
     private readonly IUserDialogService _dialogs;
     private readonly AppPaths _paths;
 
+    public event EventHandler? CodexLaunched;
+
     public HomeViewModel(
         IProviderManager providers,
         IModelStore models,
@@ -400,7 +402,10 @@ public sealed class HomeViewModel : PageViewModel
             var codexHome = card.Id == ProviderManager.CodexAccountProviderId
                 ? null
                 : _config.GetGatewayHomePath(card.Id);
-            await LaunchCodexAsync(launchDesktop, codexHome);
+            if (await LaunchCodexAsync(launchDesktop, codexHome))
+            {
+                CodexLaunched?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 
@@ -428,7 +433,10 @@ public sealed class HomeViewModel : PageViewModel
             await _activation.ActivateAsync("codex-account", null);
             await RefreshCoreAsync();
             StatusMessage = L10n.T("L10n_Home_AccountRestored");
-            await LaunchCodexAsync(desktop: true, codexHome: null);
+            if (await LaunchCodexAsync(desktop: true, codexHome: null))
+            {
+                CodexLaunched?.Invoke(this, EventArgs.Empty);
+            }
         }
         catch (Exception ex)
         {
@@ -442,7 +450,7 @@ public sealed class HomeViewModel : PageViewModel
     /// private sandboxed home passed through CODEX_HOME; the native Codex Account is launched with
     /// no override so it keeps using the real ~/.codex untouched.
     /// </summary>
-    private Task LaunchCodexAsync(bool desktop, string? codexHome)
+    private async Task<bool> LaunchCodexAsync(bool desktop, string? codexHome)
     {
         if (desktop)
         {
@@ -461,7 +469,7 @@ public sealed class HomeViewModel : PageViewModel
                 // best-effort
             }
 
-            return Task.CompletedTask;
+            return true;
         }
 
         // Codex CLI
@@ -471,7 +479,7 @@ public sealed class HomeViewModel : PageViewModel
 
         if (!Directory.Exists(binRoot))
         {
-            return Task.CompletedTask;
+            return false;
         }
 
         var codexPath = Directory.GetDirectories(binRoot)
@@ -503,7 +511,7 @@ public sealed class HomeViewModel : PageViewModel
                 // Best-effort notification only; never throw from a launch helper.
             }
 
-            return Task.CompletedTask;
+            return false;
         }
 
         try
@@ -523,13 +531,14 @@ public sealed class HomeViewModel : PageViewModel
             }
 
             Process.Start(startInfo);
+            return true;
         }
         catch
         {
             // Launching Codex is best-effort; never fail activation on this.
         }
 
-        return Task.CompletedTask;
+        return false;
     }
 
     private ProviderCard? _selectedCard;

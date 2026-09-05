@@ -47,7 +47,7 @@
                                TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}"
                                Margin="0,7,0,12" LineHeight="20" />
 
-                    <!-- Each application tab has its own screenshot and legend. -->
+                    <!-- Each application tab has its own screenshot and its own numbered legend. -->
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab1Title}" Style="{StaticResource SectionLabel}" />
                     <Image Source="Assets/guide-tab1-choose-provider.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab1Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />

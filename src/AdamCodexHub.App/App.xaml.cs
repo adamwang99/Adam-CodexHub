@@ -264,6 +264,9 @@ public partial class App : Application
             Text = "Adam CodexHub",
             Icon = _trayIconImage,
             ContextMenuStrip = menu,
+            BalloonTipTitle = L10n.T("L10n_Tray_NotificationTitle"),
+            BalloonTipText = L10n.T("L10n_Tray_CodexLaunched"),
+            BalloonTipIcon = WinForms.ToolTipIcon.Info,
             Visible = true
         };
         _trayIcon.DoubleClick += (_, _) => ShowMainWindow(window);
@@ -290,8 +293,19 @@ public partial class App : Application
         _trayIconImage = null;
     }
 
+    public void NotifyCodexLaunched()
+    {
+        if (_trayIcon is not null)
+        {
+            _trayIcon.BalloonTipTitle = L10n.T("L10n_Tray_NotificationTitle");
+            _trayIcon.BalloonTipText = L10n.T("L10n_Tray_CodexLaunched");
+            _trayIcon.ShowBalloonTip(15000);
+        }
+    }
+
     private static void ShowMainWindow(Window window)
     {
+        window.ShowInTaskbar = true;
         if (window.WindowState == WindowState.Minimized)
         {
             window.WindowState = WindowState.Normal;

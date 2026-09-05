@@ -13,6 +13,8 @@ public sealed class MainViewModel : ObservableObject
     private const int ProviderDisclosureVersion = 1;
 
     /// <summary>Short display version, e.g. "v1.0.2", read from the assembly.</summary>
+    public event EventHandler? CodexLaunched;
+
     public string AppVersion
     {
         get
@@ -29,6 +31,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly IAppSettingsService _settings;
     private readonly IUserDialogService _dialogs;
     private readonly SessionsViewModel _sessions;
+    private readonly HomeViewModel _home;
     private PageViewModel _currentPage;
     private ProviderProfile? _selectedProvider;
     private ModelDescriptor? _selectedModel;
@@ -69,6 +72,7 @@ public sealed class MainViewModel : ObservableObject
         _settings = appSettings;
         _dialogs = dialogs;
         _sessions = sessions;
+        _home = home;
 
         Pages = new ObservableCollection<PageViewModel>
         {
@@ -84,6 +88,7 @@ public sealed class MainViewModel : ObservableObject
         ActivateCommand = new AsyncRelayCommand(ActivateAsync);
         RefreshCommand = new AsyncRelayCommand(RefreshAsync);
 
+        _home.CodexLaunched += (_, _) => CodexLaunched?.Invoke(this, EventArgs.Empty);
         L10n.LanguageChanged += ReapplyTitleBarText;
     }
 

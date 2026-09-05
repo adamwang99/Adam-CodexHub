@@ -41,7 +41,7 @@ public sealed class UserDialogService : IUserDialogService
     public bool Confirm(string title, string message, string actionLabel)
     {
         var result = MessageBox.Show(
-            $"{message}\n\nConfirm action: {actionLabel}",
+            L10n.F("L10n_Msg_ConfirmBox", message, actionLabel),
             title,
             MessageBoxButton.OKCancel,
             MessageBoxImage.Warning,
@@ -71,7 +71,7 @@ public sealed class UserDialogService : IUserDialogService
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Choose provider logo",
+            Title = L10n.T("L10n_Dlg_PickLogoTitle"),
             Filter = "Images (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg|All files (*.*)|*.*",
             CheckFileExists = true,
             Multiselect = false
@@ -86,8 +86,8 @@ public sealed class UserDialogService : IUserDialogService
         if (!AllowedExtensions.Contains(extension))
         {
             MessageBox.Show(
-                "Only PNG, JPG and JPEG images are supported.",
-                "Unsupported image type",
+                L10n.T("L10n_Dlg_BadImage"),
+                L10n.T("L10n_Dlg_BadImageTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return null;
@@ -97,8 +97,8 @@ public sealed class UserDialogService : IUserDialogService
         if (info.Length > MaxLogoBytes)
         {
             MessageBox.Show(
-                "The selected image is too large. Choose an image under 512 KB.",
-                "Image too large",
+                L10n.T("L10n_Dlg_TooBig"),
+                L10n.T("L10n_Dlg_TooBigTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return null;

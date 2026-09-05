@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Navigation;
+using AdamCodexHub.App.Services;
 using AdamCodexHub.Core.Interfaces;
 
 namespace AdamCodexHub.App;
@@ -15,6 +17,22 @@ public partial class FirstRunAcknowledgementWindow : Window
     {
         InitializeComponent();
         _settings = settings;
+        L10n.LanguageChanged += UpdateLinkCaptions;
+        UpdateLinkCaptions();
+    }
+
+    /// <summary>Hyperlink captions are plain inlines, so they are re-set from L10n keys on demand.</summary>
+    private void UpdateLinkCaptions()
+    {
+        SetCaption(PrivacyLink, "L10n_FR_LinkPrivacy");
+        SetCaption(DisclaimerLink, "L10n_FR_LinkDisclaimer");
+        SetCaption(DisclosuresLink, "L10n_FR_LinkDisclosures");
+    }
+
+    private static void SetCaption(Hyperlink link, string key)
+    {
+        link.Inlines.Clear();
+        link.Inlines.Add(new Run(L10n.T(key)));
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
@@ -62,7 +80,7 @@ public partial class FirstRunAcknowledgementWindow : Window
         {
             MessageBox.Show(
                 ex.Message,
-                "Could not open legal notice",
+                Services.L10n.T("L10n_FR_OpenLinkError"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }

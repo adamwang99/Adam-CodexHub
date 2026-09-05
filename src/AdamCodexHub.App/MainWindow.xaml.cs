@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using AdamCodexHub.App.Services;
 using AdamCodexHub.App.ViewModels;
 
 namespace AdamCodexHub.App;
@@ -30,6 +31,19 @@ public partial class MainWindow : Window
         ViewModel = viewModel;
         DataContext = viewModel;
         SourceInitialized += OnSourceInitialized;
+    }
+
+    /// <summary>EN / VI segmented toggle in the title bar (checked = Vietnamese).
+    /// Handled via Checked/Unchecked (not Click) so any state change — mouse,
+    /// keyboard space, UI Automation Toggle — applies the language immediately.</summary>
+    private void LanguageToggle_Checked(object sender, RoutedEventArgs e)
+    {
+        App.ApplyLanguage(L10n.Vietnamese);
+    }
+
+    private void LanguageToggle_Unchecked(object sender, RoutedEventArgs e)
+    {
+        App.ApplyLanguage(L10n.English);
     }
 
     public MainViewModel ViewModel { get; }
@@ -180,7 +194,5 @@ public partial class MainWindow : Window
     }
 
     private void UpdateMaximizeGlyph() =>
-        MaximizeButton.Background = IsCustomMaximized
-            ? new SolidColorBrush(Color.FromRgb(0xC7, 0x7C, 0x2F))
-            : new SolidColorBrush(Color.FromRgb(0x28, 0xC8, 0x40));
+        MaximizeButton.Tag = IsCustomMaximized ? "restore" : "max";
 }

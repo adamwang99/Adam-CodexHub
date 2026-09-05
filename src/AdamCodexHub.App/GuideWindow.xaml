@@ -1,7 +1,8 @@
 <Window x:Class="AdamCodexHub.App.GuideWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Adam CodexHub — Usage Guide"
+        xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
+        Title="{DynamicResource L10n_Guide_WindowTitle}"
         Style="{StaticResource AppWindow}"
         Width="980"
         Height="760"
@@ -26,9 +27,9 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="Adam CodexHub — Usage Guide" FontSize="22" FontWeight="Bold"
+                    <TextBlock Text="{DynamicResource L10n_Guide_WindowTitle}" FontSize="22" FontWeight="Bold"
                                Foreground="{StaticResource BrushCream}" />
-                    <TextBlock Text="Every screen, step by step. Architecture diagram included."
+                    <TextBlock Text="{DynamicResource L10n_Guide_Subtitle}"
                                Foreground="{StaticResource BrushMuted}" FontSize="12" Margin="0,3,0,0" />
                 </StackPanel>
                 <Button Grid.Column="1" Content="✕" Click="Close_Click"
@@ -40,80 +41,143 @@
                 <StackPanel>
 
                     <!-- How it works in one picture -->
-                    <TextBlock Text="1 · HOW ADAM CODEXHUB FITS TOGETHER"
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec1}"
                                Style="{StaticResource SectionLabel}" />
-                    <TextBlock Text="The diagram below is generated from the repository itself: the WPF app and CLI talk to a clean Core; Providers wrap each AI service; Codex writes your config.toml safely; and a loopback Gateway lets Codex Desktop/CLI reach your chosen provider — keys never leave the machine in plaintext."
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec1Body}"
                                TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}"
                                Margin="0,7,0,12" LineHeight="20" />
 
+                    <!-- Architecture diagram: fit-width by default, zoomable + pannable -->
                     <Border CornerRadius="14" Padding="10" Background="#0AFFFFFF"
                             BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1" Margin="0,0,0,20">
-                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                            <Image Source="Assets/adam-codexhub-architecture.png"
-                                   Stretch="Uniform" Margin="4" />
-                        </ScrollViewer>
+                        <Grid>
+                            <ScrollViewer x:Name="DiagramScroller"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          PreviewMouseWheel="Diagram_PreviewMouseWheel">
+                                <Grid x:Name="DiagramHost"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Top"
+                                      Cursor="SizeAll"
+                                      MouseLeftButtonDown="Diagram_MouseLeftButtonDown"
+                                      MouseMove="Diagram_MouseMove"
+                                      MouseLeftButtonUp="Diagram_MouseLeftButtonUp"
+                                      MouseLeave="Diagram_MouseLeave">
+                                    <Image x:Name="ArchImage"
+                                           Source="Assets/adam-codexhub-architecture.png"
+                                           Stretch="Fill"
+                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                           Margin="2" />
+                                </Grid>
+                            </ScrollViewer>
+
+                            <!-- Zoom toolbar -->
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Margin="0,4,4,0">
+                                <Button Content="−"
+                                        Height="26" MinHeight="0" Padding="10,0" Margin="0,0,6,0"
+                                        FontSize="15"
+                                        Click="ZoomOut_Click"
+                                        ToolTip="{DynamicResource L10n_Guide_ZoomOutTip}"
+                                        automation:AutomationProperties.Name="Zoom out" />
+                                <Button Content="+"
+                                        Height="26" MinHeight="0" Padding="10,0" Margin="0,0,6,0"
+                                        FontSize="15"
+                                        Click="ZoomIn_Click"
+                                        ToolTip="{DynamicResource L10n_Guide_ZoomInTip}"
+                                        automation:AutomationProperties.Name="Zoom in" />
+                                <Button Content="1:1"
+                                        Height="26" MinHeight="0" Padding="10,0" Margin="0,0,6,0"
+                                        FontSize="12"
+                                        Click="ZoomReset_Click"
+                                        ToolTip="{DynamicResource L10n_Guide_ResetTip}"
+                                        automation:AutomationProperties.Name="Reset zoom to 100 percent" />
+                                <Button Content="{DynamicResource L10n_Guide_FitLabel}"
+                                        Height="26" MinHeight="0" Padding="10,0"
+                                        FontSize="12"
+                                        Click="ZoomFit_Click"
+                                        ToolTip="{DynamicResource L10n_Guide_FitTip}"
+                                        automation:AutomationProperties.Name="Fit diagram to window width" />
+                            </StackPanel>
+
+                            <!-- Current zoom percentage -->
+                            <TextBlock x:Name="ZoomLabel"
+                                       Text="100%"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Bottom"
+                                       Margin="0,0,6,4"
+                                       Foreground="{StaticResource BrushMuted}"
+                                       FontSize="11" />
+                        </Grid>
                     </Border>
 
                     <Border Height="1" Background="{StaticResource BrushHairlineSoft}" Margin="0,0,0,18" />
 
                     <!-- Step-by-step -->
-                    <TextBlock Text="2 · CHOOSE PROVIDER (HOME)"
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec2}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushCream}" Margin="0,8,0,4" LineHeight="21">
-                        <Run FontWeight="SemiBold">Pick the provider you want to use with Codex.</Run> Each provider shows its logo, health (Healthy / Warning / Unknown), the number of enabled models and its key status.
+                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Sec2Lead}" />
+                        <Run Text="{DynamicResource L10n_Guide_Sec2Rest}" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,0,0,16" LineHeight="21">
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Add an API key</Run> if the provider has none — keys are encrypted with Windows DPAPI.<LineBreak/>
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Double-click a provider</Run> to activate it with Codex (opens Desktop or CLI depending on the W / CLI badge).<LineBreak/>
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Codex Account</Run> restores the original sign-in — your keys and models are kept.<LineBreak/>
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Show all providers</Run> toggles between providers you have configured and every built-in preset.
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_1Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_1Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_2Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_2Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_3Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_3Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_4Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_4Rest}" />
                     </TextBlock>
 
-                    <TextBlock Text="3 · PROVIDERS"
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec3}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">New / Refresh</Run> manage the provider list.<LineBreak/>
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Status column</Run> — Unknown means the provider has not been health-checked yet; add a key and test to refresh it.<LineBreak/>
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Choose logo</Run> picks a custom avatar for a provider (PNG/JPG up to 512 KB).
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_1Lead}" /><Run Text="{DynamicResource L10n_Guide_B3_1Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_2Lead}" /><Run Text="{DynamicResource L10n_Guide_B3_2Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_3Lead}" /><Run Text="{DynamicResource L10n_Guide_B3_3Rest}" />
                     </TextBlock>
 
-                    <TextBlock Text="4 · MODELS"
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec4}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Scan models</Run> discovers what the provider exposes.<LineBreak/>
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Test a model</Run> opens a live progress window — streaming, tool calling and structured JSON are probed in real time with the parameters each probe returned.<LineBreak/>
-                        • <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">Enable / Disable</Run> decides what Codex may actually use. Only verified models should be enabled.
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_1Lead}" /><Run Text="{DynamicResource L10n_Guide_B4_1Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_2Lead}" /><Run Text="{DynamicResource L10n_Guide_B4_2Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_3Lead}" /><Run Text="{DynamicResource L10n_Guide_B4_3Rest}" />
                     </TextBlock>
 
-                    <TextBlock Text="5 · SESSIONS"
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec5}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        Prepare a <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">provider-safe project handoff</Run>: point at a project directory, pick the target provider, and generate a continuation instruction — without editing Codex's internal session database.
+                        <Run Text="{DynamicResource L10n_Guide_S5Prefix}" />
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_S5Lead}" />
+                        <Run Text="{DynamicResource L10n_Guide_S5Rest}" />
                     </TextBlock>
 
-                    <TextBlock Text="6 · DIAGNOSTICS"
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec6}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        Check the <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}">local gateway</Run> and config recovery status: is the loopback proxy listening, is the token valid, were there rollbacks?
+                        <Run Text="{DynamicResource L10n_Guide_S6Prefix}" />
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_S6Lead}" />
+                        <Run Text="{DynamicResource L10n_Guide_S6Rest}" />
                     </TextBlock>
 
-                    <TextBlock Text="7 · SETTINGS"
+                    <TextBlock Text="{DynamicResource L10n_Guide_Sec7}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,4" LineHeight="21">
-                        Global preferences for how the hub behaves.
+                        <Run Text="{DynamicResource L10n_Guide_S7Body}" />
                     </TextBlock>
 
                     <!-- Tips -->
                     <Border CornerRadius="12" Padding="16,13" Background="#14D89B2B"
                             BorderBrush="#59D89B2B" BorderThickness="1" Margin="0,14,0,0">
                         <StackPanel>
-                            <TextBlock Text="QUICK TIPS" Foreground="{StaticResource BrushGold}"
+                            <TextBlock Text="{DynamicResource L10n_Guide_TipsTitle}" Foreground="{StaticResource BrushGold}"
                                        FontWeight="Bold" FontSize="12" />
                             <TextBlock TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" Margin="0,6,0,0" LineHeight="20">
-                                1. A provider can stay at <Run FontWeight="SemiBold">Unknown</Run> until you test a key or run a model probe — that is normal.<LineBreak/>
-                                2. When a key hits a 429 or quota limit, the hub fails over to the next healthy key in that provider's pool (max 3 attempts).<LineBreak/>
-                                3. Every config change is backed up first — if anything breaks, Codex Account mode restores your original configuration.<LineBreak/>
-                                4. Free forever. You only pay your AI providers directly, never the hub.
+                                <Run FontWeight="SemiBold" Text="1. " /><Run Text="{DynamicResource L10n_Guide_Tip1}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="2. " /><Run Text="{DynamicResource L10n_Guide_Tip2}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="3. " /><Run Text="{DynamicResource L10n_Guide_Tip3}" /><LineBreak />
+                                <Run FontWeight="SemiBold" Text="4. " /><Run Text="{DynamicResource L10n_Guide_Tip4}" />
                             </TextBlock>
                         </StackPanel>
                     </Border>

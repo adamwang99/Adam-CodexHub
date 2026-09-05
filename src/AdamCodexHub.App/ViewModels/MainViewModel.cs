@@ -27,6 +27,10 @@ public sealed class MainViewModel : ObservableObject
     private string _errorMessage = string.Empty;
     private bool _isBusy;
 
+    // Cache used to re-localize title-bar text instantly when the UI language switches.
+    private bool _noProviderShown;
+    private string? _modelFallbackKey;
+
     public MainViewModel(
         IProviderManager providerManager,
         IModelStore modelStore,
@@ -40,6 +44,12 @@ public sealed class MainViewModel : ObservableObject
         DiagnosticsViewModel diagnostics,
         SettingsViewModel settings)
     {
+        // Startup placeholders already reflect the persisted UI language (the async refresh
+        // that replaces them runs right after the main window appears).
+        _activeProvider = L10n.T("L10n_Main_Loading");
+        _gatewayStatus = L10n.T("L10n_Main_GatewayStopped");
+        _modelFallbackKey = null;
+        _noProviderShown = false;
         _providerManager = providerManager;
         _modelStore = modelStore;
         _activation = activation;
@@ -61,6 +71,24 @@ public sealed class MainViewModel : ObservableObject
         NavigateCommand = new AsyncRelayCommand(NavigateAsync);
         ActivateCommand = new AsyncRelayCommand(ActivateAsync);
         RefreshCommand = new AsyncRelayCommand(RefreshAsync);
+
+        L10n.LanguageChanged += ReapplyTitleBarText;
+    }
+
+    /// <summary>Re-localizes the fallback title-bar labels (no provider / no model / gateway).</summary>
+    private void ReapplyTitleBarText()
+    {
+        if (_noProviderShown)
+        {
+            ActiveProvider = L10n.T("L10n_Main_NoProvider");
+        }
+
+        if (_modelFallbackKey is not null)
+        {
+            ActiveModel = L10n.T(_modelFallbackKey);
+        }
+
+        ApplyGatewayStatus();
     }
 
     public ObservableCollection<PageViewModel> Pages { get; }
@@ -173,26 +201,43 @@ public sealed class MainViewModel : ObservableObject
                            Providers.FirstOrDefault();
         await LoadModelsAsync(SelectedProvider);
 
-        ActiveProvider = active?.Name ?? "No provider";
+        _noProviderShown = active is null;
+        ActiveProvider = active?.Name ?? L10n.T("L10n_Main_NoProvider");
         if (active is null || active.Id == "codex-account")
         {
-            ActiveModel = "Codex managed";
+            _modelFallbackKey = "L10n_Main_CodexManaged";
+            ActiveModel = L10n.T(_modelFallbackKey);
         }
         else
         {
             var activeModels = await _modelStore.GetAllAsync(active.Id);
-            ActiveModel = activeModels.FirstOrDefault(x => x.Enabled)?.DisplayName ?? "No enabled model";
+            var enabled = activeModels.FirstOrDefault(x => x.Enabled);
+            if (enabled is null)
+            {
+                _modelFallbackKey = "L10n_Main_NoEnabledModel";
+                ActiveModel = L10n.T(_modelFallbackKey);
+            }
+            else
+            {
+                _modelFallbackKey = null;
+                ActiveModel = enabled.DisplayName;
+            }
         }
 
+        ApplyGatewayStatus();
+    }
+
+    private void ApplyGatewayStatus()
+    {
         GatewayStatus = _gateway.IsRunning
-            ? $"Gateway :{_gateway.Port}"
-            : "Gateway stopped";
+            ? L10n.F("L10n_Main_GatewayPort", _gateway.Port)
+            : L10n.T("L10n_Main_GatewayStopped");
     }
 
     private Task ActivateAsync() => RunAsync(async () =>
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
 
         if (UsesRemoteEndpoint(provider) &&
             !await _settings.HasAcknowledgedProviderDisclosureAsync(
@@ -200,12 +245,12 @@ public sealed class MainViewModel : ObservableObject
                 ProviderDisclosureVersion))
         {
             var confirmed = _dialogs.Confirm(
-                "Remote provider data and cost notice",
-                $"Using {provider.Name} may send prompts, source code, files, outputs and metadata to that provider. Compatibility tests, retries and failover make real API requests and may incur charges. The provider's terms, privacy policy, retention rules and regional restrictions apply.",
-                $"Continue with {provider.Name}");
+                L10n.T("L10n_Msg_RemoteTitle"),
+                L10n.F("L10n_Msg_DisclosureBody", provider.Name),
+                L10n.F("L10n_Msg_ContinueAction", provider.Name));
             if (!confirmed)
             {
-                OperationMessage = "Provider activation canceled.";
+                OperationMessage = L10n.T("L10n_Msg_ActivationCanceled");
                 return;
             }
 
@@ -219,12 +264,12 @@ public sealed class MainViewModel : ObservableObject
             provider.Id == "codex-account" ? null : SelectedModel?.RemoteId,
             _sessions.ProjectPath);
 
+        _noProviderShown = false;
         ActiveProvider = result.Provider.Name;
-        ActiveModel = result.Model?.DisplayName ?? "Codex managed";
+        _modelFallbackKey = result.Model is null ? "L10n_Main_CodexManaged" : null;
+        ActiveModel = result.Model?.DisplayName ?? L10n.T("L10n_Main_CodexManaged");
         OperationMessage = result.Message;
-        GatewayStatus = _gateway.IsRunning
-            ? $"Gateway :{_gateway.Port}"
-            : "Gateway stopped";
+        ApplyGatewayStatus();
 
         if (result.SessionPlan is not null)
         {

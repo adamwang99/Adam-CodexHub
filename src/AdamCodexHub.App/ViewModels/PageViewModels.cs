@@ -18,14 +18,33 @@ public abstract class PageViewModel : ObservableObject
     private string _statusMessage = string.Empty;
     private string _errorMessage = string.Empty;
 
-    protected PageViewModel(string title, string subtitle)
+    protected PageViewModel(string titleKey, string subtitleKey)
     {
-        Title = title;
-        Subtitle = subtitle;
+        TitleKey = titleKey;
+        SubtitleKey = subtitleKey;
+        // Page VMs are app-lifetime singletons; the subscription lives for the whole app.
+        L10n.LanguageChanged += NotifyLanguageChanged;
     }
 
-    public string Title { get; }
-    public string Subtitle { get; }
+    public string TitleKey { get; }
+    public string SubtitleKey { get; }
+
+    /// <summary>Localized page title, refreshed live when the UI language changes.</summary>
+    public string Title => L10n.T(TitleKey);
+
+    /// <summary>Localized page subtitle, refreshed live when the UI language changes.</summary>
+    public string Subtitle => L10n.T(SubtitleKey);
+
+    /// <summary>
+    /// Raised on every language switch: re-raise the localized properties this page owns.
+    /// Transient status/error messages keep the text they were composed with until the next
+    /// operation refreshes them; steady-state labels are re-composed here.
+    /// </summary>
+    protected virtual void NotifyLanguageChanged()
+    {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(Subtitle));
+    }
 
     private bool _isSelected;
     /// <summary>True while this page is the one shown in the main window (drives the nav pill).</summary>
@@ -71,7 +90,7 @@ public abstract class PageViewModel : ObservableObject
         }
         catch (OperationCanceledException)
         {
-            StatusMessage = "Operation cancelled.";
+            StatusMessage = L10n.T("L10n_Msg_Cancelled");
         }
         catch (Exception ex)
         {
@@ -116,7 +135,7 @@ public sealed class HomeViewModel : PageViewModel
         IAppSettingsService settings,
         IUserDialogService dialogs,
         AppPaths paths)
-        : base("Choose Provider", "Select an AI provider, then activate it to start coding with Codex.")
+        : base("L10n_Home_Title", "L10n_Home_Subtitle")
     {
         _providers = providers;
         _models = models;
@@ -131,7 +150,24 @@ public sealed class HomeViewModel : PageViewModel
         ActivateCommand = new AsyncRelayCommand(ActivateAsync);
         DoubleClickCommand = new AsyncRelayCommand(p => DoubleClickAsync(p as ProviderCard));
         RestoreAccountCommand = new AsyncRelayCommand(RestoreAccountAsync);
+
+        // Re-localize every card's computed text (READY/SETUP badge, key label, tooltips, model count).
+        L10n.LanguageChanged += () =>
+        {
+            foreach (var card in Providers)
+            {
+                card.NotifyLocalizedText();
+            }
+
+            UpdateShowAllTooltip();
+        };
     }
+
+    /// <summary>Tooltip of the "Show all providers" switch, depends on the current toggle state.</summary>
+    public string ShowAllTooltip => L10n.T(
+        ShowAllProviders ? "L10n_Home_ShowAllOnTip" : "L10n_Home_ShowAllOffTip");
+
+    private void UpdateShowAllTooltip() => OnPropertyChanged(nameof(ShowAllTooltip));
 
     public ObservableCollection<ProviderCard> Providers { get; } = new();
 
@@ -145,17 +181,10 @@ public sealed class HomeViewModel : PageViewModel
         {
             if (SetProperty(ref _showAllProviders, value))
             {
+                UpdateShowAllTooltip();
                 _ = RunAsync(RefreshCoreAsync);
             }
         }
-    }
-
-    /// <summary>Launch the Codex Desktop app (instead of CLI) when restoring the Codex Account.</summary>
-    private bool _useDesktopForAccount;
-    public bool UseDesktopForAccount
-    {
-        get => _useDesktopForAccount;
-        set => SetProperty(ref _useDesktopForAccount, value);
     }
 
     public ICommand RefreshCommand { get; }
@@ -246,7 +275,7 @@ public sealed class HomeViewModel : PageViewModel
                        Providers.FirstOrDefault();
 
         OnPropertyChanged(nameof(HasProviders));
-        StatusMessage = $"{Providers.Count} provider(s) shown · Updated {DateTime.Now:t}.";
+        StatusMessage = L10n.F("L10n_Home_StatusShown", Providers.Count, DateTime.Now);
     }
 
     private async Task ActivateAsync()
@@ -261,8 +290,8 @@ public sealed class HomeViewModel : PageViewModel
             if (!SelectedCard.IsValid)
             {
                 StatusMessage = SelectedCard.Id == "codex-account"
-                    ? "Codex Account is ready to activate."
-                    : $"{SelectedCard.Name} is not ready. Add a valid API key and enable a verified model first.";
+                    ? L10n.T("L10n_Home_ReadyToActivate")
+                    : L10n.F("L10n_Home_NotReady", SelectedCard.Name);
                 return;
             }
 
@@ -272,7 +301,7 @@ public sealed class HomeViewModel : PageViewModel
                     .FirstOrDefault(x => x.Enabled && x.State == ModelLifecycleState.Enabled);
                 if (enabledModel is null)
                 {
-                    StatusMessage = $"No enabled model for {SelectedCard.Name}. Open Models, scan and enable one first.";
+                    StatusMessage = L10n.F("L10n_Home_NoEnabledModel", SelectedCard.Name);
                     return;
                 }
 
@@ -285,12 +314,12 @@ public sealed class HomeViewModel : PageViewModel
                     ProviderDisclosureVersion))
             {
                 var confirmed = _dialogs.Confirm(
-                    "Remote provider data and cost notice",
-                    $"Using {SelectedCard.Name} may send prompts, source code, files, outputs and metadata to that provider. Compatibility tests, retries and failover make real API requests and may incur charges. The provider's terms, privacy policy, retention rules and regional restrictions apply.",
-                    $"Continue with {SelectedCard.Name}");
+                    L10n.T("L10n_Msg_RemoteTitle"),
+                    L10n.F("L10n_Msg_DisclosureBody", SelectedCard.Name),
+                    L10n.F("L10n_Msg_ContinueAction", SelectedCard.Name));
                 if (!confirmed)
                 {
-                    StatusMessage = "Provider activation canceled.";
+                    StatusMessage = L10n.T("L10n_Msg_ActivationCanceled");
                     return;
                 }
 
@@ -305,12 +334,12 @@ public sealed class HomeViewModel : PageViewModel
 
             await RefreshCoreAsync();
             StatusMessage = SelectedCard is null
-                ? "Activation completed."
-                : $"Activated {SelectedCard.Name}.";
+                ? L10n.T("L10n_Home_ActivationDone")
+                : L10n.F("L10n_Home_Activated", SelectedCard.Name);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Activation failed: {ex.Message}";
+            StatusMessage = L10n.F("L10n_Home_ActivationFailed", ex.Message);
             LogError("Activate failed", ex);
         }
     }
@@ -330,17 +359,18 @@ public sealed class HomeViewModel : PageViewModel
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Activation failed: {ex.Message}";
+            StatusMessage = L10n.F("L10n_Home_ActivationFailed", ex.Message);
             LogError("DoubleClick activate failed", ex);
             return;
         }
 
         // Only launch Codex when activation actually succeeded (no early return/error).
-        if (StatusMessage == $"Activated {card.Name}.")
+        if (StatusMessage == L10n.F("L10n_Home_Activated", card.Name))
         {
-            var launchDesktop = card.Id == "codex-account"
-                ? UseDesktopForAccount
-                : card.Target == CodexTarget.Windows;
+            // Codex Account always opens the Desktop app; keyed providers open Desktop or CLI
+            // depending on the card's target badge.
+            var launchDesktop = card.Id == "codex-account" ||
+                                card.Target == CodexTarget.Windows;
 
             // Managed providers use a private sandboxed Codex home; the native Codex Account
             // keeps the real ~/.codex (no CODEX_HOME override).
@@ -374,12 +404,12 @@ public sealed class HomeViewModel : PageViewModel
         {
             await _activation.ActivateAsync("codex-account", null);
             await RefreshCoreAsync();
-            StatusMessage = "Codex Account restored. Per-provider API keys and models are preserved.";
-            await LaunchCodexAsync(UseDesktopForAccount, codexHome: null);
+            StatusMessage = L10n.T("L10n_Home_AccountRestored");
+            await LaunchCodexAsync(desktop: true, codexHome: null);
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Could not restore Codex Account: {ex.Message}";
+            StatusMessage = L10n.F("L10n_Home_RestoreFailed", ex.Message);
             LogError("Restore account failed", ex);
         }
     }
@@ -537,7 +567,9 @@ public sealed class ProviderCard : ObservableObject
     public bool IsValid =>
         Id == "codex-account" || (HasUsableKey && EnabledModelCount > 0);
 
-    public string StatusLabel => IsValid ? "READY" : "SETUP";
+    public string StatusLabel => IsValid
+        ? L10n.T("L10n_Card_Ready")
+        : L10n.T("L10n_Card_Setup");
 
     /// <summary>Small corner badge: "W" for Windows Desktop, "CLI" for the terminal.</summary>
     public string TargetLabel => Target == CodexTarget.Cli ? "CLI" : "W";
@@ -545,8 +577,11 @@ public sealed class ProviderCard : ObservableObject
     /// <summary>Hover explanation for the W/CLI corner badge.</summary>
     public string TargetTooltip =>
         Target == CodexTarget.Cli
-            ? "CLI — activates this provider for Codex running in the terminal."
-            : "Windows — activates this provider for the Codex Desktop app.";
+            ? L10n.T("L10n_Card_Tip_Cli")
+            : L10n.T("L10n_Card_Tip_Win");
+
+    /// <summary>Enabled-model counter line under the logo (localized "{0} model(s)").</summary>
+    public string EnabledModelLabel => L10n.F("L10n_Card_ModelCount", EnabledModelCount);
 
     /// <summary>Two-letter abbreviation shown when the provider has no logo image.</summary>
     public string Initials
@@ -575,16 +610,31 @@ public sealed class ProviderCard : ObservableObject
     /// <summary>URI of the logo image (bundled pack URI or a user-provided file).</summary>
     public string LogoSource { get; init; } = string.Empty;
 
-    public string KeyLabel => HasUsableKey ? "API key ✓" : "API key needed";
+    public string KeyLabel => HasUsableKey
+        ? L10n.T("L10n_Card_KeyPresent")
+        : L10n.T("L10n_Card_KeyNeeded");
 
     public string TooltipDescription =>
         Id == "codex-account"
-            ? "Uses your native Codex sign-in. Double-click to restore the default Codex account."
+            ? L10n.T("L10n_Card_Desc_Account")
             : HasUsableKey && EnabledModelCount > 0
                 ? Target == CodexTarget.Cli
-                    ? "Ready to use with Codex CLI (terminal). Double-click to activate and launch the terminal."
-                    : "Ready to use with Codex Desktop (Windows). Double-click to activate and open the desktop app."
-                : "Needs a valid API key and an enabled model before it can be activated.";
+                    ? L10n.T("L10n_Card_Desc_CliReady")
+                    : L10n.T("L10n_Card_Desc_WinReady")
+                : L10n.T("L10n_Card_Desc_SetupNeeded");
+
+    /// <summary>
+    /// Re-raises every language-sensitive computed property so bound cards repaint after a
+    /// UI-language switch (invoked by HomeViewModel when L10n.LanguageChanged fires).
+    /// </summary>
+    public void NotifyLocalizedText()
+    {
+        OnPropertyChanged(nameof(StatusLabel));
+        OnPropertyChanged(nameof(TargetTooltip));
+        OnPropertyChanged(nameof(EnabledModelLabel));
+        OnPropertyChanged(nameof(KeyLabel));
+        OnPropertyChanged(nameof(TooltipDescription));
+    }
 }
 
 public enum CodexTarget
@@ -620,7 +670,7 @@ public sealed class ProviderSetupViewModel : PageViewModel
         ICompatibilityService compatibility,
         IModelStore models,
         IUserDialogService dialogs)
-        : base("Providers", "Configure a provider: profile, API keys and verified models in one place.")
+        : base("L10n_Setup_Title", "L10n_Setup_Subtitle")
     {
         _providers = providers;
         _keys = keys;
@@ -734,7 +784,7 @@ public sealed class ProviderSetupViewModel : PageViewModel
 
         SelectedProvider = Providers.FirstOrDefault(x => x.Id == selectedId) ?? Providers.FirstOrDefault();
         await Task.WhenAll(LoadKeysAsync(), LoadModelsAsync());
-        StatusMessage = $"{Providers.Count} provider(s). Select one to configure.";
+        StatusMessage = L10n.F("L10n_Setup_CountMsg", Providers.Count);
     }
 
     private readonly Dictionary<string, (bool HasKey, int ModelCount)> _providerRank = new(StringComparer.OrdinalIgnoreCase);
@@ -778,35 +828,35 @@ public sealed class ProviderSetupViewModel : PageViewModel
 
         await LoadAsync();
         SelectedProvider = Providers.First(x => x.Id == ProviderId.Trim().ToLowerInvariant());
-        StatusMessage = $"Provider '{SelectedProvider.Name}' saved.";
+        StatusMessage = L10n.F("L10n_Setup_SavedMsg", SelectedProvider.Name);
     }
 
     private async Task ToggleProviderCoreAsync()
     {
         var selected = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         await _providers.SetEnabledAsync(selected.Id, !selected.Enabled);
         await LoadAsync();
         StatusMessage = selected.Enabled
-            ? $"Provider '{selected.Name}' disabled."
-            : $"Provider '{selected.Name}' enabled.";
+            ? L10n.F("L10n_Setup_ProviderDisabledMsg", selected.Name)
+            : L10n.F("L10n_Setup_ProviderEnabledMsg", selected.Name);
     }
 
     private async Task DeleteProviderCoreAsync()
     {
         var selected = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         if (!_dialogs.Confirm(
-                "Delete provider",
-                $"Delete custom provider '{selected.Name}'? API keys should be removed separately.",
-                $"Delete {selected.Name}"))
+                L10n.T("L10n_Setup_DeleteTitle"),
+                L10n.F("L10n_Setup_DeleteBody", selected.Name),
+                L10n.F("L10n_Setup_DeleteAction", selected.Name)))
         {
             return;
         }
 
         await _providers.DeleteAsync(selected.Id);
         await LoadAsync();
-        StatusMessage = $"Provider '{selected.Name}' deleted.";
+        StatusMessage = L10n.F("L10n_Setup_DeletedMsg", selected.Name);
     }
 
     private void ClearEditor()
@@ -816,22 +866,22 @@ public sealed class ProviderSetupViewModel : PageViewModel
         ProviderName = string.Empty;
         BaseUrl = string.Empty;
         Adapter = "openai-compatible";
-        StatusMessage = "Enter a custom provider profile.";
+        StatusMessage = L10n.T("L10n_Setup_NewProfileMsg");
     }
 
     private async Task ChooseLogoCoreAsync()
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
 
         var saved = _dialogs.PickProviderLogo(provider.Id);
         if (saved is null)
         {
-            StatusMessage = "Logo selection canceled.";
+            StatusMessage = L10n.T("L10n_Setup_LogoCanceled");
             return;
         }
 
-        StatusMessage = $"Logo updated for '{provider.Name}'. The provider card will refresh on the Choose Provider page.";
+        StatusMessage = L10n.F("L10n_Setup_LogoUpdated", provider.Name);
     }
 
     // ---- API keys ------------------------------------------------------------
@@ -851,25 +901,25 @@ public sealed class ProviderSetupViewModel : PageViewModel
     private async Task AddKeyCoreAsync()
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         if (string.IsNullOrWhiteSpace(NewKey))
         {
-            StatusMessage = "Paste an API key to add.";
+            StatusMessage = L10n.T("L10n_Setup_NeedPaste");
             return;
         }
 
         await _keys.AddAsync(provider.Id, "default", NewKey.Trim());
         NewKey = string.Empty;
         await LoadKeysAsync();
-        StatusMessage = $"API key encrypted and stored for '{provider.Name}'.";
+        StatusMessage = L10n.F("L10n_Setup_KeyStored", provider.Name);
     }
 
     private async Task TestKeyCoreAsync()
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         var key = SelectedKey
-            ?? throw new InvalidOperationException("Select an API key first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_SelectKeyFirst"));
         var result = await _tester.TestAsync(provider.Id, key.Id);
         await LoadKeysAsync();
         StatusMessage = result.Summary;
@@ -878,11 +928,11 @@ public sealed class ProviderSetupViewModel : PageViewModel
     private async Task TestAllKeysCoreAsync()
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         var keys = Keys.ToArray();
         if (keys.Length == 0)
         {
-            StatusMessage = $"No API keys for {provider.Name}. Add one first.";
+            StatusMessage = L10n.F("L10n_Setup_NoKeys", provider.Name);
             return;
         }
 
@@ -903,17 +953,17 @@ public sealed class ProviderSetupViewModel : PageViewModel
         }
 
         await LoadKeysAsync();
-        StatusMessage = $"{provider.Name}: {ok} valid, {fail} failed of {keys.Length} key(s).";
+        StatusMessage = L10n.F("L10n_Setup_KeySummary", provider.Name, ok, fail, keys.Length);
         if (notes.Count > 0 && fail > 0)
         {
-            StatusMessage += $" Next: {notes[0]}";
+            StatusMessage += " " + L10n.F("L10n_Setup_NextNote", notes[0]);
         }
     }
 
     private async Task ToggleKeyCoreAsync()
     {
         var key = SelectedKey
-            ?? throw new InvalidOperationException("Select an API key first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_SelectKeyFirst"));
         await _keys.SetEnabledAsync(key.Id, !key.Enabled);
         await LoadKeysAsync();
     }
@@ -921,9 +971,9 @@ public sealed class ProviderSetupViewModel : PageViewModel
     private async Task MoveKeyCoreAsync(int offset)
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         var key = SelectedKey
-            ?? throw new InvalidOperationException("Select an API key first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_SelectKeyFirst"));
         var ordered = Keys.Select(x => x.Id).ToList();
         var current = ordered.IndexOf(key.Id);
         var target = current + offset;
@@ -941,18 +991,18 @@ public sealed class ProviderSetupViewModel : PageViewModel
     private async Task DeleteKeyCoreAsync()
     {
         var key = SelectedKey
-            ?? throw new InvalidOperationException("Select an API key first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_SelectKeyFirst"));
         if (!_dialogs.Confirm(
-                "Delete API key",
-                $"Delete '{key.Label}' and its protected secret?",
-                $"Delete {key.Label}"))
+                L10n.T("L10n_Setup_DeleteKeyTitle"),
+                L10n.F("L10n_Setup_DeleteKeyBody", key.Label),
+                L10n.F("L10n_Setup_DeleteKeyAction", key.Label)))
         {
             return;
         }
 
         await _keys.DeleteAsync(key.Id);
         await LoadKeysAsync();
-        StatusMessage = $"API key '{key.Label}' deleted.";
+        StatusMessage = L10n.F("L10n_Setup_KeyDeletedMsg", key.Label);
     }
 
     // ---- Models --------------------------------------------------------------
@@ -972,29 +1022,29 @@ public sealed class ProviderSetupViewModel : PageViewModel
     private async Task ScanModelsCoreAsync()
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         try
         {
             await _discovery.ScanAsync(provider.Id);
             await LoadModelsAsync();
-            StatusMessage = $"Model catalog refreshed for {provider.Name}. New models remain disabled.";
+            StatusMessage = L10n.F("L10n_Setup_Scanned", provider.Name);
         }
         catch (Exception ex)
         {
             StatusMessage = ex.Message.Contains("401", StringComparison.OrdinalIgnoreCase)
-                ? "Unauthorized (401). The stored API key may be invalid or expired. Use 'Test selected' / 'Test all keys' to verify, then update the key."
-                : $"Scan failed for {provider.Name}: {ex.Message}";
+                ? L10n.T("L10n_Setup_Unauthorized")
+                : L10n.F("L10n_Setup_ScanFailed", provider.Name, ex.Message);
         }
     }
 
     private async Task TestAllModelsCoreAsync()
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         var models = Models.ToArray();
         if (models.Length == 0)
         {
-            StatusMessage = $"No models for {provider.Name}. Scan models first.";
+            StatusMessage = L10n.F("L10n_Setup_NoModels", provider.Name);
             return;
         }
 
@@ -1018,19 +1068,19 @@ public sealed class ProviderSetupViewModel : PageViewModel
         }
 
         await LoadModelsAsync();
-        StatusMessage = $"{provider.Name}: tested {verified}/{models.Length} model(s).";
+        StatusMessage = L10n.F("L10n_Setup_ModelsTested", provider.Name, verified, models.Length);
         if (notes.Count > 0)
         {
-            StatusMessage += $" First issue: {notes[0]}";
+            StatusMessage += " " + L10n.F("L10n_Setup_FirstIssue", notes[0]);
         }
     }
 
     private async Task TestModelCoreAsync(ModelDescriptor? model)
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         model ??= SelectedModel
-            ?? throw new InvalidOperationException("Select a model first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_SelectModelFirst"));
 
         _dialogs.ShowModelTest(provider.Name, provider.Id, model.DisplayName, model.RemoteId);
         await LoadModelsAsync();
@@ -1040,15 +1090,15 @@ public sealed class ProviderSetupViewModel : PageViewModel
     private async Task ToggleModelCoreAsync(ModelDescriptor? model)
     {
         var provider = SelectedProvider
-            ?? throw new InvalidOperationException("Select a provider first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
         model ??= SelectedModel
-            ?? throw new InvalidOperationException("Select a model first.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_SelectModelFirst"));
         await _models.SetEnabledAsync(provider.Id, model.RemoteId, !model.Enabled);
         await LoadModelsAsync();
         SelectedModel = Models.First(x => x.RemoteId == model.RemoteId);
         StatusMessage = model.Enabled
-            ? $"Model '{model.DisplayName}' disabled."
-            : $"Model '{model.DisplayName}' enabled for Codex.";
+            ? L10n.F("L10n_Setup_ModelDisabledMsg", model.DisplayName)
+            : L10n.F("L10n_Setup_ModelEnabledMsg", model.DisplayName);
     }
 
     private static string YesNo(bool value) => value ? "Yes" : "No";
@@ -1062,20 +1112,21 @@ public sealed class SessionsViewModel : PageViewModel
     private readonly ISessionContinuityService _sessions;
     private ProviderProfile? _selectedTargetProvider;
     private string _projectPath = Environment.CurrentDirectory;
-    private string _revisionSummary = "Not synchronized";
+    private string _revisionSummary = string.Empty;
     private string _continuationInstruction = string.Empty;
 
     public SessionsViewModel(
         IProviderManager providers,
         IProjectStateService projectState,
         ISessionContinuityService sessions)
-        : base("Sessions", "Prepare provider-safe project state and continuation handoffs.")
+        : base("L10n_Session_Title", "L10n_Session_Subtitle")
     {
         _providers = providers;
         _projectState = projectState;
         _sessions = sessions;
         RefreshProjectCommand = new AsyncRelayCommand(() => RunAsync(RefreshProjectCoreAsync));
         PrepareSwitchCommand = new AsyncRelayCommand(() => RunAsync(PrepareSwitchCoreAsync));
+        RevisionSummary = L10n.T("L10n_Session_NotSync");
     }
 
     public ObservableCollection<ProviderProfile> Providers { get; } = new();
@@ -1107,6 +1158,23 @@ public sealed class SessionsViewModel : PageViewModel
     public ICommand RefreshProjectCommand { get; }
     public ICommand PrepareSwitchCommand { get; }
 
+    private bool _everSynced;
+
+    /// <summary>
+    /// True once a real project read/refresh produced a revision summary; while false the
+    /// default "Not synchronized" placeholder is re-localized on language switches.
+    /// </summary>
+    public bool HasRealSummary => _everSynced;
+
+    protected override void NotifyLanguageChanged()
+    {
+        base.NotifyLanguageChanged();
+        if (!_everSynced)
+        {
+            RevisionSummary = L10n.T("L10n_Session_NotSync");
+        }
+    }
+
     public override Task InitializeAsync() => RunAsync(InitializeCoreAsync);
 
     private async Task InitializeCoreAsync()
@@ -1118,9 +1186,19 @@ public sealed class SessionsViewModel : PageViewModel
         if (Directory.Exists(ProjectPath))
         {
             var state = await _projectState.ReadAsync(ProjectPath);
-            RevisionSummary = state is null
-                ? "Project has not been synchronized yet."
-                : $"Revision {state.Revision} Â· {state.ChangedFiles.Count} changed file(s) Â· {state.UpdatedAt.LocalDateTime:g}";
+            if (state is null)
+            {
+                RevisionSummary = L10n.T("L10n_Session_NotYetSync");
+            }
+            else
+            {
+                _everSynced = true;
+                RevisionSummary = L10n.F(
+                    "L10n_Session_RevSummary",
+                    state.Revision,
+                    state.ChangedFiles.Count,
+                    state.UpdatedAt.LocalDateTime);
+            }
         }
     }
 
@@ -1132,33 +1210,44 @@ public sealed class SessionsViewModel : PageViewModel
             ProjectPath,
             SyncLevel.Normal,
             active?.Id);
-        RevisionSummary = $"Revision {state.Revision} Â· {state.ChangedFiles.Count} changed file(s) Â· current";
-        StatusMessage = "CURRENT_STATE.md and project-state.json refreshed.";
+        _everSynced = true;
+        RevisionSummary = L10n.F(
+            "L10n_Session_RevCurrent",
+            state.Revision,
+            state.ChangedFiles.Count);
+        StatusMessage = L10n.T("L10n_Session_Refreshed");
     }
 
     private async Task PrepareSwitchCoreAsync()
     {
         EnsureProjectPath();
         var source = await _providers.GetActiveAsync()
-            ?? throw new InvalidOperationException("No active provider exists.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoActiveProvider"));
         var target = SelectedTargetProvider
-            ?? throw new InvalidOperationException("Select a target provider.");
+            ?? throw new InvalidOperationException(L10n.T("L10n_Msg_SelectTarget"));
         if (source.Id == target.Id)
         {
-            throw new InvalidOperationException("Choose a different target provider.");
+            throw new InvalidOperationException(L10n.T("L10n_Msg_SameTarget"));
         }
 
         var plan = await _sessions.PrepareSwitchAsync(ProjectPath, source.Id, target.Id);
         ContinuationInstruction = plan.ContinuationInstruction;
-        RevisionSummary = $"Revision {plan.ProjectState.Revision} Â· {plan.RecommendedSyncLevel} sync Â· {(plan.RequiresNewSession ? "new session" : "resume session")}";
-        StatusMessage = "Provider-safe handoff prepared. Current filesystem remains the source of truth.";
+        _everSynced = true;
+        RevisionSummary = L10n.F(
+            "L10n_Session_RevSwitch",
+            plan.ProjectState.Revision,
+            plan.RecommendedSyncLevel,
+            plan.RequiresNewSession
+                ? L10n.T("L10n_Session_NewSession")
+                : L10n.T("L10n_Session_ResumeSession"));
+        StatusMessage = L10n.T("L10n_Session_HandoffReady");
     }
 
     private void EnsureProjectPath()
     {
         if (string.IsNullOrWhiteSpace(ProjectPath) || !Directory.Exists(ProjectPath))
         {
-            throw new DirectoryNotFoundException("Enter an existing project directory.");
+            throw new DirectoryNotFoundException(L10n.T("L10n_Msg_BadProjectDir"));
         }
     }
 }
@@ -1176,7 +1265,7 @@ public sealed class DiagnosticsViewModel : PageViewModel
         IGatewayService gateway,
         ICodexConfigService config,
         IProviderManager providers)
-        : base("Diagnostics", "Inspect gateway, provider load and Codex configuration recovery state.")
+        : base("L10n_Diag_Title", "L10n_Diag_Subtitle")
     {
         _gateway = gateway;
         _config = config;
@@ -1213,8 +1302,8 @@ public sealed class DiagnosticsViewModel : PageViewModel
     private async Task RefreshCoreAsync()
     {
         GatewayStatus = _gateway.IsRunning
-            ? $"Listening on 127.0.0.1:{_gateway.Port}"
-            : "Stopped";
+            ? L10n.F("L10n_Diag_Listening", _gateway.Port)
+            : L10n.T("L10n_Diag_Stopped");
         await RefreshProviderWarningsAsync();
         await RefreshCodexStatusAsync();
     }
@@ -1231,15 +1320,15 @@ public sealed class DiagnosticsViewModel : PageViewModel
         }
         catch (Exception ex)
         {
-            ProviderWarnings = $"Provider load check failed: {ex.Message}";
+            ProviderWarnings = L10n.F("L10n_Diag_LoadCheckFailed", ex.Message);
         }
     }
 
     private async Task RefreshCodexStatusAsync()
     {
         CodexStatus = await _config.HasAccountProfileAsync()
-            ? $"Account profile protected Â· {_config.CodexHome}"
-            : $"Account profile not captured Â· {_config.CodexHome}";
+            ? L10n.F("L10n_Diag_AccountProtected", _config.CodexHome)
+            : L10n.F("L10n_Diag_AccountNotCaptured", _config.CodexHome);
     }
 
     private async Task ToggleGatewayCoreAsync()
@@ -1254,22 +1343,30 @@ public sealed class DiagnosticsViewModel : PageViewModel
         }
 
         await RefreshCoreAsync();
-        StatusMessage = _gateway.IsRunning ? "Gateway started." : "Gateway stopped.";
+        StatusMessage = _gateway.IsRunning
+            ? L10n.T("L10n_Diag_GatewayStarted")
+            : L10n.T("L10n_Diag_GatewayStopped");
     }
 
     private async Task RestoreConfigCoreAsync()
     {
         await _config.RestoreLastKnownGoodAsync();
         await RefreshCoreAsync();
-        StatusMessage = "Last known good Codex configuration restored.";
+        StatusMessage = L10n.T("L10n_Diag_ConfigRestored");
     }
 }
 
 public sealed class SettingsViewModel : PageViewModel
 {
     public SettingsViewModel()
-        : base("Settings", "Security and session defaults applied by Adam CodexHub.")
+        : base("L10n_Set_Title", "L10n_Set_Subtitle")
     {
-        StatusMessage = "Loopback gateway, automatic key failover, stale-session sync and prompt logging off are enforced defaults.";
+        StatusMessage = L10n.T("L10n_Set_DefaultsMsg");
+    }
+
+    protected override void NotifyLanguageChanged()
+    {
+        base.NotifyLanguageChanged();
+        StatusMessage = L10n.T("L10n_Set_DefaultsMsg");
     }
 }

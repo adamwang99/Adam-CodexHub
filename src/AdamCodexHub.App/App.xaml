@@ -4,6 +4,12 @@
              xmlns:local="clr-namespace:AdamCodexHub.App.Converters"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Active UI language dictionary (EN default). Swapped at runtime by App.ApplyLanguage. -->
+                <ResourceDictionary Source="Resources/Locales/Locale.EN.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
         <!-- ============ Brand palette (unchanged) ============ -->
         <Color x:Key="ColorBackground">#111111</Color>
         <Color x:Key="ColorPanel">#141414</Color>
@@ -830,5 +836,6 @@
             <Setter Property="Foreground" Value="{StaticResource BrushGold}" />
             <Setter Property="Background" Value="{StaticResource BrushHairlineSoft}" />
         </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

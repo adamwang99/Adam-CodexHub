@@ -37,6 +37,37 @@ public partial class App : Application
     /// </summary>
     public static bool IsRealExit { get; set; }
 
+    /// <summary>
+    /// Swaps the active UI-language dictionary (Locale.EN.xaml &lt;=&gt; Locale.VI.xaml),
+    /// updates the static <see cref="L10n"/> state and persists the choice. Every
+    /// {DynamicResource L10n_...} reference re-resolves against the new dictionary, then
+    /// L10n.LanguageChanged lets ViewModels re-notify their C#-composed strings.
+    /// </summary>
+    public static void ApplyLanguage(string language)
+    {
+        var target = language == L10n.Vietnamese ? L10n.Vietnamese : L10n.English;
+
+        try
+        {
+            if (Current?.Resources is { MergedDictionaries.Count: > 0 } resources)
+            {
+                var dict = resources.MergedDictionaries[0];
+                dict.Source = new Uri(
+                    $"Resources/Locales/Locale.{target.ToUpperInvariant()}.xaml",
+                    UriKind.Relative);
+            }
+        }
+        catch
+        {
+            // Fall through: keep L10n state in sync even if the dictionary swap failed.
+        }
+
+        L10n.SetLanguage(target);
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        UiSettingsStore.SaveLanguage(Path.Combine(localAppData, "AdamCodexHub"), target);
+    }
+
     [DllImport("user32.dll")]
     private static extern bool DestroyIcon(IntPtr handle);
 
@@ -47,6 +78,13 @@ public partial class App : Application
 
         try
         {
+            // Restore the persisted UI language BEFORE any window is created so the very
+            // first frame is already localized (English is the default).
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var appDataRoot = Path.Combine(localAppData, "AdamCodexHub");
+            ApplyLanguage(UiSettingsStore.LoadLanguage(appDataRoot));
+            LogStartup($"UI language: {L10n.CurrentLanguage}");
+
             _host = Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>
                 {
@@ -137,7 +175,7 @@ public partial class App : Application
             LogStartup("Startup failed", ex);
             MessageBox.Show(
                 ex.Message,
-                "Adam CodexHub could not start",
+                L10n.T("L10n_App_StartupErrorTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(-1);
@@ -175,9 +213,9 @@ public partial class App : Application
     private void InitializeTrayIcon(Window window)
     {
         var menu = new WinForms.ContextMenuStrip();
-        var showItem = new WinForms.ToolStripMenuItem("Show Adam CodexHub");
+        var showItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_Show"));
         showItem.Click += (_, _) => ShowMainWindow(window);
-        var exitItem = new WinForms.ToolStripMenuItem("Exit");
+        var exitItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_Exit"));
         exitItem.Click += (_, _) => ExitApplication();
         menu.Items.Add(showItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());

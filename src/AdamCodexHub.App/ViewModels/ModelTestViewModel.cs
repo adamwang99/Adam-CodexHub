@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AdamCodexHub.App.Mvvm;
+using AdamCodexHub.App.Services;
 using AdamCodexHub.Core.Domain;
 
 namespace AdamCodexHub.App.ViewModels;
@@ -125,8 +126,8 @@ public sealed class ModelTestViewModel : ObservableObject
         IsRunning = false;
         Score = result.Score;
         Summary = result.Text
-            ? $"Compatibility OK — {result.Score}/100"
-            : $"Compatibility FAILED — {result.Score}/100";
+            ? L10n.F("L10n_MT_CompatOk", result.Score)
+            : L10n.F("L10n_MT_CompatFailed", result.Score);
 
         var flags = new List<string>();
         if (result.Responses) flags.Add("Responses");
@@ -135,8 +136,11 @@ public sealed class ModelTestViewModel : ObservableObject
         if (result.ToolCalling) flags.Add("Tools");
         if (result.StructuredJson) flags.Add("Structured JSON");
         if (result.Vision) flags.Add("Vision");
+        var supported = L10n.F(
+            "L10n_MT_SupportedPrefix",
+            flags.Count == 0 ? L10n.T("L10n_MT_None") : string.Join(", ", flags));
         Notes = result.Notes is null
-            ? "Supported: " + (flags.Count == 0 ? "none" : string.Join(", ", flags))
-            : $"{result.Notes}\nSupported: " + (flags.Count == 0 ? "none" : string.Join(", ", flags));
+            ? supported
+            : $"{result.Notes}\n{supported}";
     }
 }

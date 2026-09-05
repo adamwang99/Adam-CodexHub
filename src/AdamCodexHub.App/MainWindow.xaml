@@ -51,6 +51,202 @@
             <GradientStop Offset="1" Color="#00000000" />
         </RadialGradientBrush>
 
+        <!-- Soft aqua glow used by the "Show all providers" ON state -->
+        <DropShadowEffect x:Key="AquaGlowToggle" BlurRadius="9" ShadowDepth="0" Opacity="0.6" Color="#2FD0C8" />
+
+        <!-- ============ Windows-style caption buttons (right side of the title bar) ============ -->
+        <Style x:Key="WinCaptionButton" TargetType="Button">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="58" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="#E6FFFFFF" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root" Background="Transparent" CornerRadius="0">
+                            <TextBlock x:Name="Glyph"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="10"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="min">
+                                                <Setter Property="Text" Value="&#xE921;" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="max">
+                                                <Setter Property="Text" Value="&#xE922;" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="restore">
+                                                <Setter Property="Text" Value="&#xE923;" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Value="close">
+                                                <Setter Property="Text" Value="&#xE8BB;" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Generic hover for minimize / maximize / restore -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#26FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFFFF" />
+                            </Trigger>
+                            <!-- Windows 11 close button: solid red hover with white glyph -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="Tag" Value="close" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Root" Property="Background" Value="#E81123" />
+                                <Setter Property="Foreground" Value="#FFFFFFFF" />
+                            </MultiTrigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#59FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ============ EN / VI language toggle (segmented pill) ============ -->
+        <Style x:Key="LangToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="66" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Shell"
+                                CornerRadius="13"
+                                BorderThickness="1"
+                                BorderBrush="{StaticResource BrushHairlineStrong}"
+                                Background="{StaticResource BrushCardGlass}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <!-- Sliding thumb: sits under the ACTIVE segment -->
+                                <Border x:Name="Thumb"
+                                        Grid.Column="0"
+                                        Margin="1"
+                                        CornerRadius="11"
+                                        Background="{StaticResource BrushGold}" />
+                                <TextBlock x:Name="EnLabel"
+                                           Grid.Column="0"
+                                           Text="EN"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#FF161616" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                                    <Setter Property="Foreground" Value="#99C4C4C4" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock x:Name="ViLabel"
+                                           Grid.Column="1"
+                                           Text="VI"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#99C4C4C4" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}}" Value="True">
+                                                    <Setter Property="Foreground" Value="#FF161616" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Thumb" Property="Grid.Column" Value="1" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Shell" Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Shell" Property="Opacity" Value="0.85" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ============ "Show all providers" pill switch (ON / OFF unmistakable) ============ -->
+        <Style x:Key="ShowAllToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Offset="0" Color="#38FFFFFF" />
+                        <GradientStop Offset="0.5" Color="#1EFFFFFF" />
+                        <GradientStop Offset="1" Color="#0EFFFFFF" />
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush" Value="{StaticResource BrushGlassRim}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Effect" Value="{StaticResource ButtonShadow}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{StaticResource ControlRadius}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#4DFFFFFF" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                                <Setter Property="Effect" Value="{StaticResource AmberGlowHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <DataTemplate DataType="{x:Type vm:HomeViewModel}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -62,38 +258,102 @@
                 <!-- Toolbar -->
                 <Border Grid.Row="0" Style="{StaticResource CardBorder}" Padding="12" Margin="0,0,0,14">
                     <WrapPanel>
-                        <Button Content="Codex Account"
+                        <Button Content="{DynamicResource L10n_Home_CodexAccount}"
                                 Style="{StaticResource PrimaryButton}"
                                 Command="{Binding RestoreAccountCommand}"
-                                Margin="0,0,10,0"
-                                automation:AutomationProperties.Name="Restore Codex Account">
+                                Margin="0,0,10,0">
                             <Button.ToolTip>
-                                <TextBlock>Restore the default Codex sign-in account. Your per-provider API keys and models are kept.</TextBlock>
+                                <TextBlock Text="{DynamicResource L10n_Home_RestoreTip}" />
                             </Button.ToolTip>
                         </Button>
-                        <CheckBox Content="Open Desktop app"
-                                  IsChecked="{Binding UseDesktopForAccount, Mode=TwoWay}"
-                                  VerticalAlignment="Center"
-                                  Margin="4,0,10,0"
-                                  automation:AutomationProperties.Name="Open Codex Desktop for Codex Account">
-                            <CheckBox.ToolTip>
-                                <TextBlock>When ticked, Codex Account opens in the Desktop app. Unticked opens the Codex CLI instead.</TextBlock>
-                            </CheckBox.ToolTip>
-                        </CheckBox>
-                        <Button Content="Refresh providers"
+                        <Button Content="{DynamicResource L10n_Home_RefreshProviders}"
                                 Command="{Binding RefreshCommand}"
-                                Margin="0,0,10,0"
-                                automation:AutomationProperties.Name="Refresh provider list">
+                                Margin="0,0,10,0">
                             <Button.ToolTip>
-                                <TextBlock>Reload the provider list and refresh health, key and model state.</TextBlock>
+                                <TextBlock Text="{DynamicResource L10n_Home_RefreshTip}" />
                             </Button.ToolTip>
                         </Button>
-                        <ToggleButton Content="Show all providers"
+                        <!-- Show-all switch: track + sliding thumb + ON/OFF state label -->
+                        <ToggleButton x:Name="ShowAllToggle"
+                                      Style="{StaticResource ShowAllToggleStyle}"
                                       IsChecked="{Binding ShowAllProviders, Mode=TwoWay}"
-                                      automation:AutomationProperties.Name="Show or hide unconfigured providers">
-                            <ToggleButton.ToolTip>
-                                <TextBlock>When off, only Codex Account and providers you have set up are shown. Turn on to see every preset, including unused ones.</TextBlock>
-                            </ToggleButton.ToolTip>
+                                      ToolTip="{Binding ShowAllTooltip}"
+                                      automation:AutomationProperties.Name="{Binding ShowAllTooltip}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource L10n_Home_ShowAll}"
+                                           FontSize="12.5"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0" />
+                                <!-- Track -->
+                                <Border Grid.Column="1" Width="40" Height="20" CornerRadius="10"
+                                        BorderThickness="1"
+                                        VerticalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#1CFFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#59FFFFFF" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                    <Setter Property="Background" Value="#262FD0C8" />
+                                                    <Setter Property="BorderBrush" Value="{StaticResource BrushAqua}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <!-- Sliding thumb -->
+                                    <Border Width="18" Height="18" CornerRadius="9"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Margin="1,0,0,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#CCFFFFFF" />
+                                                <Setter Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <TranslateTransform X="0" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource BrushGold}" />
+                                                        <Setter Property="RenderTransform">
+                                                            <Setter.Value>
+                                                                <TranslateTransform X="19" />
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                </Border>
+                                <!-- ON / OFF caption -->
+                                <TextBlock Grid.Column="2"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center"
+                                           Margin="8,0,0,0"
+                                           MinWidth="24">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{DynamicResource L10n_Home_Off}" />
+                                            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                    <Setter Property="Text" Value="{DynamicResource L10n_Home_On}" />
+                                                    <Setter Property="Foreground" Value="{StaticResource BrushAqua}" />
+                                                    <Setter Property="Effect" Value="{StaticResource AquaGlowToggle}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
                         </ToggleButton>
                     </WrapPanel>
                 </Border>
@@ -142,7 +402,7 @@
                                     <StackPanel MaxWidth="280">
                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                                         <TextBlock Text="{Binding TooltipDescription}" TextWrapping="Wrap" Margin="0,4,0,0" />
-                                        <TextBlock Text="Double-click to activate with Codex." Foreground="{StaticResource BrushMuted}" Margin="0,6,0,0" />
+                                        <TextBlock Text="{DynamicResource L10n_Home_DoubleClickTip}" Foreground="{StaticResource BrushMuted}" Margin="0,6,0,0" />
                                     </StackPanel>
                                 </StackPanel.ToolTip>
                                 <Grid RenderTransformOrigin="0.5,0.5">
@@ -290,7 +550,7 @@
                                     <TextBlock Text=" · "
                                                Foreground="{StaticResource BrushMuted}"
                                                FontSize="10" />
-                                    <TextBlock Text="{Binding EnabledModelCount, StringFormat={}{0} model(s)}"
+                                    <TextBlock Text="{Binding EnabledModelLabel}"
                                                Foreground="{StaticResource BrushMuted}"
                                                FontSize="10" />
                                 </StackPanel>
@@ -305,7 +565,7 @@
                 </ListBox>
 
                 <TextBlock Grid.Row="2"
-                           Text="Double-click a provider card to activate it with Codex. Codex Account returns to the default sign-in. For third-party providers, add an API key and verify a model first."
+                           Text="{DynamicResource L10n_Home_FooterHint}"
                            Foreground="{StaticResource BrushMuted}"
                            TextWrapping="Wrap"
                            Margin="0,14,0,0" />
@@ -329,18 +589,18 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <WrapPanel Grid.Row="0" Margin="6,0,6,10">
-                            <Button Content="New" Command="{Binding NewCommand}" Margin="0,0,8,0" Padding="10,6" />
-                            <Button Content="Refresh" Command="{Binding RefreshCommand}" Padding="10,6" />
+                            <Button Content="{DynamicResource L10n_Common_New}" Command="{Binding NewCommand}" Margin="0,0,8,0" Padding="10,6" />
+                            <Button Content="{DynamicResource L10n_Common_Refresh}" Command="{Binding RefreshCommand}" Padding="10,6" />
                         </WrapPanel>
                         <Grid Grid.Row="1" Margin="10,0,10,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="PROVIDER" Style="{StaticResource SectionLabel}" />
-                            <TextBlock Grid.Column="1" Text="STATUS" Style="{StaticResource SectionLabel}">
+                            <TextBlock Text="{DynamicResource L10n_Setup_ProviderColumn}" Style="{StaticResource SectionLabel}" />
+                            <TextBlock Grid.Column="1" Text="{DynamicResource L10n_Setup_StatusColumn}" Style="{StaticResource SectionLabel}">
                                 <TextBlock.ToolTip>
-                                    <TextBlock Text="Provider health. 'Unknown' means it has not been health-checked yet — test an API key or run a model probe to refresh it."
+                                    <TextBlock Text="{DynamicResource L10n_Setup_HealthTip}"
                                                TextWrapping="Wrap" MaxWidth="300" />
                                 </TextBlock.ToolTip>
                             </TextBlock>
@@ -380,14 +640,14 @@
                     <StackPanel MaxWidth="760" HorizontalAlignment="Left">
 
                         <!-- PROFILE -->
-                        <TextBlock Text="PROVIDER PROFILE" Style="{StaticResource SectionLabel}" />
-                        <TextBlock Text="Provider ID" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
+                        <TextBlock Text="{DynamicResource L10n_Setup_ProfileSection}" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Setup_ProviderId}" Style="{StaticResource FieldLabel}" Margin="0,12,0,0" />
                         <TextBox Text="{Binding ProviderId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider ID" />
-                        <TextBlock Text="Display name" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Setup_DisplayName}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding ProviderName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider display name" />
-                        <TextBlock Text="Base URL" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Setup_BaseUrl}" Style="{StaticResource FieldLabel}" />
                         <TextBox Text="{Binding BaseUrl, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12" automation:AutomationProperties.Name="Provider base URL" />
-                        <TextBlock Text="Adapter" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Setup_Adapter}" Style="{StaticResource FieldLabel}" />
                         <ComboBox Text="{Binding Adapter, UpdateSourceTrigger=PropertyChanged}"
                                   IsEditable="True"
                                   Margin="0,0,0,12"
@@ -396,20 +656,20 @@
                             <ComboBoxItem Content="openai-responses" />
                         </ComboBox>
                         <WrapPanel Margin="0,0,0,22">
-                            <Button Content="Save provider" Style="{StaticResource PrimaryButton}" Command="{Binding SaveProviderCommand}" Margin="0,0,8,8" />
-                            <Button Content="Enable / Disable" Command="{Binding ToggleProviderCommand}" Margin="0,0,8,8" />
-                            <Button Content="Choose logo" Command="{Binding ChooseLogoCommand}" Margin="0,0,8,8">
+                            <Button Content="{DynamicResource L10n_Setup_SaveProvider}" Style="{StaticResource PrimaryButton}" Command="{Binding SaveProviderCommand}" Margin="0,0,8,8" />
+                            <Button Content="{DynamicResource L10n_Common_EnableDisable}" Command="{Binding ToggleProviderCommand}" Margin="0,0,8,8" />
+                            <Button Content="{DynamicResource L10n_Setup_ChooseLogo}" Command="{Binding ChooseLogoCommand}" Margin="0,0,8,8">
                                 <Button.ToolTip>
-                                    <TextBlock Text="Set a custom provider image (PNG, JPG or JPEG, under 512 KB). Without one, the provider shows a two-letter abbreviation."
+                                    <TextBlock Text="{DynamicResource L10n_Setup_ChooseLogoTip}"
                                                TextWrapping="Wrap" MaxWidth="300" />
                                 </Button.ToolTip>
                             </Button>
-                            <Button Content="Delete provider" Style="{StaticResource DangerButton}" Command="{Binding DeleteProviderCommand}" Margin="0,0,0,8" />
+                            <Button Content="{DynamicResource L10n_Setup_DeleteProvider}" Style="{StaticResource DangerButton}" Command="{Binding DeleteProviderCommand}" Margin="0,0,0,8" />
                         </WrapPanel>
 
                         <!-- API KEYS -->
-                        <TextBlock Text="API KEY POOL" Style="{StaticResource SectionLabel}" />
-                        <TextBlock Text="Paste an API key for the selected provider (encrypted per-provider)."
+                        <TextBlock Text="{DynamicResource L10n_Setup_KeysSection}" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Setup_PasteHint}"
                                    Foreground="{StaticResource BrushMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,8" />
                         <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
@@ -417,7 +677,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBox Text="{Binding NewKey, UpdateSourceTrigger=PropertyChanged}" automation:AutomationProperties.Name="Paste provider API key" Margin="0,0,8,0" />
-                            <Button Grid.Column="1" Content="Add key" Style="{StaticResource PrimaryButton}" Command="{Binding AddKeyCommand}" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="{DynamicResource L10n_Setup_AddKey}" Style="{StaticResource PrimaryButton}" Command="{Binding AddKeyCommand}" VerticalAlignment="Center" />
                         </Grid>
 
                         <Border Style="{StaticResource CardBorder}" Padding="8" Margin="0,0,0,10">
@@ -426,41 +686,41 @@
                                       AutoGenerateColumns="False"
                                       automation:AutomationProperties.Name="API key pool">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Label" Binding="{Binding Label}" Width="2*" />
-                                    <DataGridTextColumn Header="Masked" Binding="{Binding MaskedDisplay}" Width="*" />
-                                    <DataGridTextColumn Header="Priority" Binding="{Binding Priority}" Width="90" />
-                                    <DataGridTextColumn Header="Health" Binding="{Binding Health}" Width="120" />
-                                    <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="80" />
+                                    <DataGridTextColumn Header="{DynamicResource L10n_Common_Label}" Binding="{Binding Label}" Width="2*" />
+                                    <DataGridTextColumn Header="{DynamicResource L10n_Common_Masked}" Binding="{Binding MaskedDisplay}" Width="*" />
+                                    <DataGridTextColumn Header="{DynamicResource L10n_Common_Priority}" Binding="{Binding Priority}" Width="90" />
+                                    <DataGridTextColumn Header="{DynamicResource L10n_Common_Health}" Binding="{Binding Health}" Width="120" />
+                                    <DataGridCheckBoxColumn Header="{DynamicResource L10n_Common_Enabled}" Binding="{Binding Enabled}" Width="80" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Border>
                         <WrapPanel Margin="0,0,0,22">
-                            <Button Content="Test selected" Command="{Binding TestKeyCommand}" Margin="0,0,8,0">
+                            <Button Content="{DynamicResource L10n_Setup_TestSelected}" Command="{Binding TestKeyCommand}" Margin="0,0,8,0">
                                 <Button.ToolTip>
-                                    <TextBlock>Test the currently selected API key against the provider.</TextBlock>
+                                    <TextBlock Text="{DynamicResource L10n_Setup_TestSelectedTip}" />
                                 </Button.ToolTip>
                             </Button>
-                            <Button Content="Test all keys" Command="{Binding TestAllKeysCommand}" Margin="0,0,8,0" automation:AutomationProperties.Name="Test all API keys">
+                            <Button Content="{DynamicResource L10n_Setup_TestAllKeys}" Command="{Binding TestAllKeysCommand}" Margin="0,0,8,0" automation:AutomationProperties.Name="Test all API keys">
                                 <Button.ToolTip>
-                                    <TextBlock>Test every stored API key for the selected provider in one go.</TextBlock>
+                                    <TextBlock Text="{DynamicResource L10n_Setup_TestAllKeysTip}" />
                                 </Button.ToolTip>
                             </Button>
-                            <Button Content="Enable / Disable" Command="{Binding ToggleKeyCommand}" Margin="0,0,8,0" />
-                            <Button Content="Move up" Command="{Binding MoveUpKeyCommand}" Margin="0,0,8,0" />
-                            <Button Content="Move down" Command="{Binding MoveDownKeyCommand}" Margin="0,0,8,0" />
-                            <Button Content="Delete key" Style="{StaticResource DangerButton}" Command="{Binding DeleteKeyCommand}" />
+                            <Button Content="{DynamicResource L10n_Common_EnableDisable}" Command="{Binding ToggleKeyCommand}" Margin="0,0,8,0" />
+                            <Button Content="{DynamicResource L10n_Setup_MoveUp}" Command="{Binding MoveUpKeyCommand}" Margin="0,0,8,0" />
+                            <Button Content="{DynamicResource L10n_Setup_MoveDown}" Command="{Binding MoveDownKeyCommand}" Margin="0,0,8,0" />
+                            <Button Content="{DynamicResource L10n_Setup_DeleteKey}" Style="{StaticResource DangerButton}" Command="{Binding DeleteKeyCommand}" />
                         </WrapPanel>
 
                         <!-- MODELS -->
-                        <TextBlock Text="MODELS" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Setup_ModelsSection}" Style="{StaticResource SectionLabel}" />
                         <WrapPanel Margin="0,8,0,10">
-                            <Button Content="Scan models" Style="{StaticResource PrimaryButton}" Command="{Binding ScanModelsCommand}" Margin="0,0,8,0" />
-                            <Button Content="Test all models" Command="{Binding TestAllModelsCommand}" Margin="0,0,8,0" automation:AutomationProperties.Name="Test all models">
+                            <Button Content="{DynamicResource L10n_Setup_ScanModels}" Style="{StaticResource PrimaryButton}" Command="{Binding ScanModelsCommand}" Margin="0,0,8,0" />
+                            <Button Content="{DynamicResource L10n_Setup_TestAllModels}" Command="{Binding TestAllModelsCommand}" Margin="0,0,8,0" automation:AutomationProperties.Name="Test all models">
                                 <Button.ToolTip>
-                                    <TextBlock>Run compatibility probes on every model in this list.</TextBlock>
+                                    <TextBlock Text="{DynamicResource L10n_Setup_TestAllModelsTip}" />
                                 </Button.ToolTip>
                             </Button>
-                            <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+                            <Button Content="{DynamicResource L10n_Common_Refresh}" Command="{Binding RefreshCommand}" />
                         </WrapPanel>
                         <Border Style="{StaticResource CardBorder}" Padding="8" Margin="0,0,0,10">
                             <DataGrid ItemsSource="{Binding Models}"
@@ -468,8 +728,8 @@
                                       AutoGenerateColumns="False"
                                       automation:AutomationProperties.Name="Discovered models">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Model" Binding="{Binding DisplayName}" Width="2.4*" />
-                                    <DataGridTemplateColumn Header="Status" Width="90">
+                                    <DataGridTextColumn Header="{DynamicResource L10n_Common_Model}" Binding="{Binding DisplayName}" Width="2.4*" />
+                                    <DataGridTemplateColumn Header="{DynamicResource L10n_Common_Status}" Width="90">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding State}">
@@ -494,20 +754,20 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Score" Binding="{Binding CompatibilityScore}" Width="70" />
-                                    <DataGridCheckBoxColumn Header="Enabled" Binding="{Binding Enabled}" Width="80" />
-                                    <DataGridTemplateColumn Header="Actions" Width="150">
+                                    <DataGridTextColumn Header="{DynamicResource L10n_Common_Score}" Binding="{Binding CompatibilityScore}" Width="70" />
+                                    <DataGridCheckBoxColumn Header="{DynamicResource L10n_Common_Enabled}" Binding="{Binding Enabled}" Width="80" />
+                                    <DataGridTemplateColumn Header="{DynamicResource L10n_Common_Actions}" Width="150">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Button Content="Test" Command="{Binding DataContext.TestModelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Margin="0,0,6,0" Padding="8,3" FontSize="11">
+                                                    <Button Content="{DynamicResource L10n_Common_Test}" Command="{Binding DataContext.TestModelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Margin="0,0,6,0" Padding="8,3" FontSize="11">
                                                         <Button.ToolTip>
-                                                            <TextBlock>Run compatibility probes on this model (text, streaming, tool calling).</TextBlock>
+                                                            <TextBlock Text="{DynamicResource L10n_Setup_TestModelTip}" />
                                                         </Button.ToolTip>
                                                     </Button>
-                                                    <Button Content="Enable" Command="{Binding DataContext.ToggleModelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="8,3" FontSize="11">
+                                                    <Button Content="{DynamicResource L10n_Common_Enable}" Command="{Binding DataContext.ToggleModelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" Padding="8,3" FontSize="11">
                                                         <Button.ToolTip>
-                                                            <TextBlock>Enable / disable this model for Codex.</TextBlock>
+                                                            <TextBlock Text="{DynamicResource L10n_Setup_ToggleModelTip}" />
                                                         </Button.ToolTip>
                                                     </Button>
                                                 </StackPanel>
@@ -518,8 +778,8 @@
                             </DataGrid>
                         </Border>
                         <WrapPanel Margin="0,0,0,8">
-                            <Button Content="Test compatibility" Command="{Binding TestModelCommand}" Margin="0,0,8,0" />
-                            <Button Content="Enable / Disable" Command="{Binding ToggleModelCommand}" />
+                            <Button Content="{DynamicResource L10n_Setup_TestCompatibility}" Command="{Binding TestModelCommand}" Margin="0,0,8,0" />
+                            <Button Content="{DynamicResource L10n_Common_EnableDisable}" Command="{Binding ToggleModelCommand}" />
                         </WrapPanel>
                     </StackPanel>
                 </ScrollViewer>
@@ -536,17 +796,17 @@
 
                 <Border Grid.Column="0" Style="{StaticResource CardBorder}">
                     <StackPanel>
-                        <TextBlock Text="PROJECT &amp; TARGET" Style="{StaticResource SectionLabel}" />
-                        <TextBlock Text="Project directory" Style="{StaticResource FieldLabel}" Margin="0,14,0,0" />
+                        <TextBlock Text="{DynamicResource L10n_Session_ProjTarget}" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Session_ProjDir}" Style="{StaticResource FieldLabel}" Margin="0,14,0,0" />
                         <TextBox Text="{Binding ProjectPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,14" automation:AutomationProperties.Name="Project directory" />
-                        <TextBlock Text="Target provider" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Session_TargetProvider}" Style="{StaticResource FieldLabel}" />
                         <ComboBox ItemsSource="{Binding Providers}"
                                   SelectedItem="{Binding SelectedTargetProvider, Mode=TwoWay}"
                                   DisplayMemberPath="Name"
                                   Margin="0,0,0,16"
                                   automation:AutomationProperties.Name="Target provider" />
-                        <Button Content="Refresh project state" Command="{Binding RefreshProjectCommand}" Margin="0,0,0,8" />
-                        <Button Content="Prepare provider handoff" Style="{StaticResource PrimaryButton}" Command="{Binding PrepareSwitchCommand}" />
+                        <Button Content="{DynamicResource L10n_Session_RefreshState}" Command="{Binding RefreshProjectCommand}" Margin="0,0,0,8" />
+                        <Button Content="{DynamicResource L10n_Session_Prepare}" Style="{StaticResource PrimaryButton}" Command="{Binding PrepareSwitchCommand}" />
                         <Border Style="{StaticResource CardBorder}" Margin="0,18,0,0">
                             <TextBlock Text="{Binding RevisionSummary}" TextWrapping="Wrap" />
                         </Border>
@@ -559,7 +819,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <TextBlock Text="Continuation instruction" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="{DynamicResource L10n_Session_Continuation}" Style="{StaticResource SectionLabel}" />
                         <TextBox Grid.Row="1"
                                  Text="{Binding ContinuationInstruction}"
                                  IsReadOnly="True"
@@ -582,10 +842,10 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="LOCAL GATEWAY" Style="{StaticResource SectionLabel}" />
+                            <TextBlock Text="{DynamicResource L10n_Diag_GatewaySection}" Style="{StaticResource SectionLabel}" />
                             <TextBlock Text="{Binding GatewayStatus}" FontSize="17" FontWeight="SemiBold" Margin="0,10,0,0" />
                         </StackPanel>
-                        <Button Grid.Column="1" Content="Start / Stop" Command="{Binding ToggleGatewayCommand}" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Content="{DynamicResource L10n_Diag_StartStop}" Command="{Binding ToggleGatewayCommand}" VerticalAlignment="Center" />
                     </Grid>
                 </Border>
                 <Border Style="{StaticResource CardBorder}" Margin="0,0,0,14">
@@ -595,10 +855,10 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="CODEX CONFIG" Style="{StaticResource SectionLabel}" />
+                            <TextBlock Text="{DynamicResource L10n_Diag_ConfigSection}" Style="{StaticResource SectionLabel}" />
                             <TextBlock Text="{Binding CodexStatus}" FontSize="15" Margin="0,10,0,0" TextWrapping="Wrap" />
                         </StackPanel>
-                        <Button Grid.Column="1" Content="Restore last good" Command="{Binding RestoreConfigCommand}" VerticalAlignment="Center" />
+                        <Button Grid.Column="1" Content="{DynamicResource L10n_Diag_Restore}" Command="{Binding RestoreConfigCommand}" VerticalAlignment="Center" />
                     </Grid>
                 </Border>
                 <Border Margin="0,0,0,14">
@@ -615,11 +875,11 @@
                         </Style>
                     </Border.Style>
                     <StackPanel>
-                        <TextBlock Text="PROVIDER STARTUP WARNINGS" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushGold}" />
+                        <TextBlock Text="{DynamicResource L10n_Diag_WarningsSection}" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushGold}" />
                         <TextBlock Text="{Binding ProviderWarnings}" FontSize="13" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{StaticResource BrushCream}" />
                     </StackPanel>
                 </Border>
-                <Button Content="Refresh diagnostics" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" />
+                <Button Content="{DynamicResource L10n_Diag_Refresh}" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" />
             </StackPanel>
         </DataTemplate>
 
@@ -627,11 +887,11 @@
             <StackPanel MaxWidth="760" HorizontalAlignment="Left">
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
-                        <TextBlock Text="ENFORCED DEFAULTS" Style="{StaticResource SectionLabel}" />
-                        <CheckBox Content="Loopback-only gateway" Foreground="{StaticResource BrushMuted}" IsChecked="True" IsEnabled="False" Margin="0,16,0,8" />
-                        <CheckBox Content="Automatic key failover" Foreground="{StaticResource BrushMuted}" IsChecked="True" IsEnabled="False" Margin="0,0,0,8" />
-                        <CheckBox Content="Auto-refresh stale sessions" Foreground="{StaticResource BrushMuted}" IsChecked="True" IsEnabled="False" Margin="0,0,0,8" />
-                        <CheckBox Content="Prompt and response logging" Foreground="{StaticResource BrushMuted}" IsChecked="False" IsEnabled="False" />
+                        <TextBlock Text="{DynamicResource L10n_Set_DefaultsSection}" Style="{StaticResource SectionLabel}" />
+                        <CheckBox Content="{DynamicResource L10n_Set_Loopback}" Foreground="{StaticResource BrushMuted}" IsChecked="True" IsEnabled="False" Margin="0,16,0,8" />
+                        <CheckBox Content="{DynamicResource L10n_Set_Failover}" Foreground="{StaticResource BrushMuted}" IsChecked="True" IsEnabled="False" Margin="0,0,0,8" />
+                        <CheckBox Content="{DynamicResource L10n_Set_AutoRefresh}" Foreground="{StaticResource BrushMuted}" IsChecked="True" IsEnabled="False" Margin="0,0,0,8" />
+                        <CheckBox Content="{DynamicResource L10n_Set_Logging}" Foreground="{StaticResource BrushMuted}" IsChecked="False" IsEnabled="False" />
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -651,72 +911,84 @@
 
         <Grid Margin="10">
             <Grid.RowDefinitions>
-                <RowDefinition Height="44" />
+                <RowDefinition Height="58" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="30" />
             </Grid.RowDefinitions>
 
-            <!-- ============ Title bar (macOS traffic lights + app identity) ============ -->
+            <!-- ============ Title bar (larger logo left, EN/VI toggle + Windows controls right) ============ -->
             <Border Grid.Row="0" CornerRadius="12,12,0,0"
                     Background="#4D0D0D0D"
                     BorderBrush="{StaticResource BrushGlassRim}"
                     BorderThickness="1,1,1,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
                     MouseLeftButtonUp="TitleBar_MouseLeftButtonUp">
-                <Grid Margin="14,0">
+                <Grid Margin="14,0,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Traffic lights -->
+                    <!-- App identity: bigger, crisp logo + name -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Style="{StaticResource TrafficLightButton}"
-                                Tag="close"
-                                Background="#FF5F57"
-                                Click="Close_Click"
-                                Margin="0,0,8,0"
-                                automation:AutomationProperties.Name="Close window" />
-                        <Button Style="{StaticResource TrafficLightButton}"
-                                Tag="min"
-                                Background="#FEBC2E"
-                                Click="Minimize_Click"
-                                Margin="0,0,8,0"
-                                automation:AutomationProperties.Name="Minimize window" />
-                        <Button x:Name="MaximizeButton"
-                                Style="{StaticResource TrafficLightButton}"
-                                Tag="max"
-                                Background="#28C840"
-                                Click="MaximizeRestore_Click"
-                                automation:AutomationProperties.Name="Maximize or restore window" />
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
-                        <Border Width="24" Height="24" CornerRadius="7"
-                                Background="#14FFFFFF" BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1">
-                            <Image Source="Assets/adam-codexhub-logo.png" Stretch="Uniform" Margin="4" />
+                        <Border Width="52" Height="52" CornerRadius="16"
+                                Background="#16FFFFFF"
+                                BorderBrush="{StaticResource BrushHairlineStrong}"
+                                BorderThickness="1"
+                                Margin="0,0,0,0">
+                            <Image Source="Assets/adam-codexhub-logo.png" Stretch="Uniform" Margin="3"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border>
-                        <TextBlock Text="Adam CodexHub" FontWeight="SemiBold" FontSize="13"
-                                   VerticalAlignment="Center" Margin="10,0,0,0" />
-                        <TextBlock Text="control hub" Foreground="{StaticResource BrushMuted}" FontSize="11"
-                                   VerticalAlignment="Center" Margin="8,0,0,0" />
+                        <StackPanel VerticalAlignment="Center" Margin="12,0,0,0">
+                            <TextBlock Text="Adam CodexHub" FontWeight="SemiBold" FontSize="15"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource L10n_Title_ControlHub}" Foreground="{StaticResource BrushMuted}" FontSize="11"
+                                       VerticalAlignment="Center" Margin="0,1,0,0" />
+                        </StackPanel>
                     </StackPanel>
 
-                    <!-- Right: active provider + gateway -->
-                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Right: status chips + EN/VI toggle + Windows caption buttons -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <Border CornerRadius="8" Padding="10,4" Margin="0,0,8,0"
                                 Background="#12FFFFFF" BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1">
-                            <TextBlock VerticalAlignment="Center">
-                                <Run Text="Active: " Foreground="{StaticResource BrushMuted}" FontSize="11" />
-                                <Run Text="{Binding ActiveProvider, Mode=OneWay}" FontWeight="SemiBold" FontSize="11" />
-                            </TextBlock>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{DynamicResource L10n_Title_ActivePrefix}" Foreground="{StaticResource BrushMuted}" FontSize="11" />
+                                <TextBlock Text="{Binding ActiveProvider, Mode=OneWay}" FontWeight="SemiBold" FontSize="11" />
+                            </StackPanel>
                         </Border>
-                        <Border CornerRadius="8" Padding="10,4"
+                        <Border CornerRadius="8" Padding="10,4" Margin="0,0,14,0"
                                 Background="#12FFFFFF" BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1">
                             <TextBlock Text="{Binding GatewayStatus}" Foreground="{StaticResource BrushAqua}" FontSize="11" VerticalAlignment="Center" />
                         </Border>
+
+                        <!-- Language toggle: EN | VI (checked = Vietnamese) -->
+                        <ToggleButton x:Name="LanguageToggle"
+                                      Style="{StaticResource LangToggleStyle}"
+                                      IsChecked="False"
+                                      Checked="LanguageToggle_Checked"
+                                      Unchecked="LanguageToggle_Unchecked"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,4,0"
+                                      ToolTip="{DynamicResource L10n_Toggle_Tooltip}"
+                                      automation:AutomationProperties.Name="Switch UI language" />
+
+                        <!-- Windows caption buttons: minimize / maximize / close -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                            <Button Style="{StaticResource WinCaptionButton}"
+                                    Tag="min"
+                                    Click="Minimize_Click"
+                                    automation:AutomationProperties.Name="Minimize window" />
+                            <Button x:Name="MaximizeButton"
+                                    Style="{StaticResource WinCaptionButton}"
+                                    Tag="max"
+                                    Click="MaximizeRestore_Click"
+                                    automation:AutomationProperties.Name="Maximize or restore window" />
+                            <Button Style="{StaticResource WinCaptionButton}"
+                                    Tag="close"
+                                    Click="Close_Click"
+                                    automation:AutomationProperties.Name="Close window" />
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -742,7 +1014,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="CONTROL" Style="{StaticResource SectionLabel}" Margin="12,0,0,12" />
+                        <TextBlock Text="{DynamicResource L10n_Sidebar_Control}" Style="{StaticResource SectionLabel}" Margin="12,0,0,12" />
 
                         <ItemsControl Grid.Row="1" ItemsSource="{Binding Pages}">
                             <ItemsControl.ItemTemplate>
@@ -804,16 +1076,14 @@
                         <StackPanel Grid.Row="2" Margin="12,0,12,6">
                             <!-- About / Guide: two separate glass buttons -->
                             <StackPanel Orientation="Horizontal" Margin="2,0,0,10">
-                                <Button Content="About" Click="About_Click" Padding="14,7"
-                                        automation:AutomationProperties.Name="About Adam CodexHub">
+                                <Button Content="{DynamicResource L10n_Sidebar_About}" Click="About_Click" Padding="14,7">
                                     <Button.ToolTip>
-                                        <TextBlock Text="About Adam CodexHub — built for research &amp; learning, free forever." />
+                                        <TextBlock Text="{DynamicResource L10n_Sidebar_AboutTip}" />
                                     </Button.ToolTip>
                                 </Button>
-                                <Button Content="Guide" Click="Guide_Click" Padding="14,7" Margin="8,0,0,0"
-                                        automation:AutomationProperties.Name="Open the usage guide">
+                                <Button Content="{DynamicResource L10n_Sidebar_Guide}" Click="Guide_Click" Padding="14,7" Margin="8,0,0,0">
                                     <Button.ToolTip>
-                                        <TextBlock Text="Detailed usage guide with the architecture diagram." />
+                                        <TextBlock Text="{DynamicResource L10n_Sidebar_GuideTip}" />
                                     </Button.ToolTip>
                                 </Button>
                             </StackPanel>
@@ -843,7 +1113,7 @@
                             <TextBlock Text="{Binding CurrentPage.Title}" Style="{StaticResource PageHeading}" />
                             <TextBlock Text="{Binding CurrentPage.Subtitle}" Margin="0,5,0,16" FontSize="13" Foreground="{StaticResource BrushMuted}" TextWrapping="Wrap" />
                         </StackPanel>
-                        <Button Grid.Column="1" Content="Refresh all" Command="{Binding RefreshCommand}" VerticalAlignment="Top" Padding="14,8" />
+                        <Button Grid.Column="1" Content="{DynamicResource L10n_Common_RefreshAll}" Command="{Binding RefreshCommand}" VerticalAlignment="Top" Padding="14,8" />
                     </Grid>
 
                     <ProgressBar Grid.Row="1" Height="2" IsIndeterminate="True" Margin="0,0,0,12">
@@ -914,7 +1184,7 @@
                     <TextBlock VerticalAlignment="Center" Foreground="{StaticResource BrushMuted}" FontSize="11"
                                Text="{Binding OperationMessage}" TextTrimming="CharacterEllipsis" />
                     <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{StaticResource BrushGold}"
-                               FontSize="10" FontWeight="SemiBold" Text="ADAM CODEXHUB · LOCAL GATEWAY" />
+                               FontSize="10" FontWeight="SemiBold" Text="{DynamicResource L10n_Title_StatusTag}" />
                 </Grid>
             </Border>
         </Grid>

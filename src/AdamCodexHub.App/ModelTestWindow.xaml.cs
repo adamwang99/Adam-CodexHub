@@ -44,7 +44,7 @@ public partial class ModelTestWindow : Window
         catch (Exception ex)
         {
             _viewModel.IsRunning = false;
-            _viewModel.Summary = "Test failed";
+            _viewModel.Summary = Services.L10n.T("L10n_MT_TestFailed");
             _viewModel.Notes = ex.Message;
         }
     }

@@ -1,7 +1,7 @@
 <Window x:Class="AdamCodexHub.App.FirstRunAcknowledgementWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Adam CodexHub — Important"
+        Title="{DynamicResource L10n_FR_WindowTitle}"
         Style="{StaticResource AppWindow}"
         Width="700"
         Height="700"
@@ -18,7 +18,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Important Before First Use"
+            <TextBlock Text="{DynamicResource L10n_FR_Heading}"
                        FontSize="24"
                        FontWeight="Bold"
                        Foreground="{StaticResource BrushWhite}" />
@@ -27,38 +27,38 @@
                           Margin="0,16,0,16"
                           VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,12,0">
-                    <TextBlock Text="Provider and session behavior"
+                    <TextBlock Text="{DynamicResource L10n_FR_Sec1}"
                                Foreground="{StaticResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
-                               Text="Adam CodexHub does not convert an existing chat session from one provider into another. Current project files, Git state and synchronized project state take priority over old chat history. Cross-provider use requires a separate session and a project handoff. A normal app exit restores the preserved Codex Account configuration; a crash or forced termination may prevent restoration."
+                               Text="{DynamicResource L10n_FR_Sec1Body}"
                                TextWrapping="Wrap"
                                Foreground="{StaticResource BrushCream}"
                                LineHeight="21" />
 
-                    <TextBlock Text="Remote data transfer and provider terms"
+                    <TextBlock Text="{DynamicResource L10n_FR_Sec2}"
                                Foreground="{StaticResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
-                               Text="When you use a remote provider, prompts, source code, files, outputs and metadata may be sent to that provider. Its terms, privacy policy, retention, training and cross-border transfer rules apply. Do not send confidential, personal or regulated data unless you are authorized and the provider is suitable."
+                               Text="{DynamicResource L10n_FR_Sec2Body}"
                                TextWrapping="Wrap"
                                Foreground="{StaticResource BrushCream}"
                                LineHeight="21" />
 
-                    <TextBlock Text="Real requests, charges and local security"
+                    <TextBlock Text="{DynamicResource L10n_FR_Sec3}"
                                Foreground="{StaticResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
-                               Text="Key tests, model compatibility probes, retries and failover make real API requests and may consume credits or incur charges. Keys are protected at rest with Windows DPAPI, but no local tool can protect them from malicious software running as the same Windows user. Remote custom endpoints must use HTTPS; HTTP is allowed only for loopback providers."
+                               Text="{DynamicResource L10n_FR_Sec3Body}"
                                TextWrapping="Wrap"
                                Foreground="{StaticResource BrushCream}"
                                LineHeight="21" />
 
-                    <TextBlock Text="Independent experimental software"
+                    <TextBlock Text="{DynamicResource L10n_FR_Sec4}"
                                Foreground="{StaticResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
-                               Text="This independent MIT-licensed project is intended for learning, experimentation and developer evaluation. It is not affiliated with or endorsed by OpenAI, Microsoft, GitHub or any provider, and it is not certified for safety-critical, regulated or other high-risk use."
+                               Text="{DynamicResource L10n_FR_Sec4Body}"
                                TextWrapping="Wrap"
                                Foreground="{StaticResource BrushCream}"
                                LineHeight="21" />
@@ -66,13 +66,16 @@
                     <TextBlock Margin="0,0,0,16"
                                Foreground="{StaticResource BrushAqua}"
                                TextWrapping="Wrap">
-                        <Hyperlink NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/PRIVACY.md"
+                        <Hyperlink x:Name="PrivacyLink"
+                                   NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/PRIVACY.md"
                                    RequestNavigate="OpenLink">Privacy</Hyperlink>
                         <Run Text="  ·  " />
-                        <Hyperlink NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/DISCLAIMER.md"
+                        <Hyperlink x:Name="DisclaimerLink"
+                                   NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/DISCLAIMER.md"
                                    RequestNavigate="OpenLink">Disclaimer</Hyperlink>
                         <Run Text="  ·  " />
-                        <Hyperlink NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/docs/PROVIDER-DATA-DISCLOSURES.md"
+                        <Hyperlink x:Name="DisclosuresLink"
+                                   NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/docs/PROVIDER-DATA-DISCLOSURES.md"
                                    RequestNavigate="OpenLink">Provider disclosures</Hyperlink>
                     </TextBlock>
 
@@ -83,7 +86,7 @@
                               Margin="0,0,0,10">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
-                                   Text="I understand that providers may use separate sessions and that project state may be synchronized for handoff." />
+                                   Text="{DynamicResource L10n_FR_Check1}" />
                     </CheckBox>
 
                     <CheckBox x:Name="DataAcknowledgementCheckBox"
@@ -93,7 +96,7 @@
                               Margin="0,0,0,10">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
-                                   Text="I understand that remote providers may receive my data and apply their own terms and privacy practices." />
+                                   Text="{DynamicResource L10n_FR_Check2}" />
                     </CheckBox>
 
                     <CheckBox x:Name="ResponsibilityAcknowledgementCheckBox"
@@ -102,7 +105,7 @@
                               Foreground="{StaticResource BrushCream}">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
-                                   Text="I understand that probes and retries may cost money, and that I am responsible for provider charges, credentials, data and lawful use." />
+                                   Text="{DynamicResource L10n_FR_Check3}" />
                     </CheckBox>
                 </StackPanel>
             </ScrollViewer>
@@ -113,7 +116,7 @@
                     HorizontalAlignment="Right"
                     IsEnabled="False"
                     Click="Continue_Click"
-                    Content="I Understand — Continue" />
+                    Content="{DynamicResource L10n_FR_Continue}" />
         </Grid>
     </Border>
 </Window>

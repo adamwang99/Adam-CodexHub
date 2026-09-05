@@ -933,7 +933,7 @@
                     <!-- App identity: large crisp logo (no rounded frame) + name -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <Image Source="Assets/adam-codexhub-logo.png"
-                               Width="58" Height="58"
+                               Width="70" Height="70"
                                Stretch="Uniform"
                                RenderOptions.BitmapScalingMode="HighQuality"
                                VerticalAlignment="Center">

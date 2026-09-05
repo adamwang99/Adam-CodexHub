@@ -19,18 +19,20 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Header -->
+            <!-- Header: the SAME frameless logo as the main window, same 70px -->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Border Width="52" Height="52" CornerRadius="14" Background="#16FFFFFF"
-                        BorderBrush="{StaticResource BrushGlassRim}" BorderThickness="1">
-                    <Image Source="Assets/adam-codexhub-logo.png" Stretch="Uniform" Margin="9"
-                           RenderOptions.BitmapScalingMode="HighQuality" />
-                </Border>
+                <Image Source="Assets/adam-codexhub-logo.png" Width="70" Height="70"
+                       Stretch="Uniform" VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality">
+                    <Image.Effect>
+                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.5" Color="#000000" />
+                    </Image.Effect>
+                </Image>
                 <StackPanel Grid.Column="1" Margin="16,2,0,0" VerticalAlignment="Center">
                     <TextBlock Text="Adam CodexHub" FontSize="22" FontWeight="Bold"
                                Foreground="{StaticResource BrushCream}" />

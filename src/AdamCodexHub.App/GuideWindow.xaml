@@ -119,45 +119,45 @@
                     <TextBlock Text="{DynamicResource L10n_Guide_Sec2}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushCream}" Margin="0,8,0,4" LineHeight="21">
-                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Sec2Lead}" />
+                        <Run FontWeight="SemiBold" Text="{DynamicResource L10n_Guide_Sec2Lead}" /><Run Text=" " />
                         <Run Text="{DynamicResource L10n_Guide_Sec2Rest}" />
                     </TextBlock>
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,0,0,16" LineHeight="21">
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_1Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_1Rest}" /><LineBreak />
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_2Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_2Rest}" /><LineBreak />
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_3Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_3Rest}" /><LineBreak />
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_4Lead}" /><Run Text="{DynamicResource L10n_Guide_B2_4Rest}" />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_1Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B2_1Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_2Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B2_2Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_3Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B2_3Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B2_4Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B2_4Rest}" />
                     </TextBlock>
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Sec3}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_1Lead}" /><Run Text="{DynamicResource L10n_Guide_B3_1Rest}" /><LineBreak />
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_2Lead}" /><Run Text="{DynamicResource L10n_Guide_B3_2Rest}" /><LineBreak />
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_3Lead}" /><Run Text="{DynamicResource L10n_Guide_B3_3Rest}" />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_1Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B3_1Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_2Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B3_2Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B3_3Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B3_3Rest}" />
                     </TextBlock>
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Sec4}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_1Lead}" /><Run Text="{DynamicResource L10n_Guide_B4_1Rest}" /><LineBreak />
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_2Lead}" /><Run Text="{DynamicResource L10n_Guide_B4_2Rest}" /><LineBreak />
-                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_3Lead}" /><Run Text="{DynamicResource L10n_Guide_B4_3Rest}" />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_1Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B4_1Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_2Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B4_2Rest}" /><LineBreak />
+                        <Run Text="• " /><Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_B4_3Lead}" /><Run Text=" " /><Run Text="{DynamicResource L10n_Guide_B4_3Rest}" />
                     </TextBlock>
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Sec5}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        <Run Text="{DynamicResource L10n_Guide_S5Prefix}" />
-                        <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_S5Lead}" />
+                        <Run Text="{DynamicResource L10n_Guide_S5Prefix}" /><Run Text=" " />
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_S5Lead}" /><Run Text=" " />
                         <Run Text="{DynamicResource L10n_Guide_S5Rest}" />
                     </TextBlock>
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Sec6}"
                                Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
                     <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{StaticResource BrushMuted}" Margin="0,8,0,16" LineHeight="21">
-                        <Run Text="{DynamicResource L10n_Guide_S6Prefix}" />
-                        <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_S6Lead}" />
+                        <Run Text="{DynamicResource L10n_Guide_S6Prefix}" /><Run Text=" " />
+                        <Run FontWeight="SemiBold" Foreground="{StaticResource BrushCream}" Text="{DynamicResource L10n_Guide_S6Lead}" /><Run Text=" " />
                         <Run Text="{DynamicResource L10n_Guide_S6Rest}" />
                     </TextBlock>
 

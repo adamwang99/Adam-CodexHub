@@ -60,9 +60,10 @@ public sealed class ProviderActivationService : IProviderActivationService
                     "Codex Account is already active.");
             }
 
-            await _config.ActivateAccountAsync(cancellationToken);
+            // Codex Account is the native, immutable configuration: activation only flips the
+            // app's internal active state. Nothing is ever written to ~/.codex and the in-process
+            // gateway keeps running (the app now lives in the tray between window closures).
             await _providers.SetActiveAsync(target.Id, cancellationToken);
-            await _gateway.StopAsync(cancellationToken);
             return new ProviderActivationResult(
                 target,
                 null,
@@ -93,7 +94,10 @@ public sealed class ProviderActivationService : IProviderActivationService
         try
         {
             await _providers.SetActiveAsync(target.Id, cancellationToken);
-            await _config.ActivateGatewayAsync(
+            // The prepared sandbox home is written under the app data directory; the launcher
+            // resolves its path again via GetGatewayHomePath when starting Codex with CODEX_HOME.
+            _ = await _config.PrepareGatewayHomeAsync(
+                target.Id,
                 model.RemoteId,
                 _gateway.Port,
                 _gateway.LocalToken,

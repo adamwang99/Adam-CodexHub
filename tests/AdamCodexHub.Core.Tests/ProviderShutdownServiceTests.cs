@@ -8,44 +8,40 @@ namespace AdamCodexHub.Core.Tests;
 public sealed class ProviderShutdownServiceTests
 {
     [Fact]
-    public async Task RemoteProviderRestoresAccountProfileOnShutdown()
+    public async Task RemoteProviderResetsActiveToCodexAccountOnShutdown()
     {
         var providers = new ShutdownProviderManager(CreateProvider("openrouter"));
-        var config = new ShutdownConfigService(hasAccountProfile: true);
-        var service = new ProviderShutdownService(providers, config);
+        var service = new ProviderShutdownService(providers);
 
         var status = await service.RestoreAccountAsync();
 
         Assert.Equal(ProviderShutdownStatus.AccountRestored, status);
-        Assert.Equal(1, config.ActivateAccountCalls);
         Assert.Equal("codex-account", providers.Active?.Id);
     }
 
     [Fact]
-    public async Task MissingAccountProfileLeavesProviderSelectionUnchanged()
+    public async Task RestoreAccountDoesNotRequireAnAccountProfileOnDisk()
     {
+        // Managed providers live in a sandboxed CODEX_HOME, so shutting down never needs a
+        // captured ~/.codex profile: the app only resets its internal active state.
         var providers = new ShutdownProviderManager(CreateProvider("openrouter"));
-        var config = new ShutdownConfigService(hasAccountProfile: false);
-        var service = new ProviderShutdownService(providers, config);
+        var service = new ProviderShutdownService(providers);
 
         var status = await service.RestoreAccountAsync();
 
-        Assert.Equal(ProviderShutdownStatus.AccountProfileUnavailable, status);
-        Assert.Equal(0, config.ActivateAccountCalls);
-        Assert.Equal("openrouter", providers.Active?.Id);
+        Assert.Equal(ProviderShutdownStatus.AccountRestored, status);
+        Assert.Equal("codex-account", providers.Active?.Id);
     }
 
     [Fact]
     public async Task ActiveAccountDoesNotRewriteConfiguration()
     {
         var providers = new ShutdownProviderManager(CreateProvider("codex-account"));
-        var config = new ShutdownConfigService(hasAccountProfile: true);
-        var service = new ProviderShutdownService(providers, config);
+        var service = new ProviderShutdownService(providers);
 
         var status = await service.RestoreAccountAsync();
 
         Assert.Equal(ProviderShutdownStatus.AlreadyUsingAccount, status);
-        Assert.Equal(0, config.ActivateAccountCalls);
         Assert.Equal("codex-account", providers.Active?.Id);
     }
 
@@ -113,44 +109,6 @@ public sealed class ProviderShutdownServiceTests
         public Task SetHealthAsync(
             string providerId,
             ProviderHealth health,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-    }
-
-    private sealed class ShutdownConfigService : ICodexConfigService
-    {
-        private readonly bool _hasAccountProfile;
-
-        public ShutdownConfigService(bool hasAccountProfile)
-        {
-            _hasAccountProfile = hasAccountProfile;
-        }
-
-        public string CodexHome => "test-codex-home";
-        public int ActivateAccountCalls { get; private set; }
-
-        public Task<bool> HasAccountProfileAsync(
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(_hasAccountProfile);
-
-        public Task ActivateAccountAsync(CancellationToken cancellationToken = default)
-        {
-            ActivateAccountCalls++;
-            return Task.CompletedTask;
-        }
-
-        public Task ActivateGatewayAsync(
-            string modelId,
-            int gatewayPort,
-            string gatewayToken,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-
-        public Task<string?> BackupCurrentAsync(
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-
-        public Task RestoreLastKnownGoodAsync(
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
     }

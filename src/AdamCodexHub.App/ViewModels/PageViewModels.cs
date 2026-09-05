@@ -101,6 +101,7 @@ public sealed class HomeViewModel : PageViewModel
     private readonly IKeyPoolService _keys;
     private readonly IGatewayService _gateway;
     private readonly IProviderActivationService _activation;
+    private readonly ICodexConfigService _config;
     private readonly IAppSettingsService _settings;
     private readonly IUserDialogService _dialogs;
     private readonly AppPaths _paths;
@@ -111,6 +112,7 @@ public sealed class HomeViewModel : PageViewModel
         IKeyPoolService keys,
         IGatewayService gateway,
         IProviderActivationService activation,
+        ICodexConfigService config,
         IAppSettingsService settings,
         IUserDialogService dialogs,
         AppPaths paths)
@@ -121,6 +123,7 @@ public sealed class HomeViewModel : PageViewModel
         _keys = keys;
         _gateway = gateway;
         _activation = activation;
+        _config = config;
         _settings = settings;
         _dialogs = dialogs;
         _paths = paths;
@@ -338,7 +341,13 @@ public sealed class HomeViewModel : PageViewModel
             var launchDesktop = card.Id == "codex-account"
                 ? UseDesktopForAccount
                 : card.Target == CodexTarget.Windows;
-            await LaunchCodexAsync(launchDesktop);
+
+            // Managed providers use a private sandboxed Codex home; the native Codex Account
+            // keeps the real ~/.codex (no CODEX_HOME override).
+            var codexHome = card.Id == ProviderManager.CodexAccountProviderId
+                ? null
+                : _config.GetGatewayHomePath(card.Id);
+            await LaunchCodexAsync(launchDesktop, codexHome);
         }
     }
 
@@ -366,7 +375,7 @@ public sealed class HomeViewModel : PageViewModel
             await _activation.ActivateAsync("codex-account", null);
             await RefreshCoreAsync();
             StatusMessage = "Codex Account restored. Per-provider API keys and models are preserved.";
-            await LaunchCodexAsync(UseDesktopForAccount);
+            await LaunchCodexAsync(UseDesktopForAccount, codexHome: null);
         }
         catch (Exception ex)
         {
@@ -375,7 +384,12 @@ public sealed class HomeViewModel : PageViewModel
         }
     }
 
-    private static Task LaunchCodexAsync(bool desktop)
+    /// <summary>
+    /// Launches Codex after a successful activation. Managed third-party providers run against a
+    /// private sandboxed home passed through CODEX_HOME; the native Codex Account is launched with
+    /// no override so it keeps using the real ~/.codex untouched.
+    /// </summary>
+    private Task LaunchCodexAsync(bool desktop, string? codexHome)
     {
         if (desktop)
         {
@@ -419,11 +433,21 @@ public sealed class HomeViewModel : PageViewModel
 
         try
         {
-            Process.Start(new ProcessStartInfo(codexPath)
+            // UseShellExecute must be false so the CODEX_HOME environment variable can be set for
+            // managed providers; CreateNoWindow=false gives the console Codex CLI its own window.
+            var startInfo = new ProcessStartInfo(codexPath)
             {
                 WorkingDirectory = Path.GetDirectoryName(codexPath),
-                UseShellExecute = true
-            });
+                UseShellExecute = false,
+                CreateNoWindow = false
+            };
+
+            if (!string.IsNullOrWhiteSpace(codexHome))
+            {
+                startInfo.Environment["CODEX_HOME"] = codexHome;
+            }
+
+            Process.Start(startInfo);
         }
         catch
         {

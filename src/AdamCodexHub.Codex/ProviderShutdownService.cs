@@ -9,18 +9,19 @@ public enum ProviderShutdownStatus
     AccountProfileUnavailable
 }
 
+/// <summary>
+/// Runs when the app exits. Because managed providers now live in a sandboxed CODEX_HOME that is
+/// separate from the user's real ~/.codex, shutting down never rewrites any file on disk: it only
+/// resets the app's internal active-provider state back to the native Codex Account.
+/// </summary>
 public sealed class ProviderShutdownService
 {
     private const string CodexAccountProviderId = "codex-account";
     private readonly IProviderManager _providers;
-    private readonly ICodexConfigService _config;
 
-    public ProviderShutdownService(
-        IProviderManager providers,
-        ICodexConfigService config)
+    public ProviderShutdownService(IProviderManager providers)
     {
         _providers = providers;
-        _config = config;
     }
 
     public async Task<ProviderShutdownStatus> RestoreAccountAsync(
@@ -35,12 +36,6 @@ public sealed class ProviderShutdownService
             return ProviderShutdownStatus.AlreadyUsingAccount;
         }
 
-        if (!await _config.HasAccountProfileAsync(cancellationToken))
-        {
-            return ProviderShutdownStatus.AccountProfileUnavailable;
-        }
-
-        await _config.ActivateAccountAsync(cancellationToken);
         await _providers.SetActiveAsync(CodexAccountProviderId, cancellationToken);
         return ProviderShutdownStatus.AccountRestored;
     }

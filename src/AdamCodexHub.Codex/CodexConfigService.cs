@@ -14,15 +14,14 @@ public sealed class CodexConfigService : ICodexConfigService
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     public CodexConfigService()
-        : this(Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".codex"))
+        : this(DefaultCodexHome(), DefaultRuntimeHomesRoot())
     {
     }
 
-    private CodexConfigService(string codexHome)
+    private CodexConfigService(string codexHome, string runtimeHomesRoot)
     {
         CodexHome = Path.GetFullPath(codexHome);
+        RuntimeHomesRoot = Path.GetFullPath(runtimeHomesRoot);
         _configPath = Path.Combine(CodexHome, "config.toml");
         _accountPath = Path.Combine(CodexHome, "config-ACCOUNT.toml");
         _backupDirectory = Path.Combine(CodexHome, "adam-codexhub-backups");
@@ -33,11 +32,32 @@ public sealed class CodexConfigService : ICodexConfigService
 
     public string CodexHome { get; }
 
+    /// <summary>
+    /// Root folder holding one private, sandboxed Codex home per managed provider
+    /// (<c>&lt;RuntimeHomesRoot&gt;/&lt;providerId&gt;/config.toml</c>). Gateway activations are
+    /// written here so the user's real <see cref="CodexHome"/> configuration stays untouched.
+    /// </summary>
+    public string RuntimeHomesRoot { get; }
+
     public static CodexConfigService ForHome(string codexHome)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(codexHome);
-        return new CodexConfigService(codexHome);
+        // Test/embedded homes keep their sandboxed provider homes inside the same folder so the
+        // whole tree stays self-contained (e.g. for temp-dir test fixtures).
+        return new CodexConfigService(
+            codexHome,
+            Path.Combine(Path.GetFullPath(codexHome), "codex-homes"));
     }
+
+    private static string DefaultCodexHome() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ".codex");
+
+    private static string DefaultRuntimeHomesRoot() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "AdamCodexHub",
+        "data",
+        "codex-homes");
 
     public Task<bool> HasAccountProfileAsync(
         CancellationToken cancellationToken = default) =>
@@ -169,6 +189,75 @@ public sealed class CodexConfigService : ICodexConfigService
         {
             _gate.Release();
         }
+    }
+
+    public async Task<string> PrepareGatewayHomeAsync(
+        string providerId,
+        string modelId,
+        int gatewayPort,
+        string gatewayToken,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(modelId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayToken);
+        if (gatewayPort is < 1 or > 65535)
+        {
+            throw new ArgumentOutOfRangeException(nameof(gatewayPort));
+        }
+
+        var runtimeHome = GetGatewayHomePath(providerId);
+
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            Directory.CreateDirectory(runtimeHome);
+
+            // The real ~/.codex/config.toml is only READ as the base so the user keeps their
+            // shared settings; the gateway keys are applied to a private copy below.
+            var current = File.Exists(_configPath)
+                ? await File.ReadAllTextAsync(_configPath, cancellationToken)
+                : string.Empty;
+            var model = string.IsNullOrWhiteSpace(current)
+                ? new TomlTable()
+                : ParseToml(current);
+
+            var candidate = BuildGatewayCandidate(
+                model,
+                modelId.Trim(),
+                gatewayPort,
+                gatewayToken.Trim());
+            ValidateGatewayCandidate(
+                candidate,
+                modelId.Trim(),
+                gatewayPort,
+                gatewayToken.Trim());
+
+            var destination = Path.Combine(runtimeHome, "config.toml");
+            await AtomicWriteFileAsync(destination, candidate, cancellationToken);
+
+            var written = await File.ReadAllTextAsync(destination, cancellationToken);
+            ValidateToml(written);
+            return runtimeHome;
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public string GetGatewayHomePath(string providerId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerId);
+        return Path.Combine(RuntimeHomesRoot, ToSafeDirectoryName(providerId));
+    }
+
+    private static string ToSafeDirectoryName(string providerId)
+    {
+        var safe = new string(providerId
+            .Select(c => char.IsLetterOrDigit(c) || c is '.' or '_' or '-' ? c : '_')
+            .ToArray());
+        return safe.Length == 0 ? "provider" : safe;
     }
 
     private static string BuildGatewayCandidate(

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using AdamCodexHub.App.ViewModels;
 using AdamCodexHub.App.Services;
@@ -17,6 +18,8 @@ using AdamCodexHub.Providers.Adapters;
 using AdamCodexHub.Providers.Registry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Drawing = System.Drawing;
+using WinForms = System.Windows.Forms;
 
 namespace AdamCodexHub.App;
 
@@ -24,6 +27,18 @@ public partial class App : Application
 {
     private const int RequiredSessionAcknowledgementVersion = 2;
     private IHost? _host;
+    private WinForms.NotifyIcon? _trayIcon;
+    private Drawing.Icon? _trayIconImage;
+
+    /// <summary>
+    /// True once the user has chosen a real exit (tray "Exit" or OS session ending). Window
+    /// closing is intercepted otherwise, so the app hides to the system tray and the in-process
+    /// gateway keeps running.
+    /// </summary>
+    public static bool IsRealExit { get; set; }
+
+    [DllImport("user32.dll")]
+    private static extern bool DestroyIcon(IntPtr handle);
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -107,7 +122,11 @@ public partial class App : Application
             LogStartup("Main window resolved");
             MainWindow = window;
             window.Show();
-            ShutdownMode = ShutdownMode.OnMainWindowClose;
+
+            // ShutdownMode stays OnExplicitShutdown (declared in App.xaml): closing the window
+            // only hides it to the tray while the in-process gateway keeps serving Codex.
+            InitializeTrayIcon(window);
+            LogStartup("Tray icon initialized");
             LogStartup("Main window shown");
             await window.ViewModel.InitializeAsync();
             LogStartup("Main view model initialized");
@@ -130,6 +149,8 @@ public partial class App : Application
         var host = _host;
         _host = null;
 
+        DisposeTrayIcon();
+
         if (host is not null)
         {
             Task.Run(() => ShutdownHostAsync(host)).GetAwaiter().GetResult();
@@ -137,6 +158,108 @@ public partial class App : Application
         }
 
         base.OnExit(e);
+    }
+
+    protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
+    {
+        // Never let close-to-tray block a Windows logoff/shutdown; stop the host gracefully
+        // (gateway + state) before the OS tears the session down.
+        IsRealExit = true;
+        base.OnSessionEnding(e);
+        if (!e.Cancel)
+        {
+            Shutdown();
+        }
+    }
+
+    private void InitializeTrayIcon(Window window)
+    {
+        var menu = new WinForms.ContextMenuStrip();
+        var showItem = new WinForms.ToolStripMenuItem("Show Adam CodexHub");
+        showItem.Click += (_, _) => ShowMainWindow(window);
+        var exitItem = new WinForms.ToolStripMenuItem("Exit");
+        exitItem.Click += (_, _) => ExitApplication();
+        menu.Items.Add(showItem);
+        menu.Items.Add(new WinForms.ToolStripSeparator());
+        menu.Items.Add(exitItem);
+
+        _trayIconImage = LoadTrayIcon();
+        _trayIcon = new WinForms.NotifyIcon
+        {
+            Text = "Adam CodexHub",
+            Icon = _trayIconImage,
+            ContextMenuStrip = menu,
+            Visible = true
+        };
+        _trayIcon.DoubleClick += (_, _) => ShowMainWindow(window);
+    }
+
+    private void ExitApplication()
+    {
+        IsRealExit = true;
+        DisposeTrayIcon();
+        Shutdown();
+    }
+
+    private void DisposeTrayIcon()
+    {
+        var icon = _trayIcon;
+        _trayIcon = null;
+        if (icon is not null)
+        {
+            icon.Visible = false;
+            icon.Dispose();
+        }
+
+        _trayIconImage?.Dispose();
+        _trayIconImage = null;
+    }
+
+    private static void ShowMainWindow(Window window)
+    {
+        if (window.WindowState == WindowState.Minimized)
+        {
+            window.WindowState = WindowState.Normal;
+        }
+
+        window.Show();
+        window.Activate();
+        window.Topmost = true;
+        window.Topmost = false;
+        window.Focus();
+    }
+
+    private static Drawing.Icon LoadTrayIcon()
+    {
+        var packUri = new Uri(
+            "pack://application:,,,/AdamCodexHub.App;component/Assets/adam-codexhub-logo.png",
+            UriKind.Absolute);
+        using var stream = Application.GetResourceStream(packUri)?.Stream
+            ?? throw new InvalidOperationException("Bundled app logo resource was not found.");
+
+        // Scale the (usually large) logo down so the small tray icon stays crisp, then convert
+        // the bitmap handle into a standalone icon (the handle is destroyed after cloning).
+        using var source = new Drawing.Bitmap(stream);
+        using var scaled = new Drawing.Bitmap(32, 32);
+        using (var graphics = Drawing.Graphics.FromImage(scaled))
+        {
+            graphics.InterpolationMode = Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.SmoothingMode = Drawing.Drawing2D.SmoothingMode.HighQuality;
+            graphics.PixelOffsetMode = Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            graphics.Clear(Drawing.Color.Transparent);
+            graphics.DrawImage(source, 0, 0, 32, 32);
+        }
+
+        var hIcon = scaled.GetHicon();
+        try
+        {
+            using var fromHandle = Drawing.Icon.FromHandle(hIcon);
+            return (Drawing.Icon)fromHandle.Clone();
+        }
+        finally
+        {
+            DestroyIcon(hIcon);
+        }
     }
 
     private static async Task ShutdownHostAsync(IHost host)

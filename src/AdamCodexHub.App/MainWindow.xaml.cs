@@ -34,6 +34,22 @@ public partial class MainWindow : Window
 
     public MainViewModel ViewModel { get; }
 
+    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+    {
+        base.OnClosing(e);
+
+        // Closing the main window hides the app to the system tray instead of exiting: the
+        // in-process gateway must keep serving Codex. Only a real exit (tray "Exit" or an OS
+        // session ending) is allowed to tear the window down.
+        if (App.IsRealExit)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        Hide();
+    }
+
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
         // Rounded window corners on Windows 11 (harmless no-op on older builds).

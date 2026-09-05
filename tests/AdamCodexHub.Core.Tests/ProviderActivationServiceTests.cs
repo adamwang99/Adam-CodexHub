@@ -8,12 +8,12 @@ namespace AdamCodexHub.Core.Tests;
 public sealed class ProviderActivationServiceTests
 {
     [Fact]
-    public async Task ActivateAccountRestoresConfigStopsGatewayAndSetsActive()
+    public async Task ActivateAccountSetsActiveWithoutRewritingConfigOrStoppingGateway()
     {
         var remote = CreateProvider("openrouter", enabled: true);
         var account = CreateProvider("codex-account", enabled: true);
         var providers = new FakeProviderManager(remote, active: remote);
-        var config = new FakeConfig(hasAccountProfile: true);
+        var config = new FakeConfig(hasAccountProfile: false);
         var gateway = new FakeGateway(running: true);
 
         var service = Create(providers, config: config, gateway: gateway);
@@ -21,8 +21,9 @@ public sealed class ProviderActivationServiceTests
 
         Assert.Equal("codex-account", result.Provider.Id);
         Assert.Null(result.Model);
-        Assert.Equal(1, config.ActivateAccountCalls);
-        Assert.Equal(1, gateway.StopCalls);
+        Assert.Equal(0, config.ActivateAccountCalls);
+        Assert.Equal(0, config.PrepareGatewayHomeCalls);
+        Assert.Equal(0, gateway.StopCalls);
         Assert.Equal("codex-account", providers.Active?.Id);
     }
 
@@ -43,7 +44,7 @@ public sealed class ProviderActivationServiceTests
     }
 
     [Fact]
-    public async Task ActivateRemoteStartsGatewayWritesConfigAndSetsActive()
+    public async Task ActivateRemoteStartsGatewayPreparesSandboxHomeAndSetsActive()
     {
         var remote = CreateProvider("deepseek", enabled: true);
         var account = CreateProvider("codex-account", enabled: true);
@@ -60,9 +61,11 @@ public sealed class ProviderActivationServiceTests
         Assert.Equal("deepseek", result.Provider.Id);
         Assert.Equal("deepseek-chat", result.Model?.RemoteId);
         Assert.Equal(1, gateway.StartCalls);
-        Assert.Equal(1, config.ActivateGatewayCalls);
+        Assert.Equal(1, config.PrepareGatewayHomeCalls);
+        Assert.Equal("deepseek", config.LastPreparedProviderId);
+        Assert.Equal("deepseek-chat", config.LastPreparedModelId);
         Assert.Equal("deepseek", providers.Active?.Id);
-        Assert.Equal("deepseek-chat", config.LastGatewayModelId);
+        Assert.Equal(0, gateway.StopCalls);
     }
 
     [Fact]
@@ -312,6 +315,9 @@ public sealed class ProviderActivationServiceTests
         public int ActivateAccountCalls { get; private set; }
         public int ActivateGatewayCalls { get; private set; }
         public string? LastGatewayModelId { get; private set; }
+        public int PrepareGatewayHomeCalls { get; private set; }
+        public string? LastPreparedProviderId { get; private set; }
+        public string? LastPreparedModelId { get; private set; }
 
         public Task<bool> HasAccountProfileAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(_hasAccountProfile);
@@ -320,6 +326,27 @@ public sealed class ProviderActivationServiceTests
         {
             ActivateAccountCalls++;
             return Task.CompletedTask;
+        }
+
+        public string GetGatewayHomePath(string providerId) =>
+            Path.Combine("test-homes", providerId);
+
+        public Task<string> PrepareGatewayHomeAsync(
+            string providerId,
+            string modelId,
+            int gatewayPort,
+            string gatewayToken,
+            CancellationToken cancellationToken = default)
+        {
+            if (_failGatewayWrite)
+            {
+                throw new InvalidOperationException("Simulated config write failure.");
+            }
+
+            PrepareGatewayHomeCalls++;
+            LastPreparedProviderId = providerId;
+            LastPreparedModelId = modelId;
+            return Task.FromResult(GetGatewayHomePath(providerId));
         }
 
         public Task ActivateGatewayAsync(

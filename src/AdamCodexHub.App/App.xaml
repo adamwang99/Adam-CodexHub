@@ -137,6 +137,10 @@
             <GradientStop Offset="1.0" Color="#00000000" />
         </LinearGradientBrush>
 
+        <!-- App font: Barlow embedded in Assets/Fonts (Regular 400 / Medium 500 / SemiBold 600 / Bold 700,
+             full Vietnamese coverage). Composite "Segoe UI" fallback keeps rare glyphs (✓, ⭐, emoji) safe. -->
+        <FontFamily x:Key="FontBarlow">/Assets/Fonts/#Barlow, Segoe UI</FontFamily>
+
         <Thickness x:Key="ControlPadding">12,8</Thickness>
         <CornerRadius x:Key="ControlRadius">6</CornerRadius>
         <CornerRadius x:Key="CardRadius">8</CornerRadius>
@@ -152,7 +156,7 @@
         <Style x:Key="AppWindow" TargetType="Window">
             <Setter Property="Background" Value="{StaticResource BrushWindow}" />
             <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
+            <Setter Property="FontFamily" Value="{StaticResource FontBarlow}" />
             <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
             <Setter Property="UseLayoutRounding" Value="True" />
             <Setter Property="WindowStyle" Value="None" />
@@ -828,6 +832,7 @@
             <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
             <Setter Property="Background" Value="#E6161616" />
             <Setter Property="BorderBrush" Value="{StaticResource BrushHairline}" />
+            <Setter Property="FontFamily" Value="{StaticResource FontBarlow}" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="HasDropShadow" Value="True" />
         </Style>

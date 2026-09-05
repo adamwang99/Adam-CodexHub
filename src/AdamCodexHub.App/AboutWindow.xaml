@@ -157,51 +157,51 @@
                         </StackPanel>
                     </Button>
 
-                    <!-- Total PDF -->
+                    <!-- Facebook profile -->
                     <Button HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="12,9" Margin="0,0,0,8"
                             Click="OpenLink_Click"
-                            Tag="https://github.com/adamwang99/total-pdf"
-                            automation:AutomationProperties.Name="Open Total PDF repository">
+                            Tag="https://www.facebook.com/tuanvuonghoang/"
+                            automation:AutomationProperties.Name="Open Facebook profile">
                         <Button.ToolTip>
-                            <TextBlock Text="{DynamicResource L10n_About_Social_TotalPdf_Tip}" />
+                            <TextBlock Text="{DynamicResource L10n_About_Social_Facebook_Tip}" />
                         </Button.ToolTip>
                         <StackPanel Orientation="Horizontal">
                             <Border Width="34" Height="34" CornerRadius="9"
-                                    Background="#14FFFFFF" BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1">
-                                <TextBlock Text="📄" FontSize="16"
+                                    Background="#1E1877F2" BorderBrush="#661877F2" BorderThickness="1">
+                                <TextBlock Text="f" FontWeight="Bold" FontSize="18" Foreground="#F2FFFFFF"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{DynamicResource L10n_About_Social_TotalPdf_Label}"
+                                <TextBlock Text="{DynamicResource L10n_About_Social_Facebook_Label}"
                                            FontWeight="SemiBold" FontSize="13" />
-                                <TextBlock Text="{DynamicResource L10n_About_Social_TotalPdf_Url}"
+                                <TextBlock Text="{DynamicResource L10n_About_Social_Facebook_Url}"
                                            Foreground="{StaticResource BrushMuted}" FontSize="11" />
                             </StackPanel>
                         </StackPanel>
                     </Button>
 
-                    <!-- Adam TypeSlayer -->
+                    <!-- Facebook community group -->
                     <Button HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Left"
                             Padding="12,9" Margin="0,0,0,6"
                             Click="OpenLink_Click"
-                            Tag="https://github.com/adamwang99/Adam-TypeSlayer"
-                            automation:AutomationProperties.Name="Open Adam TypeSlayer repository">
+                            Tag="https://www.facebook.com/groups/931272648865049"
+                            automation:AutomationProperties.Name="Open the Adam Community Facebook group">
                         <Button.ToolTip>
-                            <TextBlock Text="{DynamicResource L10n_About_Social_TypeSlayer_Tip}" />
+                            <TextBlock Text="{DynamicResource L10n_About_Social_FbGroup_Tip}" />
                         </Button.ToolTip>
                         <StackPanel Orientation="Horizontal">
                             <Border Width="34" Height="34" CornerRadius="9"
-                                    Background="#14FFFFFF" BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1">
-                                <TextBlock Text="⌨️" FontSize="16"
+                                    Background="#1E1877F2" BorderBrush="#661877F2" BorderThickness="1">
+                                <TextBlock Text="&#x1F465;" FontSize="16" Foreground="#F2FFFFFF"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                <TextBlock Text="{DynamicResource L10n_About_Social_TypeSlayer_Label}"
+                                <TextBlock Text="{DynamicResource L10n_About_Social_FbGroup_Label}"
                                            FontWeight="SemiBold" FontSize="13" />
-                                <TextBlock Text="{DynamicResource L10n_About_Social_TypeSlayer_Url}"
+                                <TextBlock Text="{DynamicResource L10n_About_Social_FbGroup_Url}"
                                            Foreground="{StaticResource BrushMuted}" FontSize="11" />
                             </StackPanel>
                         </StackPanel>

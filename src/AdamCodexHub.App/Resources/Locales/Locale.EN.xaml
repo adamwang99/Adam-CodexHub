@@ -127,7 +127,7 @@
     <sys:String x:Key="L10n_About_FreeTitle">FREE FOR LIFE</sys:String>
     <sys:String x:Key="L10n_About_OpenGuide">Open the guide</sys:String>
     <sys:String x:Key="L10n_About_ProjectsSection">PROJECTS &amp; SOCIAL</sys:String>
-    <sys:String x:Key="L10n_About_StarHint">Enjoying Adam CodexHub? A ⭐ on GitHub keeps this free project alive — and star the repos below that you find useful.</sys:String>
+    <sys:String x:Key="L10n_About_StarHint">Enjoying Adam CodexHub? A ⭐ on GitHub keeps this free project alive — and join the Adam Community on Facebook to connect with other users.</sys:String>
     <sys:String x:Key="L10n_About_OpenTip">Open in your browser</sys:String>
     <sys:String x:Key="L10n_About_Social_GitHub_Label">GitHub Profile</sys:String>
     <sys:String x:Key="L10n_About_Social_GitHub_Url">github.com/adamwang99</sys:String>
@@ -135,12 +135,12 @@
     <sys:String x:Key="L10n_About_Social_CodexHub_Label">Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Social_CodexHub_Url">github.com/adamwang99/Adam-CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Social_CodexHub_Tip">Open the Adam CodexHub repository (this app's source) in your browser.</sys:String>
-    <sys:String x:Key="L10n_About_Social_TotalPdf_Label">Total PDF</sys:String>
-    <sys:String x:Key="L10n_About_Social_TotalPdf_Url">github.com/adamwang99/total-pdf</sys:String>
-    <sys:String x:Key="L10n_About_Social_TotalPdf_Tip">Open the Total PDF repository in your browser.</sys:String>
-    <sys:String x:Key="L10n_About_Social_TypeSlayer_Label">Adam TypeSlayer</sys:String>
-    <sys:String x:Key="L10n_About_Social_TypeSlayer_Url">github.com/adamwang99/Adam-TypeSlayer</sys:String>
-    <sys:String x:Key="L10n_About_Social_TypeSlayer_Tip">Open the Adam TypeSlayer repository in your browser.</sys:String>
+    <sys:String x:Key="L10n_About_Social_Facebook_Label">Facebook</sys:String>
+    <sys:String x:Key="L10n_About_Social_Facebook_Url">facebook.com/tuanvuonghoang</sys:String>
+    <sys:String x:Key="L10n_About_Social_Facebook_Tip">Open Adam's Facebook profile in your browser.</sys:String>
+    <sys:String x:Key="L10n_About_Social_FbGroup_Label">Facebook Group (Adam Community)</sys:String>
+    <sys:String x:Key="L10n_About_Social_FbGroup_Url">facebook.com/groups/931272648865049</sys:String>
+    <sys:String x:Key="L10n_About_Social_FbGroup_Tip">Join the Adam Community group on Facebook.</sys:String>
     <sys:String x:Key="L10n_FR_WindowTitle">Adam CodexHub — Important</sys:String>
     <sys:String x:Key="L10n_FR_Heading">Important Before First Use</sys:String>
     <sys:String x:Key="L10n_FR_Sec1">Provider and session behavior</sys:String>

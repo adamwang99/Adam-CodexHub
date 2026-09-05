@@ -25,6 +25,10 @@
   <ItemGroup>
     <Resource Include="Assets\adam-codexhub-logo.png" />
     <Resource Include="Assets\adam-codexhub-architecture.png" />
+    <Resource Include="Assets\Fonts\Barlow-Regular.ttf" />
+    <Resource Include="Assets\Fonts\Barlow-Medium.ttf" />
+    <Resource Include="Assets\Fonts\Barlow-SemiBold.ttf" />
+    <Resource Include="Assets\Fonts\Barlow-Bold.ttf" />
     <Resource Include="Assets\providers\anthropic.png" />
     <Resource Include="Assets\providers\codex-account.png" />
     <Resource Include="Assets\providers\deepseek.png" />

@@ -911,12 +911,12 @@
 
         <Grid Margin="10">
             <Grid.RowDefinitions>
-                <RowDefinition Height="58" />
+                <RowDefinition Height="66" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="30" />
             </Grid.RowDefinitions>
 
-            <!-- ============ Title bar (larger logo left, EN/VI toggle + Windows controls right) ============ -->
+            <!-- ============ Title bar (frameless logo left, EN/VI toggle + Windows controls right) ============ -->
             <Border Grid.Row="0" CornerRadius="12,12,0,0"
                     Background="#4D0D0D0D"
                     BorderBrush="{StaticResource BrushGlassRim}"
@@ -930,16 +930,18 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- App identity: bigger, crisp logo + name -->
+                    <!-- App identity: large crisp logo (no rounded frame) + name -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="52" Height="52" CornerRadius="16"
-                                Background="#16FFFFFF"
-                                BorderBrush="{StaticResource BrushHairlineStrong}"
-                                BorderThickness="1"
-                                Margin="0,0,0,0">
-                            <Image Source="Assets/adam-codexhub-logo.png" Stretch="Uniform" Margin="3"
-                                   RenderOptions.BitmapScalingMode="HighQuality" />
-                        </Border>
+                        <Image Source="Assets/adam-codexhub-logo.png"
+                               Width="58" Height="58"
+                               Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               VerticalAlignment="Center">
+                            <Image.Effect>
+                                <!-- Soft drop shadow keeps the logo floating over the glass -->
+                                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.5" Color="#000000" />
+                            </Image.Effect>
+                        </Image>
                         <StackPanel VerticalAlignment="Center" Margin="12,0,0,0">
                             <TextBlock Text="Adam CodexHub" FontWeight="SemiBold" FontSize="15"
                                        VerticalAlignment="Center" />
@@ -950,16 +952,16 @@
 
                     <!-- Right: status chips + EN/VI toggle + Windows caption buttons -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border CornerRadius="8" Padding="10,4" Margin="0,0,8,0"
+                        <Border CornerRadius="8" Padding="8,3" Margin="0,0,6,0"
                                 Background="#12FFFFFF" BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="{DynamicResource L10n_Title_ActivePrefix}" Foreground="{StaticResource BrushMuted}" FontSize="11" />
-                                <TextBlock Text="{Binding ActiveProvider, Mode=OneWay}" FontWeight="SemiBold" FontSize="11" />
+                                <TextBlock Text="{DynamicResource L10n_Title_ActivePrefix}" Foreground="{StaticResource BrushMuted}" FontSize="10.5" />
+                                <TextBlock Text="{Binding ActiveProvider, Mode=OneWay}" FontWeight="SemiBold" FontSize="10.5" />
                             </StackPanel>
                         </Border>
-                        <Border CornerRadius="8" Padding="10,4" Margin="0,0,14,0"
+                        <Border CornerRadius="8" Padding="8,3" Margin="0,0,10,0"
                                 Background="#12FFFFFF" BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1">
-                            <TextBlock Text="{Binding GatewayStatus}" Foreground="{StaticResource BrushAqua}" FontSize="11" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding GatewayStatus}" Foreground="{StaticResource BrushAqua}" FontSize="10.5" VerticalAlignment="Center" />
                         </Border>
 
                         <!-- Language toggle: EN | VI (checked = Vietnamese) -->
@@ -996,7 +998,7 @@
             <!-- ============ Body: sidebar + content ============ -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="216" />
+                    <ColumnDefinition Width="198" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -1014,79 +1016,102 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="{DynamicResource L10n_Sidebar_Control}" Style="{StaticResource SectionLabel}" Margin="12,0,0,12" />
+                        <TextBlock Text="{DynamicResource L10n_Sidebar_Control}" Style="{StaticResource SectionLabel}" Margin="10,0,0,10" />
 
-                        <ItemsControl Grid.Row="1" ItemsSource="{Binding Pages}">
+                        <!-- Glass nav: one pill per page; active item gets an amber highlight + bold white label -->
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding Pages}" HorizontalContentAlignment="Stretch">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="2,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="3" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <!-- Active indicator -->
-                                        <Border Grid.Column="0" CornerRadius="2" Margin="0,6"
-                                                HorizontalAlignment="Center" VerticalAlignment="Stretch" Width="3">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="Transparent" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Background" Value="{StaticResource BrushGold}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                        </Border>
-                                        <Border Grid.Column="1" CornerRadius="{StaticResource PillRadius}" Padding="12,9" Margin="4,0,0,0">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="Transparent" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                            <Setter Property="Background" Value="{StaticResource BrushSidebarActive}" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <Button Padding="0"
-                                                    Background="Transparent"
-                                                    Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}">
-                                                <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
-                                                        <Setter Property="Padding" Value="0" />
-                                                        <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+                                    <Button Margin="0,2"
+                                            Cursor="Hand"
+                                            HorizontalContentAlignment="Stretch"
+                                            Command="{Binding DataContext.NavigateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+                                                <Setter Property="FontWeight" Value="Normal" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Pill"
+                                                                    Background="{TemplateBinding Background}"
+                                                                    CornerRadius="{StaticResource PillRadius}"
+                                                                    Padding="10,8">
+                                                                <ContentPresenter HorizontalAlignment="Stretch"
+                                                                                  VerticalAlignment="Center" />
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Pill" Property="Background" Value="#1AFFFFFF" />
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter TargetName="Pill" Property="Opacity" Value="0.85" />
+                                                                </Trigger>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter TargetName="Pill" Property="Background" Value="#33D89B2B" />
+                                                                    <Setter Property="Foreground" Value="{StaticResource BrushWhite}" />
+                                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                                </DataTrigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- Active dot: glows amber on the current page -->
+                                            <Border Width="7" Height="7" CornerRadius="3.5"
+                                                    VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#4DFFFFFF" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                <Setter Property="Foreground" Value="{StaticResource BrushWhite}" />
-                                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                                                <Setter Property="Background" Value="{StaticResource BrushGold}" />
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </Button.Style>
-                                                <TextBlock Text="{Binding Title}" FontSize="13" />
-                                            </Button>
-                                        </Border>
-                                    </Grid>
+                                                </Border.Style>
+                                            </Border>
+                                            <TextBlock Text="{Binding Title}" FontSize="13" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <StackPanel Grid.Row="2" Margin="12,0,12,6">
-                            <!-- About / Guide: two separate glass buttons -->
-                            <StackPanel Orientation="Horizontal" Margin="2,0,0,10">
-                                <Button Content="{DynamicResource L10n_Sidebar_About}" Click="About_Click" Padding="14,7">
+                        <StackPanel Grid.Row="2" Margin="0,10,0,6">
+                            <!-- About / Guide: two equal glass buttons sharing the sidebar width -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0"
+                                        Content="{DynamicResource L10n_Sidebar_About}"
+                                        Click="About_Click"
+                                        Padding="10,8"
+                                        Margin="0,0,4,0"
+                                        HorizontalContentAlignment="Center"
+                                        FontSize="12.5">
                                     <Button.ToolTip>
                                         <TextBlock Text="{DynamicResource L10n_Sidebar_AboutTip}" />
                                     </Button.ToolTip>
                                 </Button>
-                                <Button Content="{DynamicResource L10n_Sidebar_Guide}" Click="Guide_Click" Padding="14,7" Margin="8,0,0,0">
+                                <Button Grid.Column="1"
+                                        Content="{DynamicResource L10n_Sidebar_Guide}"
+                                        Click="Guide_Click"
+                                        Padding="10,8"
+                                        Margin="4,0,0,0"
+                                        HorizontalContentAlignment="Center"
+                                        FontSize="12.5">
                                     <Button.ToolTip>
                                         <TextBlock Text="{DynamicResource L10n_Sidebar_GuideTip}" />
                                     </Button.ToolTip>
                                 </Button>
-                            </StackPanel>
+                            </Grid>
                             <Border Height="1" Background="{StaticResource BrushHairlineSoft}" Margin="0,0,0,12" />
                             <TextBlock Text="ADAM DUNG AI" Foreground="{StaticResource BrushGold}" FontSize="10" FontWeight="SemiBold"
                                        HorizontalAlignment="Left" />

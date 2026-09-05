@@ -19,7 +19,7 @@ public partial class AboutWindow : Window
         guide.ShowDialog();
     }
 
-    /// <summary>Opens the button's Tag URL in the default browser (real adamwang99 links only).</summary>
+    /// <summary>Opens the button's Tag URL in the default browser (Adam's real links only).</summary>
     private void OpenLink_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: string url } || string.IsNullOrWhiteSpace(url))

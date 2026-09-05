@@ -127,7 +127,7 @@
     <sys:String x:Key="L10n_About_FreeTitle">MIỄN PHÍ VĨNH VIỄN</sys:String>
     <sys:String x:Key="L10n_About_OpenGuide">Mở hướng dẫn</sys:String>
     <sys:String x:Key="L10n_About_ProjectsSection">DỰ ÁN &amp; MẠNG XÃ HỘI</sys:String>
-    <sys:String x:Key="L10n_About_StarHint">Bạn thấy Adam CodexHub hữu ích? Một ⭐ trên GitHub giúp dự án miễn phí này tiếp tục sống — và hãy star các kho lưu trữ dưới đây mà bạn thấy hay.</sys:String>
+    <sys:String x:Key="L10n_About_StarHint">Bạn thấy Adam CodexHub hữu ích? Một ⭐ trên GitHub giúp dự án miễn phí này tiếp tục sống — và hãy tham gia nhóm Adam Community trên Facebook để kết nối với những người dùng khác.</sys:String>
     <sys:String x:Key="L10n_About_OpenTip">Mở trong trình duyệt</sys:String>
     <sys:String x:Key="L10n_About_Social_GitHub_Label">Hồ sơ GitHub</sys:String>
     <sys:String x:Key="L10n_About_Social_GitHub_Url">github.com/adamwang99</sys:String>
@@ -135,12 +135,12 @@
     <sys:String x:Key="L10n_About_Social_CodexHub_Label">Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Social_CodexHub_Url">github.com/adamwang99/Adam-CodexHub</sys:String>
     <sys:String x:Key="L10n_About_Social_CodexHub_Tip">Mở kho lưu trữ Adam CodexHub (mã nguồn ứng dụng này) trong trình duyệt.</sys:String>
-    <sys:String x:Key="L10n_About_Social_TotalPdf_Label">Total PDF</sys:String>
-    <sys:String x:Key="L10n_About_Social_TotalPdf_Url">github.com/adamwang99/total-pdf</sys:String>
-    <sys:String x:Key="L10n_About_Social_TotalPdf_Tip">Mở kho lưu trữ Total PDF trong trình duyệt.</sys:String>
-    <sys:String x:Key="L10n_About_Social_TypeSlayer_Label">Adam TypeSlayer</sys:String>
-    <sys:String x:Key="L10n_About_Social_TypeSlayer_Url">github.com/adamwang99/Adam-TypeSlayer</sys:String>
-    <sys:String x:Key="L10n_About_Social_TypeSlayer_Tip">Mở kho lưu trữ Adam TypeSlayer trong trình duyệt.</sys:String>
+    <sys:String x:Key="L10n_About_Social_Facebook_Label">Facebook</sys:String>
+    <sys:String x:Key="L10n_About_Social_Facebook_Url">facebook.com/tuanvuonghoang</sys:String>
+    <sys:String x:Key="L10n_About_Social_Facebook_Tip">Mở hồ sơ Facebook của Adam trong trình duyệt.</sys:String>
+    <sys:String x:Key="L10n_About_Social_FbGroup_Label">Nhóm Facebook (Adam Community)</sys:String>
+    <sys:String x:Key="L10n_About_Social_FbGroup_Url">facebook.com/groups/931272648865049</sys:String>
+    <sys:String x:Key="L10n_About_Social_FbGroup_Tip">Tham gia nhóm Adam Community trên Facebook.</sys:String>
     <sys:String x:Key="L10n_FR_WindowTitle">Adam CodexHub — Quan Trọng</sys:String>
     <sys:String x:Key="L10n_FR_Heading">Quan Trọng Trước Khi Dùng Lần Đầu</sys:String>
     <sys:String x:Key="L10n_FR_Sec1">Hành vi của nhà cung cấp và phiên làm việc</sys:String>

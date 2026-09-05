@@ -42,6 +42,15 @@
     <sys:String x:Key="L10n_Home_Off">OFF</sys:String>
     <sys:String x:Key="L10n_Home_DoubleClickTip">Double-click to activate with Codex.</sys:String>
     <sys:String x:Key="L10n_Home_FooterHint">Double-click a provider card to activate it with Codex. Codex Account returns to the default sign-in. For third-party providers, add an API key and verify a model first.</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Title">How it works</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Subtitle">Your API keys stay safely on this PC. The internal gateway routes every Codex session to the healthiest provider — your keys never leave your machine.</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Keys_Title">API keys</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Keys_Sub">Stored safely on your PC</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Keys_Sources">DeepSeek · Qwen · Anthropic…</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Gateway_Title">Internal gateway</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Gateway_Sub">Picks the best key and the healthiest provider</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Codex_Title">Codex Desktop / CLI</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Codex_Sub">You chat, plan and write code</sys:String>
     <sys:String x:Key="L10n_Card_Ready">READY</sys:String>
     <sys:String x:Key="L10n_Card_Setup">SETUP</sys:String>
     <sys:String x:Key="L10n_Card_KeyPresent">API key ✓</sys:String>

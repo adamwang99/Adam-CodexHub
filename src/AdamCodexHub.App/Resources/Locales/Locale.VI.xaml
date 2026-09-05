@@ -42,6 +42,15 @@
     <sys:String x:Key="L10n_Home_Off">OFF</sys:String>
     <sys:String x:Key="L10n_Home_DoubleClickTip">Nhấp đúp để kích hoạt với Codex.</sys:String>
     <sys:String x:Key="L10n_Home_FooterHint">Nhấp đúp vào thẻ nhà cung cấp để kích hoạt với Codex. Codex Account trả về đăng nhập mặc định. Với nhà cung cấp bên thứ ba, hãy thêm API key và kiểm tra một mô hình trước.</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Title">Cách hoạt động</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Subtitle">API key của bạn nằm an toàn trên máy. Gateway nội bộ tự chọn nhà cung cấp khỏe mạnh nhất cho từng phiên Codex — key không bao giờ rời khỏi máy bạn.</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Keys_Title">API Keys</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Keys_Sub">Lưu an toàn trên máy của bạn</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Keys_Sources">DeepSeek · Qwen · Anthropic…</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Gateway_Title">Gateway nội bộ</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Gateway_Sub">Tự chọn key tốt nhất và nhà cung cấp khỏe mạnh</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Codex_Title">Codex Desktop / CLI</sys:String>
+    <sys:String x:Key="L10n_Home_Flow_Codex_Sub">Bạn trò chuyện, lập kế hoạch và viết mã</sys:String>
     <sys:String x:Key="L10n_Card_Ready">SẴN SÀNG</sys:String>
     <sys:String x:Key="L10n_Card_Setup">THIẾT LẬP</sys:String>
     <sys:String x:Key="L10n_Card_KeyPresent">Có API key ✓</sys:String>

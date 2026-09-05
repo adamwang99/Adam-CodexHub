@@ -300,6 +300,61 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Dual-direction connector arrows between flow nodes. The top arrow (aqua →) sends,
+             the bottom arrow (amber ←) returns; they blink in opposite phase like live data
+             exchange. Storyboards stop cleanly on Unloaded. -->
+        <Style x:Key="FlowArrowSend" TargetType="TextBlock">
+            <Setter Property="Text" Value="&#x2192;" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{StaticResource BrushAqua}" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.45" Color="#2FD0C8" />
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard x:Name="FlowSendBlink">
+                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             From="0.15" To="1" Duration="0:0:0.65" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="FrameworkElement.Unloaded">
+                    <RemoveStoryboard BeginStoryboardName="FlowSendBlink" />
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="FlowArrowRecv" TargetType="TextBlock">
+            <Setter Property="Text" Value="&#x2190;" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#E0D89B2B" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Opacity="0.45" Color="#D89B2B" />
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                    <BeginStoryboard x:Name="FlowRecvBlink">
+                        <Storyboard BeginTime="0:0:0.65" RepeatBehavior="Forever" AutoReverse="True">
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             From="0.15" To="1" Duration="0:0:0.65" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="FrameworkElement.Unloaded">
+                    <RemoveStoryboard BeginStoryboardName="FlowRecvBlink" />
+                </EventTrigger>
+            </Style.Triggers>
+        </Style>
+
         <DataTemplate DataType="{x:Type vm:HomeViewModel}">
             <!-- Single vertical scroll flow: toolbar, provider grid, feature-flow diagram, footer.
                  Lives inside the page ScrollViewer (MainWindow content Row 3): the ListBox no longer
@@ -695,51 +750,12 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Flow arrow 1 → signal lane: aqua dot travels right, amber dot returns -->
-                            <Grid Grid.Column="1" Width="46" Margin="2,0">
-                                <TextBlock Style="{StaticResource FlowArrowGlyph}" />
-                                <Ellipse Width="7" Height="7" Fill="#E02FD0C8"
-                                         HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,8,0,0"
-                                         RenderTransformOrigin="0.5,0.5">
-                                    <Ellipse.RenderTransform>
-                                        <TranslateTransform x:Name="Sig1Fwd" />
-                                    </Ellipse.RenderTransform>
-                                    <Ellipse.Triggers>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                            <BeginStoryboard x:Name="Sig1FwdSb">
-                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetName="Sig1Fwd"
-                                                                     Storyboard.TargetProperty="X"
-                                                                     From="0" To="39" Duration="0:0:1.2" />
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Unloaded">
-                                            <RemoveStoryboard BeginStoryboardName="Sig1FwdSb" />
-                                        </EventTrigger>
-                                    </Ellipse.Triggers>
-                                </Ellipse>
-                                <Ellipse Width="7" Height="7" Fill="#E0D89B2B"
-                                         HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0,0,0,8"
-                                         RenderTransformOrigin="0.5,0.5">
-                                    <Ellipse.RenderTransform>
-                                        <TranslateTransform x:Name="Sig1Ret" />
-                                    </Ellipse.RenderTransform>
-                                    <Ellipse.Triggers>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                            <BeginStoryboard x:Name="Sig1RetSb">
-                                                <Storyboard BeginTime="0:0:0.6" RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetName="Sig1Ret"
-                                                                     Storyboard.TargetProperty="X"
-                                                                     From="39" To="0" Duration="0:0:1.2" />
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Unloaded">
-                                            <RemoveStoryboard BeginStoryboardName="Sig1RetSb" />
-                                        </EventTrigger>
-                                    </Ellipse.Triggers>
-                                </Ellipse>
+                            <!-- Flow connector 1: dual arrows — aqua → sends up, amber ← returns below -->
+                            <Grid Grid.Column="1" Width="44" Margin="2,0">
+                                <TextBlock Style="{StaticResource FlowArrowSend}"
+                                           VerticalAlignment="Top" Margin="0,12,0,0" />
+                                <TextBlock Style="{StaticResource FlowArrowRecv}"
+                                           VerticalAlignment="Bottom" Margin="0,0,0,12" />
                             </Grid>
 
                             <!-- 2 · Internal gateway (aqua hero accent) -->
@@ -768,51 +784,12 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Flow arrow 2 → signal lane: aqua dot travels right, amber dot returns -->
-                            <Grid Grid.Column="3" Width="46" Margin="2,0">
-                                <TextBlock Style="{StaticResource FlowArrowGlyph}" />
-                                <Ellipse Width="7" Height="7" Fill="#E02FD0C8"
-                                         HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,8,0,0"
-                                         RenderTransformOrigin="0.5,0.5">
-                                    <Ellipse.RenderTransform>
-                                        <TranslateTransform x:Name="Sig2Fwd" />
-                                    </Ellipse.RenderTransform>
-                                    <Ellipse.Triggers>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                            <BeginStoryboard x:Name="Sig2FwdSb">
-                                                <Storyboard BeginTime="0:0:0.3" RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetName="Sig2Fwd"
-                                                                     Storyboard.TargetProperty="X"
-                                                                     From="0" To="39" Duration="0:0:1.2" />
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Unloaded">
-                                            <RemoveStoryboard BeginStoryboardName="Sig2FwdSb" />
-                                        </EventTrigger>
-                                    </Ellipse.Triggers>
-                                </Ellipse>
-                                <Ellipse Width="7" Height="7" Fill="#E0D89B2B"
-                                         HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0,0,0,8"
-                                         RenderTransformOrigin="0.5,0.5">
-                                    <Ellipse.RenderTransform>
-                                        <TranslateTransform x:Name="Sig2Ret" />
-                                    </Ellipse.RenderTransform>
-                                    <Ellipse.Triggers>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-                                            <BeginStoryboard x:Name="Sig2RetSb">
-                                                <Storyboard BeginTime="0:0:0.9" RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetName="Sig2Ret"
-                                                                     Storyboard.TargetProperty="X"
-                                                                     From="39" To="0" Duration="0:0:1.2" />
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                        <EventTrigger RoutedEvent="FrameworkElement.Unloaded">
-                                            <RemoveStoryboard BeginStoryboardName="Sig2RetSb" />
-                                        </EventTrigger>
-                                    </Ellipse.Triggers>
-                                </Ellipse>
+                            <!-- Flow connector 2: dual arrows — aqua → sends up, amber ← returns below -->
+                            <Grid Grid.Column="3" Width="44" Margin="2,0">
+                                <TextBlock Style="{StaticResource FlowArrowSend}"
+                                           VerticalAlignment="Top" Margin="0,12,0,0" />
+                                <TextBlock Style="{StaticResource FlowArrowRecv}"
+                                           VerticalAlignment="Bottom" Margin="0,0,0,12" />
                             </Grid>
 
                             <!-- 3 · Codex Desktop / CLI -->

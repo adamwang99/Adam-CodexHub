@@ -7,7 +7,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <!-- Real multi-size application icon (taskbar, alt-tab, explorer) — fixes the black blob. -->
     <ApplicationIcon>Assets\adam-codexhub.ico</ApplicationIcon>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
   </PropertyGroup>
   <ItemGroup>
     <!-- UseWindowsForms pulls framework global usings for System.Windows.Forms/System.Drawing that

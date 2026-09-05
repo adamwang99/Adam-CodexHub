@@ -1,5 +1,6 @@
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using AdamCodexHub.App.ViewModels;
 using AdamCodexHub.App.Services;
@@ -26,6 +27,8 @@ namespace AdamCodexHub.App;
 public partial class App : Application
 {
     private const int RequiredSessionAcknowledgementVersion = 2;
+    private const string SingleInstanceMutexName = "Global\\AdamCodexHub.SingleInstance.v1";
+    private static Mutex? _singleInstanceMutex;
     private IHost? _host;
     private WinForms.NotifyIcon? _trayIcon;
     private Drawing.Icon? _trayIconImage;
@@ -78,6 +81,20 @@ public partial class App : Application
 
         try
         {
+            var ownsMutex = false;
+            _singleInstanceMutex = new Mutex(true, SingleInstanceMutexName, out ownsMutex);
+            if (!ownsMutex)
+            {
+                LogStartup("Second instance blocked");
+                MessageBox.Show(
+                    "Adam CodexHub is already running in the system tray.\\n\\nClose the existing instance before launching another copy.",
+                    "Adam CodexHub",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                Shutdown();
+                return;
+            }
+
             // Restore the persisted UI language BEFORE any window is created so the very
             // first frame is already localized (English is the default).
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -213,6 +230,8 @@ public partial class App : Application
             host.Dispose();
         }
 
+        _singleInstanceMutex?.Dispose();
+        _singleInstanceMutex = null;
         base.OnExit(e);
     }
 

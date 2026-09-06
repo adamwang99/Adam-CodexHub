@@ -1063,7 +1063,17 @@ public sealed class ProviderSetupViewModel : PageViewModel
             return;
         }
 
-        await _keys.AddAsync(provider.Id, "default", NewKey.Trim());
+        // Never create two keys with the same label inside one provider: the key pool uses the
+        // label as the human handle, and duplicate "default" rows only confuse later edits.
+        var existing = await _keys.ListAsync(provider.Id);
+        var taken = existing.Select(k => k.Label).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var label = "default";
+        for (var attempt = 2; taken.Contains(label) && attempt < 1000; attempt++)
+        {
+            label = $"default ({attempt})";
+        }
+
+        await _keys.AddAsync(provider.Id, label, NewKey.Trim());
         NewKey = string.Empty;
         await LoadKeysAsync();
         StatusMessage = L10n.F("L10n_Setup_KeyStored", provider.Name);

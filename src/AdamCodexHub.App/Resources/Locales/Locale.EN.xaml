@@ -58,6 +58,7 @@
     <sys:String x:Key="L10n_Card_Setup">SETUP</sys:String>
     <sys:String x:Key="L10n_Card_KeyPresent">API key ✓</sys:String>
     <sys:String x:Key="L10n_Card_KeyNeeded">API key needed</sys:String>
+    <sys:String x:Key="L10n_Card_ApiProvider">External API · {0}</sys:String>
     <sys:String x:Key="L10n_Card_Desc_Account">Uses your native Codex sign-in. Double-click to restore the default Codex account.</sys:String>
     <sys:String x:Key="L10n_Card_AccountDefault">Default Codex app</sys:String>
     <sys:String x:Key="L10n_Card_Desc_CliReady">Ready to use with Codex CLI (terminal). Double-click to activate and launch the terminal.</sys:String>
@@ -299,6 +300,11 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Activation completed.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Activated {0}.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Activation failed: {0}</sys:String>
+    <sys:String x:Key="L10n_Home_RoutingVerificationFailed">Could not verify the Codex route to {0}. Codex was not opened to prevent the wrong provider.</sys:String>
+    <sys:String x:Key="L10n_Msg_SwitchProviderTitle">Switch Codex provider</sys:String>
+    <sys:String x:Key="L10n_Msg_SwitchProviderBody">Codex is running with {0}. Are you sure you want to close Codex and switch to {1}?</sys:String>
+    <sys:String x:Key="L10n_Msg_SwitchProviderAction">Close and switch to {0}</sys:String>
+
     <sys:String x:Key="L10n_Home_AccountRestored">Codex Account restored. Per-provider API keys and models are preserved.</sys:String>
     <sys:String x:Key="L10n_Home_RestoreFailed">Could not restore Codex Account: {0}</sys:String>
     <sys:String x:Key="L10n_Setup_NewProfileMsg">Enter a custom provider profile.</sys:String>

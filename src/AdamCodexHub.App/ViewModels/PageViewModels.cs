@@ -118,6 +118,8 @@ public sealed class HomeViewModel : PageViewModel
 
     /// <summary>Official Codex download page — offered when the Codex CLI is not installed.</summary>
     private const string CodexCliDownloadUrl = "https://openai.com/codex";
+    private const int CodexProcessShutdownWaitMs = 5000;
+    private static readonly string[] CodexProcessNames = { "codex", "CodexDesktop", "ChatGPT" };
 
     private readonly IProviderManager _providers;
     private readonly IModelStore _models;
@@ -262,8 +264,10 @@ public sealed class HomeViewModel : PageViewModel
             }
             else
             {
-                // Not configured yet — a single card so the user can set it up.
+                // Keep both launch targets visible even before setup is complete. The CLI card
+                // must not disappear merely because a key has not been tested yet.
                 built.Add(NewCard(CodexTarget.Windows));
+                built.Add(NewCard(CodexTarget.Cli));
             }
         }
 
@@ -375,6 +379,24 @@ public sealed class HomeViewModel : PageViewModel
             return;
         }
 
+        var source = await _providers.GetActiveAsync();
+        if (source is not null &&
+            !string.Equals(source.Id, card.Id, StringComparison.OrdinalIgnoreCase) &&
+            CodexProcessNames.Any(name => Process.GetProcessesByName(name).Length > 0))
+        {
+            var confirmed = _dialogs.Confirm(
+                L10n.T("L10n_Msg_SwitchProviderTitle"),
+                L10n.F("L10n_Msg_SwitchProviderBody", source.Name, card.Name),
+                L10n.F("L10n_Msg_SwitchProviderAction", card.Name));
+            if (!confirmed)
+            {
+                StatusMessage = L10n.T("L10n_Msg_ActivationCanceled");
+                return;
+            }
+
+            await StopCodexProcessesAsync();
+        }
+
         SelectedCard = card;
 
         try
@@ -391,7 +413,26 @@ public sealed class HomeViewModel : PageViewModel
         // Only launch Codex when activation actually succeeded (no early return/error).
         if (StatusMessage == L10n.F("L10n_Home_Activated", card.Name))
         {
-            // Windows (W) cards: the Codex DESKTOP app is launched. For keyed providers the
+            var active = await _providers.GetActiveAsync();
+            if (active is null || !string.Equals(active.Id, card.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                StatusMessage = L10n.F("L10n_Home_ProviderVerificationFailed", card.Name);
+                LogError("Provider verification failed after activation",
+                    new InvalidOperationException($"Expected '{card.Id}', got '{active?.Id ?? "none"}'."));
+                return;
+            }
+
+            // The activation result must also match the route Codex will read. Do not launch if
+            // the Desktop overlay or CLI sandbox points elsewhere.
+            if (!await VerifyCodexRoutingAsync(card))
+            {
+                StatusMessage = L10n.F("L10n_Home_RoutingVerificationFailed", card.Name);
+                LogError("Codex routing verification failed",
+                    new InvalidOperationException($"Route verification failed for '{card.Id}'."));
+                return;
+            }
+
+            // Windows (W) cards: the Codex DESKTOP app is launched.
             // config overlay (ActivateDesktopAsync) points the Desktop app at our gateway so it
             // runs on the provider's API key — never the ChatGPT account quota. CLI cards run in
             // the sandboxed CODEX_HOME. Codex Account always opens the Desktop app.
@@ -405,6 +446,58 @@ public sealed class HomeViewModel : PageViewModel
             if (await LaunchCodexAsync(launchDesktop, codexHome))
             {
                 CodexLaunched?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    private async Task<bool> VerifyCodexRoutingAsync(ProviderCard card)
+    {
+        var hasOverlay = await _config.HasGatewayOverlayAsync();
+        if (card.Id == ProviderManager.CodexAccountProviderId)
+        {
+            return !hasOverlay;
+        }
+
+        if (card.Target == CodexTarget.Windows)
+        {
+            return hasOverlay;
+        }
+
+        // The per-provider sandbox path (CODEX_HOME) is itself the routing isolation, so the
+        // gateway marker inside is enough — the config may not literally name every provider id.
+        var sandboxConfig = Path.Combine(_config.GetGatewayHomePath(card.Id), "config.toml");
+        if (!File.Exists(sandboxConfig))
+        {
+            return false;
+        }
+
+        var text = await File.ReadAllTextAsync(sandboxConfig);
+        return text.Contains("adam_codexhub", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task StopCodexProcessesAsync()
+    {
+        foreach (var processName in CodexProcessNames)
+        {
+            foreach (var process in Process.GetProcessesByName(processName))
+            {
+                try
+                {
+                    process.CloseMainWindow();
+                    if (!process.WaitForExit(CodexProcessShutdownWaitMs))
+                    {
+                        process.Kill(entireProcessTree: true);
+                        await process.WaitForExitAsync();
+                    }
+                }
+                catch (InvalidOperationException)
+                {
+                    // Process exited between discovery and close.
+                }
+                finally
+                {
+                    process.Dispose();
+                }
             }
         }
     }
@@ -670,6 +763,11 @@ public sealed class ProviderCard : ObservableObject
         ? L10n.T("L10n_Card_KeyPresent")
         : L10n.T("L10n_Card_KeyNeeded");
 
+    /// <summary>Explicit provider identity shown on external-API cards.</summary>
+    public string ApiProviderLabel => Id == ProviderManager.CodexAccountProviderId
+        ? string.Empty
+        : L10n.F("L10n_Card_ApiProvider", Name);
+
     public string TooltipDescription =>
         Id == ProviderManager.CodexAccountProviderId
             ? L10n.T("L10n_Card_Desc_Account")
@@ -689,6 +787,7 @@ public sealed class ProviderCard : ObservableObject
         OnPropertyChanged(nameof(TargetTooltip));
         OnPropertyChanged(nameof(EnabledModelLabel));
         OnPropertyChanged(nameof(KeyLabel));
+        OnPropertyChanged(nameof(ApiProviderLabel));
         OnPropertyChanged(nameof(TooltipDescription));
     }
 }

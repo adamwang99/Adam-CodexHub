@@ -59,6 +59,7 @@
     <sys:String x:Key="L10n_Card_Setup">THIẾT LẬP</sys:String>
     <sys:String x:Key="L10n_Card_KeyPresent">Có API key ✓</sys:String>
     <sys:String x:Key="L10n_Card_KeyNeeded">Cần API key</sys:String>
+    <sys:String x:Key="L10n_Card_ApiProvider">API ngoài · {0}</sys:String>
     <sys:String x:Key="L10n_Card_Desc_Account">Dùng đăng nhập Codex gốc của bạn. Nhấp đúp để khôi phục tài khoản Codex mặc định.</sys:String>
     <sys:String x:Key="L10n_Card_AccountDefault">Ứng dụng Codex mặc định</sys:String>
     <sys:String x:Key="L10n_Card_Desc_CliReady">Sẵn sàng dùng với Codex CLI (terminal). Nhấp đúp để kích hoạt và mở terminal.</sys:String>
@@ -300,6 +301,11 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Đã hoàn tất kích hoạt.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Đã kích hoạt {0}.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Kích hoạt thất bại: {0}</sys:String>
+    <sys:String x:Key="L10n_Home_RoutingVerificationFailed">Không xác minh được tuyến Codex tới {0}. Codex chưa được mở để tránh nhầm nhà cung cấp.</sys:String>
+    <sys:String x:Key="L10n_Msg_SwitchProviderTitle">Đổi nhà cung cấp Codex</sys:String>
+    <sys:String x:Key="L10n_Msg_SwitchProviderBody">Codex đang chạy với {0}. Bạn có chắc muốn đóng Codex và chuyển sang {1} không?</sys:String>
+    <sys:String x:Key="L10n_Msg_SwitchProviderAction">Đóng và chuyển sang {0}</sys:String>
+
     <sys:String x:Key="L10n_Home_AccountRestored">Đã khôi phục Codex Account. API key và mô hình của từng nhà cung cấp vẫn được giữ nguyên.</sys:String>
     <sys:String x:Key="L10n_Home_RestoreFailed">Không thể khôi phục Codex Account: {0}</sys:String>
     <sys:String x:Key="L10n_Setup_NewProfileMsg">Hãy nhập hồ sơ nhà cung cấp tùy chỉnh.</sys:String>

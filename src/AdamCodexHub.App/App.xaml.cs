@@ -135,6 +135,7 @@ public partial class App : Application
 
                 services.AddSingleton<IGatewayService, LocalGatewayService>();
                 services.AddSingleton<IUserDialogService, UserDialogService>();
+                services.AddSingleton<StartupKeyRevalidator>();
 
                 services.AddSingleton<HomeViewModel>();
                 services.AddSingleton<ProviderSetupViewModel>();
@@ -201,6 +202,27 @@ public partial class App : Application
             InitializeTrayIcon(window);
             LogStartup("Tray icon initialized");
             LogStartup("Main window shown");
+
+            // Keys left degraded (Offline / rate-limited / stale Unknown) by transient gateway
+            // failures in the previous session get one quiet probe each, so an installed and
+            // previously-tested provider is usable right away — no manual re-test required.
+            // Runs bounded (8s cap) so startup never stalls on a dead provider.
+            try
+            {
+                using var revalidationCts = new CancellationTokenSource(TimeSpan.FromSeconds(8));
+                var revalidator = _host.Services.GetRequiredService<StartupKeyRevalidator>();
+                await revalidator.RevalidateAsync(revalidationCts.Token);
+                LogStartup("Startup key revalidation completed");
+            }
+            catch (OperationCanceledException)
+            {
+                LogStartup("Startup key revalidation timed out after 8s");
+            }
+            catch (Exception revalidateEx)
+            {
+                LogStartup("Startup key revalidation failed", revalidateEx);
+            }
+
             await window.ViewModel.InitializeAsync();
             LogStartup("Main view model initialized");
             LogProviderStartupWarnings(_host);

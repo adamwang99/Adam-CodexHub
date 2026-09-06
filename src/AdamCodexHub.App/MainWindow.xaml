@@ -649,6 +649,13 @@
                                            Margin="0,16,0,3"
                                            TextWrapping="Wrap"
                                            TextAlignment="Center" />
+                                <TextBlock Text="{Binding ApiProviderLabel}"
+                                           Foreground="{StaticResource BrushAqua}"
+                                           FontSize="10"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,2"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center" />
                                 <!-- Account card (codex-account) shows a plain default-app note;
                                      keyed providers show health · models + key label. -->
                                 <StackPanel HorizontalAlignment="Center">

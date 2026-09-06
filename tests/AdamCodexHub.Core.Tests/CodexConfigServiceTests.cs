@@ -72,6 +72,43 @@ public sealed class CodexConfigServiceTests
         Assert.False(await fixture.Service.HasAccountProfileAsync());
     }
 
+    [Fact]
+    public async Task AccountProfileNeverRetainsGatewayOverlay()
+    {
+        await using var fixture = new ConfigFixture();
+        // Simulates a profile poisoned by an older build: the "current" config already carries
+        // the gateway overlay when the next desktop activation snapshots it as the account
+        // profile. The snapshot (and any later restore) must come out clean.
+        const string poisoned = """
+            model = "gpt-account"
+            model_provider = "adam_codexhub"
+            custom_setting = true
+
+            [model_providers.legacy]
+            name = "Legacy Provider"
+            base_url = "https://legacy.example.test/v1"
+            wire_api = "responses"
+
+            [model_providers.adam_codexhub]
+            name = "Adam CodexHub Local Gateway"
+            base_url = "http://127.0.0.1:59663/v1"
+            wire_api = "responses"
+            """;
+        await fixture.WriteConfigAsync(poisoned);
+
+        await fixture.Service.ActivateGatewayAsync("remote-model", "DeepSeek", 18771, TestGatewayToken);
+
+        var profile = await File.ReadAllTextAsync(fixture.AccountPath);
+        Assert.DoesNotContain("adam_codexhub", profile);
+        Assert.Contains("gpt-account", profile);
+
+        Assert.True(await fixture.Service.RestoreAccountIfGatewayOverlayAsync());
+        var restored = Toml.ToModel(await fixture.ReadConfigAsync());
+        Assert.DoesNotContain("adam_codexhub", await fixture.ReadConfigAsync());
+        Assert.False(restored.ContainsKey("model_provider"));
+        Assert.Equal(true, restored["custom_setting"]);
+    }
+
     private sealed class ConfigFixture : IAsyncDisposable
     {
         private readonly string _root = Path.Combine(

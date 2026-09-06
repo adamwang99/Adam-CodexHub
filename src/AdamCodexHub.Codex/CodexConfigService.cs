@@ -82,6 +82,17 @@ public sealed class CodexConfigService : ICodexConfigService
 
             try
             {
+                // Self-heal: a profile captured while a stale gateway overlay was present can
+                // itself carry the gateway block (older versions copied the raw current config).
+                // Strip it here so restoring "Codex Account" always returns to the native
+                // sign-in — otherwise the overlay survives every restore and the route check
+                // refuses to open Codex.
+                if (TryStripGatewayOverlay(account, out var clean))
+                {
+                    account = clean;
+                    await AtomicWriteFileAsync(_accountPath, clean, cancellationToken);
+                }
+
                 await AtomicWriteConfigAsync(account, cancellationToken);
             }
             catch
@@ -139,9 +150,14 @@ public sealed class CodexConfigService : ICodexConfigService
                 // Always refresh the saved account profile with the CURRENT native config before
                 // overlaying, so restoring later returns to exactly what the user had (plugins,
                 // marketplaces, manual provider blocks…), not a stale first-ever snapshot.
+                // A stale gateway overlay in that snapshot is stripped so the profile never
+                // re-poisons the native config after a restore.
                 if (!string.IsNullOrWhiteSpace(current))
                 {
-                    await AtomicWriteFileAsync(_accountPath, current, cancellationToken);
+                    var profile = TryStripGatewayOverlay(current, out var clean)
+                        ? clean
+                        : current;
+                    await AtomicWriteFileAsync(_accountPath, profile, cancellationToken);
                 }
 
                 await AtomicWriteConfigAsync(candidate, cancellationToken);
@@ -304,6 +320,45 @@ public sealed class CodexConfigService : ICodexConfigService
             .Select(c => char.IsLetterOrDigit(c) || c is '.' or '_' or '-' ? c : '_')
             .ToArray());
         return safe.Length == 0 ? "provider" : safe;
+    }
+
+    /// <summary>
+    /// Removes any <c>adam_codexhub</c> gateway remnant from a Codex configuration snapshot.
+    /// Older builds copied the raw (already overlaid) config as the account profile, which made
+    /// every later "restore Codex Account" write the gateway block straight back — keeping the
+    /// overlay alive forever. Returns false when the input is already clean.
+    /// </summary>
+    private static bool TryStripGatewayOverlay(string input, out string sanitized)
+    {
+        var model = ParseToml(input);
+        var providers = model.TryGetValue("model_providers", out var value)
+            ? value as TomlTable
+            : null;
+        var hasGatewayEntry = providers?.ContainsKey(ManagedProviderId) == true;
+        var isGatewayRoute = string.Equals(
+            model.TryGetValue("model_provider", out var route) ? route as string : null,
+            ManagedProviderId,
+            StringComparison.Ordinal);
+
+        if (!hasGatewayEntry && !isGatewayRoute)
+        {
+            sanitized = input;
+            return false;
+        }
+
+        providers?.Remove(ManagedProviderId);
+        if (providers is { Count: 0 })
+        {
+            model.Remove("model_providers");
+        }
+
+        if (isGatewayRoute)
+        {
+            model.Remove("model_provider");
+        }
+
+        sanitized = Toml.FromModel(model);
+        return true;
     }
 
     private static string BuildGatewayCandidate(

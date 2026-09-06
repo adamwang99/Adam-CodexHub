@@ -126,6 +126,7 @@ public sealed class ProviderShutdownServiceTests
 
         public Task ActivateGatewayAsync(
             string modelId,
+            string gatewayProviderName,
             int gatewayPort,
             string gatewayToken,
             CancellationToken cancellationToken = default) =>
@@ -142,6 +143,7 @@ public sealed class ProviderShutdownServiceTests
             string modelId,
             int gatewayPort,
             string gatewayToken,
+            string? gatewayProviderName = null,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(Path.Combine("test-homes", providerId));
 

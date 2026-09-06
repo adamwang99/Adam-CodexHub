@@ -338,6 +338,7 @@ public sealed class ProviderActivationServiceTests
             string modelId,
             int gatewayPort,
             string gatewayToken,
+            string? gatewayProviderName = null,
             CancellationToken cancellationToken = default)
         {
             if (_failGatewayWrite)
@@ -353,6 +354,7 @@ public sealed class ProviderActivationServiceTests
 
         public Task ActivateGatewayAsync(
             string modelId,
+            string gatewayProviderName,
             int gatewayPort,
             string gatewayToken,
             CancellationToken cancellationToken = default)

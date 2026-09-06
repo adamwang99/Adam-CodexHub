@@ -98,11 +98,13 @@ public sealed class CodexConfigService : ICodexConfigService
 
     public async Task ActivateGatewayAsync(
         string modelId,
+        string gatewayProviderName,
         int gatewayPort,
         string gatewayToken,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(modelId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(gatewayProviderName);
         ArgumentException.ThrowIfNullOrWhiteSpace(gatewayToken);
         if (gatewayPort is < 1 or > 65535)
         {
@@ -122,6 +124,7 @@ public sealed class CodexConfigService : ICodexConfigService
             var candidate = BuildGatewayCandidate(
                 model,
                 modelId.Trim(),
+                gatewayProviderName,
                 gatewayPort,
                 gatewayToken.Trim());
             ValidateGatewayCandidate(
@@ -237,6 +240,7 @@ public sealed class CodexConfigService : ICodexConfigService
         string modelId,
         int gatewayPort,
         string gatewayToken,
+        string? gatewayProviderName = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(providerId);
@@ -266,6 +270,7 @@ public sealed class CodexConfigService : ICodexConfigService
             var candidate = BuildGatewayCandidate(
                 model,
                 modelId.Trim(),
+                gatewayProviderName,
                 gatewayPort,
                 gatewayToken.Trim());
             ValidateGatewayCandidate(
@@ -304,6 +309,7 @@ public sealed class CodexConfigService : ICodexConfigService
     private static string BuildGatewayCandidate(
         TomlTable model,
         string modelId,
+        string? gatewayProviderName,
         int gatewayPort,
         string gatewayToken)
     {
@@ -318,9 +324,14 @@ public sealed class CodexConfigService : ICodexConfigService
             model["model_providers"] = providers;
         }
 
+        // The provider name in this block is what Codex Desktop/CLI display as the model
+        // source, so it must name the actual provider (DeepSeek, TTMAPI…) rather than the
+        // generic gateway label.
         providers[ManagedProviderId] = new TomlTable
         {
-            ["name"] = "Adam CodexHub Local Gateway",
+            ["name"] = string.IsNullOrWhiteSpace(gatewayProviderName)
+                ? "Adam CodexHub Local Gateway"
+                : gatewayProviderName,
             ["base_url"] = $"http://127.0.0.1:{gatewayPort}/v1",
             ["wire_api"] = "responses",
             ["experimental_bearer_token"] = gatewayToken

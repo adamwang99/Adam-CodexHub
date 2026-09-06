@@ -9,6 +9,7 @@ public interface ICodexConfigService
 
     Task ActivateGatewayAsync(
         string modelId,
+        string gatewayProviderName,
         int gatewayPort,
         string gatewayToken,
         CancellationToken cancellationToken = default);
@@ -27,6 +28,7 @@ public interface ICodexConfigService
         string modelId,
         int gatewayPort,
         string gatewayToken,
+        string? gatewayProviderName = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

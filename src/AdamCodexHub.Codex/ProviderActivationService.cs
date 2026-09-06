@@ -106,6 +106,7 @@ public sealed class ProviderActivationService : IProviderActivationService
                 model.RemoteId,
                 _gateway.Port,
                 _gateway.LocalToken,
+                target.Name,
                 cancellationToken);
         }
         catch
@@ -155,6 +156,7 @@ public sealed class ProviderActivationService : IProviderActivationService
 
         await _config.ActivateGatewayAsync(
             result.Model.RemoteId,
+            result.Provider.Name,
             _gateway.Port,
             _gateway.LocalToken,
             cancellationToken);

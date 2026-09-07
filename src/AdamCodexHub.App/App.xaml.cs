@@ -208,17 +208,50 @@ public partial class App : Application
                 }
             }
 
-            // Heal after an abnormal exit: if the real ~/.codex/config.toml still carries the
-            // desktop gateway overlay (app was killed while a Windows-card provider was active),
-            // restore the Codex Account profile so the Desktop app never points at a dead port.
+            // Startup routing: put Codex Desktop back on the provider the user last ran.
+            // If that provider is a keyed third-party channel (DeepSeek, TTMAPI, 9Router…), the
+            // gateway overlay is re-written automatically (stable port + persisted token), so a
+            // restart never strands Codex on the account model list. Only when there is no active
+            // keyed provider does the old heal logic restore the native Codex Account profile.
             try
             {
-                var healConfig = _host.Services.GetRequiredService<ICodexConfigService>();
-                if (await healConfig.RestoreAccountIfGatewayOverlayAsync())
+                var routingProviders = _host.Services.GetRequiredService<IProviderManager>();
+                var activeRoutingProvider = await routingProviders.GetActiveAsync();
+                if (activeRoutingProvider is not null &&
+                    !string.Equals(activeRoutingProvider.Id, "codex-account", StringComparison.OrdinalIgnoreCase) &&
+                    activeRoutingProvider.Enabled)
                 {
-                    var healProviders = _host.Services.GetRequiredService<IProviderManager>();
-                    await healProviders.SetActiveAsync("codex-account");
-                    LogStartup("Startup heal: restored ~/.codex account config (stale gateway overlay).");
+                    var modelStore = _host.Services.GetRequiredService<IModelStore>();
+                    var enabledModel = (await modelStore.GetAllAsync(
+                            activeRoutingProvider.Id,
+                            CancellationToken.None))
+                        .FirstOrDefault(x =>
+                            x.Enabled && x.State == AdamCodexHub.Core.Domain.ModelLifecycleState.Enabled);
+                    if (enabledModel is not null)
+                    {
+                        var activation = _host.Services.GetRequiredService<IProviderActivationService>();
+                        await activation.ActivateDesktopAsync(
+                            activeRoutingProvider.Id,
+                            enabledModel.RemoteId,
+                            projectPath: null,
+                            CancellationToken.None);
+                        LogStartup(
+                            $"Startup overlay: Codex Desktop routed to {activeRoutingProvider.Name} / {enabledModel.RemoteId}.");
+                    }
+                    else
+                    {
+                        LogStartup(
+                            $"Startup routing: provider {activeRoutingProvider.Name} has no enabled model; keeping account config.");
+                    }
+                }
+                else
+                {
+                    var healConfig = _host.Services.GetRequiredService<ICodexConfigService>();
+                    if (await healConfig.RestoreAccountIfGatewayOverlayAsync())
+                    {
+                        await routingProviders.SetActiveAsync("codex-account");
+                        LogStartup("Startup heal: restored ~/.codex account config (stale gateway overlay).");
+                    }
                 }
             }
             catch (Exception healEx)

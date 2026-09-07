@@ -557,12 +557,24 @@
                                             </BeginStoryboard>
                                         </EventTrigger>
                                     </Grid.Triggers>
-                                    <!-- Logo disc: clear glass — transparent center, hairline rim, shadow cast by the logo itself -->
+                                    <!-- Logo disc: clear glass — transparent center, hairline rim, shadow cast by the logo itself.
+                                         Active (SẴN SÀNG) discs get a warm amber fill + rim + soft glow so they stand out. -->
                                     <Border Width="80" Height="80" CornerRadius="21"
                                             HorizontalAlignment="Center"
-                                            Background="Transparent"
-                                            BorderBrush="{DynamicResource BrushOverlayHoverStrong}"
                                             BorderThickness="1">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource BrushLogoDisc}" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource BrushOverlayHoverStrong}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsValid}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource BrushActiveDisc}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource BrushActiveDiscRim}" />
+                                                        <Setter Property="Effect" Value="{StaticResource LogoGlowActive}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Grid Margin="9">
                                             <Grid.Style>
                                                 <Style TargetType="Grid">

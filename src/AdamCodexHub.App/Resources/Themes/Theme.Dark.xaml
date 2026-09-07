@@ -134,6 +134,10 @@
     <DropShadowEffect x:Key="AmberGlowHover" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.45" Color="#D89B2B" />
     <DropShadowEffect x:Key="LogoShadow" BlurRadius="12" ShadowDepth="5" Direction="270" Opacity="0.6" Color="#000000" />
     <DropShadowEffect x:Key="LogoGlowHover" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.65" Color="#D89B2B" />
+    <DropShadowEffect x:Key="LogoGlowActive" BlurRadius="16" ShadowDepth="0" Opacity="0.5" Color="#D89B2B" />
+    <SolidColorBrush x:Key="BrushLogoDisc" Color="#00FFFFFF" />
+    <SolidColorBrush x:Key="BrushActiveDisc" Color="#26D89B2B" />
+    <SolidColorBrush x:Key="BrushActiveDiscRim" Color="#88D89B2B" />
     <DropShadowEffect x:Key="AquaGlowToggle" BlurRadius="9" ShadowDepth="0" Opacity="0.6" Color="#2FD0C8" />
 
     <LinearGradientBrush x:Key="BrushWindow" StartPoint="0,0" EndPoint="1,1">

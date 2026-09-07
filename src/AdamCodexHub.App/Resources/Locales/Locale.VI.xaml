@@ -39,6 +39,7 @@
     <sys:String x:Key="L10n_Home_RestoreTip">Khôi phục tài khoản đăng nhập Codex mặc định. Các API key và mô hình riêng của từng nhà cung cấp vẫn được giữ nguyên.</sys:String>
     <sys:String x:Key="L10n_Home_RefreshProviders">Làm mới nhà cung cấp</sys:String>
     <sys:String x:Key="L10n_Home_RefreshTip">Tải lại danh sách nhà cung cấp và cập nhật trạng thái sức khỏe, key và mô hình.</sys:String>
+    <sys:String x:Key="L10n_Home_ExpandProvidersTip">Mở rộng / thu gọn danh sách nhà cung cấp</sys:String>
     <sys:String x:Key="L10n_Home_ShowAll">Hiện tất cả nhà cung cấp</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOnTip">'Hiện tất cả nhà cung cấp' đang BẬT — hiển thị các nhà cung cấp đã cấu hình và mọi preset có sẵn.</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOffTip">'Hiện tất cả nhà cung cấp' đang TẮT — chỉ hiển thị Codex Account và các nhà cung cấp bạn đã thiết lập.</sys:String>

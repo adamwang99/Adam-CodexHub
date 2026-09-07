@@ -465,13 +465,17 @@
                     </WrapPanel>
                 </Border>
 
-                <!-- Provider grid: floating logos, no enclosing card -->
-                <ListBox ItemsSource="{Binding Providers}"
-                         SelectedItem="{Binding SelectedCard, Mode=TwoWay}"
-                         MouseDoubleClick="OnProviderDoubleClick"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                         automation:AutomationProperties.Name="Provider selection grid">
+                <!-- Provider grid: floating logos, no enclosing card. One row by default so the
+                     "How it works" diagram stays visible; a subtle corner chevron expands the rest. -->
+                <Grid>
+                    <ListBox ItemsSource="{Binding Providers}"
+                             SelectedItem="{Binding SelectedCard, Mode=TwoWay}"
+                             MouseDoubleClick="OnProviderDoubleClick"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                             MaxHeight="{Binding ProvidersViewHeight}"
+                             ClipToBounds="True"
+                             automation:AutomationProperties.Name="Provider selection grid">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -708,9 +712,34 @@
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
-                </ListBox>
+                    </ListBox>
+                    <!-- Expand / collapse chevron (subtle, bottom-right corner) -->
+                    <Button Command="{Binding ProvidersExpandCommand}"
+                           Width="22" Height="18" Padding="0"
+                           HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                           Margin="0,0,10,0"
+                           Cursor="Hand"
+                           ToolTip="{DynamicResource L10n_Home_ExpandProvidersTip}">
+                       <Button.Template>
+                           <ControlTemplate TargetType="Button">
+                               <Border x:Name="Bg" Background="{DynamicResource BrushOverlayMilk}"
+                                       CornerRadius="6">
+                                   <TextBlock Text="{Binding ProvidersExpandGlyph}"
+                                              FontFamily="Segoe MDL2 Assets" FontSize="9"
+                                              Foreground="{DynamicResource BrushTextMid}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                               </Border>
+                               <ControlTemplate.Triggers>
+                                   <Trigger Property="IsMouseOver" Value="True">
+                                       <Setter TargetName="Bg" Property="Background" Value="{DynamicResource BrushOverlayHover}" />
+                                   </Trigger>
+                               </ControlTemplate.Triggers>
+                           </ControlTemplate>
+                       </Button.Template>
+                    </Button>
+                    </Grid>
 
-                <!-- ============ How it works: simple feature flow (API keys → gateway → Codex) ============ -->
+                    <!-- ============ How it works: simple feature flow (API keys → gateway → Codex) ============ -->
                 <Border Margin="0,16,0,0"
                         CornerRadius="18"
                         BorderThickness="1"

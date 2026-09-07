@@ -39,6 +39,7 @@
     <sys:String x:Key="L10n_Home_RestoreTip">Restore the default Codex sign-in account. Your per-provider API keys and models are kept.</sys:String>
     <sys:String x:Key="L10n_Home_RefreshProviders">Refresh providers</sys:String>
     <sys:String x:Key="L10n_Home_RefreshTip">Reload the provider list and refresh health, key and model state.</sys:String>
+    <sys:String x:Key="L10n_Home_ExpandProvidersTip">Expand or collapse the provider list</sys:String>
     <sys:String x:Key="L10n_Home_ShowAll">Show all providers</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOnTip">Show all providers is ON — configured providers and every built-in preset are visible.</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOffTip">Show all providers is OFF — only Codex Account and providers you have set up are shown.</sys:String>

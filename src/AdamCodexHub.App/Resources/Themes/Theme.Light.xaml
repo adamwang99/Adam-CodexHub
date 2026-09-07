@@ -130,7 +130,7 @@
     <DropShadowEffect x:Key="AmberHalo" BlurRadius="18" ShadowDepth="1" Direction="270" Opacity="0.3" Color="#A87905" />
     <DropShadowEffect x:Key="ButtonShadow" BlurRadius="9" ShadowDepth="3" Direction="270" Opacity="0.18" Color="#000000" />
     <DropShadowEffect x:Key="AmberGlowHover" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.35" Color="#A87905" />
-    <DropShadowEffect x:Key="LogoShadow" BlurRadius="12" ShadowDepth="4" Direction="270" Opacity="0.3" Color="#000000" />
+    <DropShadowEffect x:Key="LogoShadow" BlurRadius="12" ShadowDepth="4" Direction="270" Opacity="0.4" Color="#9A9A9A" />
     <DropShadowEffect x:Key="LogoGlowHover" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.45" Color="#A87905" />
     <DropShadowEffect x:Key="AquaGlowToggle" BlurRadius="9" ShadowDepth="0" Opacity="0.6" Color="#16857F" />
 

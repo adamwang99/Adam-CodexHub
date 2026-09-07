@@ -155,6 +155,7 @@ public sealed class HomeViewModel : PageViewModel
         _dialogs = dialogs;
         _paths = paths;
         RefreshCommand = new AsyncRelayCommand(() => RunAsync(RefreshCoreAsync));
+        ProvidersExpandCommand = new RelayCommand(() => ProvidersExpanded = !ProvidersExpanded);
         ActivateCommand = new AsyncRelayCommand(ActivateAsync);
         DoubleClickCommand = new AsyncRelayCommand(p => DoubleClickAsync(p as ProviderCard));
         RestoreAccountCommand = new AsyncRelayCommand(RestoreAccountAsync);
@@ -199,6 +200,29 @@ public sealed class HomeViewModel : PageViewModel
     public ICommand ActivateCommand { get; }
     public ICommand DoubleClickCommand { get; }
     public ICommand RestoreAccountCommand { get; }
+    public ICommand ProvidersExpandCommand { get; }
+
+    /// <summary>Collapsed by default: the provider grid shows one row so the "How it works"
+    /// diagram stays in view. Expanded reveals every provider row.</summary>
+    private bool _providersExpanded;
+    public bool ProvidersExpanded
+    {
+        get => _providersExpanded;
+        set
+        {
+            if (SetProperty(ref _providersExpanded, value))
+            {
+                OnPropertyChanged(nameof(ProvidersViewHeight));
+                OnPropertyChanged(nameof(ProvidersExpandGlyph));
+            }
+        }
+    }
+
+    /// <summary>Height cap for the provider grid (one row collapsed, tall when expanded).</summary>
+    public double ProvidersViewHeight => ProvidersExpanded ? 4000 : 128;
+
+    /// <summary>Segoe MDL2 chevron glyph flipped when expanded.</summary>
+    public string ProvidersExpandGlyph => ProvidersExpanded ? "\uE70E" : "\uE70D";
 
     public override Task InitializeAsync() => RunAsync(RefreshCoreAsync);
 

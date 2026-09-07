@@ -56,8 +56,8 @@
 
         <!-- ============ Windows-style caption buttons (right side of the title bar) ============ -->
         <Style x:Key="WinCaptionButton" TargetType="Button">
-            <Setter Property="Width" Value="46" />
-            <Setter Property="Height" Value="58" />
+            <Setter Property="Width" Value="42" />
+            <Setter Property="Height" Value="40" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="MinHeight" Value="0" />
             <Setter Property="BorderThickness" Value="0" />
@@ -67,7 +67,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root" Background="Transparent" CornerRadius="0">
+                        <Border x:Name="Root" Background="Transparent" CornerRadius="2">
                             <TextBlock x:Name="Glyph"
                                        FontFamily="Segoe MDL2 Assets"
                                        FontSize="10"
@@ -1301,7 +1301,7 @@
                                       automation:AutomationProperties.Name="Switch UI language" />
 
                         <!-- Windows caption buttons: minimize / maximize / close -->
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Style="{StaticResource WinCaptionButton}"
                                     Tag="min"
                                     Click="Minimize_Click"

@@ -38,6 +38,7 @@ public sealed class CodexConfigServiceTests
         var gateway = Assert.IsType<TomlTable>(providers["adam_codexhub"]);
         Assert.Equal("DeepSeek", gateway["name"]);
         Assert.Equal("http://127.0.0.1:18771/v1", gateway["base_url"]);
+        Assert.Equal(false, gateway["requires_openai_auth"]);
         Assert.Equal(TestGatewayToken, gateway["experimental_bearer_token"]);
 
         Assert.True(await fixture.Service.HasAccountProfileAsync());

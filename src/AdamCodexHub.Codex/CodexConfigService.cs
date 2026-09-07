@@ -389,6 +389,11 @@ public sealed class CodexConfigService : ICodexConfigService
                 : gatewayProviderName,
             ["base_url"] = $"http://127.0.0.1:{gatewayPort}/v1",
             ["wire_api"] = "responses",
+            // The hub gateway authenticates via its own bearer token below — it is NOT an
+            // OpenAI-account provider. Without this flag Codex Desktop treats it as such and
+            // pre-flights auth against api.openai.com, which 401s ("Missing bearer...") and
+            // also breaks the model list fetch.
+            ["requires_openai_auth"] = false,
             ["experimental_bearer_token"] = gatewayToken
         };
 

@@ -1,0 +1,154 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============ Night (charcoal glass) — brand palette ============ -->
+    <Color x:Key="ColorBackground">#111111</Color>
+    <Color x:Key="ColorPanel">#141414</Color>
+    <Color x:Key="ColorCard">#181818</Color>
+    <Color x:Key="ColorCardHover">#202020</Color>
+    <Color x:Key="ColorGold">#D89B2B</Color>
+    <Color x:Key="ColorGoldHover">#E5AA3E</Color>
+    <Color x:Key="ColorCream">#F8F4E8</Color>
+    <Color x:Key="ColorWhite">#FFFFFF</Color>
+    <Color x:Key="ColorAqua">#2FD0C8</Color>
+    <Color x:Key="ColorMuted">#C4C4C4</Color>
+    <Color x:Key="ColorBorder">#303030</Color>
+    <Color x:Key="ColorDanger">#E66A6A</Color>
+    <Color x:Key="ColorDangerSurface">#2A1717</Color>
+    <Color x:Key="ColorWarningSurface">#2A2417</Color>
+
+    <Color x:Key="ColorGlassTop">#2E000000</Color>
+    <Color x:Key="ColorGlassMid">#1A000000</Color>
+    <Color x:Key="ColorGlassBottom">#3D0A0A0A</Color>
+    <Color x:Key="ColorHairline">#26FFFFFF</Color>
+    <Color x:Key="ColorHairlineSoft">#14FFFFFF</Color>
+    <Color x:Key="ColorHairlineStrong">#40FFFFFF</Color>
+    <Color x:Key="ColorAmbientGold">#38D89B2B</Color>
+    <Color x:Key="ColorAmbientAqua">#2E2FD0C8</Color>
+    <Color x:Key="ColorAmbientAmberWarm">#3BE0A83C</Color>
+    <Color x:Key="ColorAmbientMauve">#2E8A6FD8</Color>
+    <Color x:Key="ColorSidebar">#73111111</Color>
+    <Color x:Key="ColorSidebarHover">#26FFFFFF</Color>
+    <Color x:Key="ColorSidebarActive">#59D89B2B</Color>
+    <Color x:Key="ColorContentGlass">#A60E0E0E</Color>
+    <Color x:Key="ColorCardGlass">#590E0E0E</Color>
+    <Color x:Key="ColorCardGlassStrong">#66161616</Color>
+    <Color x:Key="ColorScrimTop">#66000000</Color>
+    <Color x:Key="ColorSpecularTop">#5CFFFFFF</Color>
+    <Color x:Key="ColorSpecularArc">#33FFFFFF</Color>
+    <Color x:Key="ColorMilk">#0FFFFFFF</Color>
+    <Color x:Key="ColorMilkTop">#1CFFFFFF</Color>
+
+    <!-- Text ramp (semantic): dark theme = white with alpha; light theme = near-black with alpha -->
+    <Color x:Key="ColorTextHigh">#F2FFFFFF</Color>
+    <Color x:Key="ColorTextMid">#CCFFFFFF</Color>
+    <Color x:Key="ColorTextLow">#99FFFFFF</Color>
+    <!-- Overlay tints for hover / pressed states (inverted per theme) -->
+    <Color x:Key="ColorOverlayHover">#1AFFFFFF</Color>
+    <Color x:Key="ColorOverlayHoverStrong">#26FFFFFF</Color>
+    <Color x:Key="ColorOverlayPressed">#59FFFFFF</Color>
+    <Color x:Key="ColorOverlayMilk">#12FFFFFF</Color>
+    <!-- Bespoke surfaces -->
+    <Color x:Key="ColorSwitchTrack">#1CFFFFFF</Color>
+    <Color x:Key="ColorSwitchThumb">#CCFFFFFF</Color>
+    <Color x:Key="ColorBadgeGlass">#73FFFFFF</Color>
+    <Color x:Key="ColorTooltip">#E6161616</Color>
+    <Color x:Key="ColorTitleBar">#4D0D0D0D</Color>
+    <Color x:Key="ColorFlowTop">#70161616</Color>
+    <Color x:Key="ColorFlowMid">#4D161616</Color>
+    <Color x:Key="ColorFlowBottom">#38161616</Color>
+
+    <SolidColorBrush x:Key="BrushBackground" Color="{StaticResource ColorBackground}" />
+    <SolidColorBrush x:Key="BrushPanel" Color="{StaticResource ColorPanel}" />
+    <SolidColorBrush x:Key="BrushCard" Color="{StaticResource ColorCard}" />
+    <SolidColorBrush x:Key="BrushCardHover" Color="{StaticResource ColorCardHover}" />
+    <SolidColorBrush x:Key="BrushGold" Color="{StaticResource ColorGold}" />
+    <SolidColorBrush x:Key="BrushGoldHover" Color="{StaticResource ColorGoldHover}" />
+    <SolidColorBrush x:Key="BrushCream" Color="{StaticResource ColorCream}" />
+    <SolidColorBrush x:Key="BrushWhite" Color="{StaticResource ColorWhite}" />
+    <SolidColorBrush x:Key="BrushAqua" Color="{StaticResource ColorAqua}" />
+    <SolidColorBrush x:Key="BrushMuted" Color="{StaticResource ColorMuted}" />
+    <SolidColorBrush x:Key="BrushBorder" Color="{StaticResource ColorBorder}" />
+    <SolidColorBrush x:Key="BrushDanger" Color="{StaticResource ColorDanger}" />
+    <SolidColorBrush x:Key="BrushDangerSurface" Color="{StaticResource ColorDangerSurface}" />
+    <SolidColorBrush x:Key="BrushWarningSurface" Color="{StaticResource ColorWarningSurface}" />
+
+    <SolidColorBrush x:Key="BrushTextHigh" Color="{StaticResource ColorTextHigh}" />
+    <SolidColorBrush x:Key="BrushTextMid" Color="{StaticResource ColorTextMid}" />
+    <SolidColorBrush x:Key="BrushTextLow" Color="{StaticResource ColorTextLow}" />
+    <SolidColorBrush x:Key="BrushOverlayHover" Color="{StaticResource ColorOverlayHover}" />
+    <SolidColorBrush x:Key="BrushOverlayHoverStrong" Color="{StaticResource ColorOverlayHoverStrong}" />
+    <SolidColorBrush x:Key="BrushOverlayPressed" Color="{StaticResource ColorOverlayPressed}" />
+    <SolidColorBrush x:Key="BrushOverlayMilk" Color="{StaticResource ColorOverlayMilk}" />
+    <SolidColorBrush x:Key="BrushSwitchTrack" Color="{StaticResource ColorSwitchTrack}" />
+    <SolidColorBrush x:Key="BrushSwitchThumb" Color="{StaticResource ColorSwitchThumb}" />
+    <SolidColorBrush x:Key="BrushBadgeGlass" Color="{StaticResource ColorBadgeGlass}" />
+    <SolidColorBrush x:Key="BrushTooltip" Color="{StaticResource ColorTooltip}" />
+    <SolidColorBrush x:Key="BrushTitleBar" Color="{StaticResource ColorTitleBar}" />
+    <SolidColorBrush x:Key="BrushFlowTop" Color="{StaticResource ColorFlowTop}" />
+    <SolidColorBrush x:Key="BrushFlowMid" Color="{StaticResource ColorFlowMid}" />
+    <SolidColorBrush x:Key="BrushFlowBottom" Color="{StaticResource ColorFlowBottom}" />
+
+    <SolidColorBrush x:Key="BrushHairline" Color="{StaticResource ColorHairline}" />
+    <SolidColorBrush x:Key="BrushHairlineSoft" Color="{StaticResource ColorHairlineSoft}" />
+    <SolidColorBrush x:Key="BrushHairlineStrong" Color="{StaticResource ColorHairlineStrong}" />
+    <SolidColorBrush x:Key="BrushSidebar" Color="{StaticResource ColorSidebar}" />
+    <SolidColorBrush x:Key="BrushSidebarHover" Color="{StaticResource ColorSidebarHover}" />
+    <SolidColorBrush x:Key="BrushSidebarActive" Color="{StaticResource ColorSidebarActive}" />
+    <SolidColorBrush x:Key="BrushCardGlass" Color="{StaticResource ColorCardGlass}" />
+    <SolidColorBrush x:Key="BrushCardGlassStrong" Color="{StaticResource ColorCardGlassStrong}" />
+    <SolidColorBrush x:Key="BrushMilk" Color="{StaticResource ColorMilk}" />
+
+    <LinearGradientBrush x:Key="BrushSpecularTop" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0.0" Color="#66FFFFFF" />
+        <GradientStop Offset="0.45" Color="#2EFFFFFF" />
+        <GradientStop Offset="1.0" Color="#00FFFFFF" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="BrushGlassFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0.0" Color="#1AFFFFFF" />
+        <GradientStop Offset="0.08" Color="#0DFFFFFF" />
+        <GradientStop Offset="0.5" Color="#00000000" />
+        <GradientStop Offset="1.0" Color="#12000000" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="BrushGlassSurface" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0.0" Color="#59FFFFFF" />
+        <GradientStop Offset="0.3" Color="#2EFFFFFF" />
+        <GradientStop Offset="0.7" Color="#1AFFFFFF" />
+        <GradientStop Offset="1.0" Color="#33FFFFFF" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="BrushGlassRim" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0.0" Color="#C8FFFFFF" />
+        <GradientStop Offset="0.08" Color="#59FFFFFF" />
+        <GradientStop Offset="0.35" Color="#1EFFFFFF" />
+        <GradientStop Offset="0.7" Color="#0CFFFFFF" />
+        <GradientStop Offset="1.0" Color="#33FFFFFF" />
+    </LinearGradientBrush>
+
+    <DropShadowEffect x:Key="GlassShadow" BlurRadius="24" ShadowDepth="10" Direction="270" Opacity="0.5" Color="#000000" />
+    <DropShadowEffect x:Key="GlassShadowSoft" BlurRadius="16" ShadowDepth="6" Direction="270" Opacity="0.35" Color="#000000" />
+    <DropShadowEffect x:Key="AmberHalo" BlurRadius="18" ShadowDepth="1" Direction="270" Opacity="0.4" Color="#D89B2B" />
+    <DropShadowEffect x:Key="ButtonShadow" BlurRadius="9" ShadowDepth="3" Direction="270" Opacity="0.4" Color="#000000" />
+    <DropShadowEffect x:Key="AmberGlowHover" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.45" Color="#D89B2B" />
+    <DropShadowEffect x:Key="LogoShadow" BlurRadius="12" ShadowDepth="5" Direction="270" Opacity="0.6" Color="#000000" />
+    <DropShadowEffect x:Key="LogoGlowHover" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.65" Color="#D89B2B" />
+    <DropShadowEffect x:Key="AquaGlowToggle" BlurRadius="9" ShadowDepth="0" Opacity="0.6" Color="#2FD0C8" />
+
+    <LinearGradientBrush x:Key="BrushWindow" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Offset="0.0" Color="#FF1C1B26" />
+        <GradientStop Offset="0.4" Color="#FF10101A" />
+        <GradientStop Offset="0.75" Color="#FF141417" />
+        <GradientStop Offset="1.0" Color="#FF1A1815" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushContentScrim" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0.0" Color="#FF110F19" />
+        <GradientStop Offset="1.0" Color="#FF171513" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrushTitleScrim" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Offset="0.0" Color="#2EFFFFFF" />
+        <GradientStop Offset="0.5" Color="#0EFFFFFF" />
+        <GradientStop Offset="1.0" Color="#00000000" />
+    </LinearGradientBrush>
+</ResourceDictionary>

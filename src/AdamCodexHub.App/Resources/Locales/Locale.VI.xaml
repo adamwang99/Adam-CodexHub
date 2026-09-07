@@ -8,6 +8,7 @@
     <sys:String x:Key="L10n_Sidebar_Tagline">ADAM DÙNG AI</sys:String>
     <sys:String x:Key="L10n_Title_VersionTip">Phiên bản ứng dụng</sys:String>
     <sys:String x:Key="L10n_Toggle_Tooltip">Chuyển ngôn ngữ giao diện (Tiếng Anh / Tiếng Việt).</sys:String>
+    <sys:String x:Key="L10n_Toggle_ThemeTip">Đổi giao diện sáng / tối.</sys:String>
     <sys:String x:Key="L10n_Common_New">Mới</sys:String>
     <sys:String x:Key="L10n_Common_Refresh">Làm mới</sys:String>
     <sys:String x:Key="L10n_Common_Health">Sức khỏe</sys:String>

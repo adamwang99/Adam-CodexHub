@@ -31,6 +31,7 @@ public partial class MainWindow : Window
         ViewModel = viewModel;
         DataContext = viewModel;
         SourceInitialized += OnSourceInitialized;
+        ThemeToggle.IsChecked = App.CurrentTheme == App.ThemeLight;
         _viewModel.CodexLaunched += OnCodexLaunched;
     }
 
@@ -55,6 +56,11 @@ public partial class MainWindow : Window
     private void LanguageToggle_Unchecked(object sender, RoutedEventArgs e)
     {
         App.ApplyLanguage(L10n.English);
+    }
+
+    private void ThemeToggle_Click(object sender, RoutedEventArgs e)
+    {
+        App.ApplyTheme(ThemeToggle.IsChecked == true ? App.ThemeLight : App.ThemeDark);
     }
 
     public MainViewModel ViewModel { get; }

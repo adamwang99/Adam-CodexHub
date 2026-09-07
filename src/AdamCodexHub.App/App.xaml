@@ -6,139 +6,12 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- Active color theme (Night default). Swapped at runtime by App.ApplyTheme. -->
+                <ResourceDictionary Source="Resources/Themes/Theme.Dark.xaml" />
                 <!-- Active UI language dictionary (EN default). Swapped at runtime by App.ApplyLanguage. -->
                 <ResourceDictionary Source="Resources/Locales/Locale.EN.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
-        <!-- ============ Brand palette (unchanged) ============ -->
-        <Color x:Key="ColorBackground">#111111</Color>
-        <Color x:Key="ColorPanel">#141414</Color>
-        <Color x:Key="ColorCard">#181818</Color>
-        <Color x:Key="ColorCardHover">#202020</Color>
-        <Color x:Key="ColorGold">#D89B2B</Color>
-        <Color x:Key="ColorGoldHover">#E5AA3E</Color>
-        <Color x:Key="ColorCream">#F8F4E8</Color>
-        <Color x:Key="ColorWhite">#FFFFFF</Color>
-        <Color x:Key="ColorAqua">#2FD0C8</Color>
-        <Color x:Key="ColorMuted">#C4C4C4</Color>
-        <Color x:Key="ColorBorder">#303030</Color>
-        <Color x:Key="ColorDanger">#E66A6A</Color>
-        <Color x:Key="ColorDangerSurface">#2A1717</Color>
-        <Color x:Key="ColorWarningSurface">#2A2417</Color>
-
-        <!-- ============ Glass surface palette (alpha over charcoal) ============ -->
-        <Color x:Key="ColorGlassTop">#2E000000</Color>
-        <Color x:Key="ColorGlassMid">#1A000000</Color>
-        <Color x:Key="ColorGlassBottom">#3D0A0A0A</Color>
-        <Color x:Key="ColorHairline">#26FFFFFF</Color>
-        <Color x:Key="ColorHairlineSoft">#14FFFFFF</Color>
-        <Color x:Key="ColorHairlineStrong">#40FFFFFF</Color>
-        <Color x:Key="ColorAmbientGold">#38D89B2B</Color>
-        <Color x:Key="ColorAmbientAqua">#2E2FD0C8</Color>
-        <Color x:Key="ColorAmbientAmberWarm">#3BE0A83C</Color>
-        <Color x:Key="ColorAmbientMauve">#2E8A6FD8</Color>
-        <Color x:Key="ColorSidebar">#73111111</Color>
-        <Color x:Key="ColorSidebarHover">#26FFFFFF</Color>
-        <Color x:Key="ColorSidebarActive">#59D89B2B</Color>
-        <Color x:Key="ColorContentGlass">#A60E0E0E</Color>
-        <Color x:Key="ColorCardGlass">#590E0E0E</Color>
-        <Color x:Key="ColorCardGlassStrong">#66161616</Color>
-        <Color x:Key="ColorScrimTop">#66000000</Color>
-        <Color x:Key="ColorSpecularTop">#5CFFFFFF</Color>
-        <Color x:Key="ColorSpecularArc">#33FFFFFF</Color>
-        <Color x:Key="ColorMilk">#0FFFFFFF</Color>
-        <Color x:Key="ColorMilkTop">#1CFFFFFF</Color>
-
-        <SolidColorBrush x:Key="BrushBackground" Color="{StaticResource ColorBackground}" />
-        <SolidColorBrush x:Key="BrushPanel" Color="{StaticResource ColorPanel}" />
-        <SolidColorBrush x:Key="BrushCard" Color="{StaticResource ColorCard}" />
-        <SolidColorBrush x:Key="BrushCardHover" Color="{StaticResource ColorCardHover}" />
-        <SolidColorBrush x:Key="BrushGold" Color="{StaticResource ColorGold}" />
-        <SolidColorBrush x:Key="BrushGoldHover" Color="{StaticResource ColorGoldHover}" />
-        <SolidColorBrush x:Key="BrushCream" Color="{StaticResource ColorCream}" />
-        <SolidColorBrush x:Key="BrushWhite" Color="{StaticResource ColorWhite}" />
-        <SolidColorBrush x:Key="BrushAqua" Color="{StaticResource ColorAqua}" />
-        <SolidColorBrush x:Key="BrushMuted" Color="{StaticResource ColorMuted}" />
-        <SolidColorBrush x:Key="BrushBorder" Color="{StaticResource ColorBorder}" />
-        <SolidColorBrush x:Key="BrushDanger" Color="{StaticResource ColorDanger}" />
-        <SolidColorBrush x:Key="BrushDangerSurface" Color="{StaticResource ColorDangerSurface}" />
-        <SolidColorBrush x:Key="BrushWarningSurface" Color="{StaticResource ColorWarningSurface}" />
-
-        <SolidColorBrush x:Key="BrushHairline" Color="{StaticResource ColorHairline}" />
-        <SolidColorBrush x:Key="BrushHairlineSoft" Color="{StaticResource ColorHairlineSoft}" />
-        <SolidColorBrush x:Key="BrushHairlineStrong" Color="{StaticResource ColorHairlineStrong}" />
-        <SolidColorBrush x:Key="BrushSidebar" Color="{StaticResource ColorSidebar}" />
-        <SolidColorBrush x:Key="BrushSidebarHover" Color="{StaticResource ColorSidebarHover}" />
-        <SolidColorBrush x:Key="BrushSidebarActive" Color="{StaticResource ColorSidebarActive}" />
-        <SolidColorBrush x:Key="BrushCardGlass" Color="{StaticResource ColorCardGlass}" />
-        <SolidColorBrush x:Key="BrushCardGlassStrong" Color="{StaticResource ColorCardGlassStrong}" />
-        <SolidColorBrush x:Key="BrushMilk" Color="{StaticResource ColorMilk}" />
-
-        <!-- Top specular "light lip" — the bright arc along the top edge of glass panels -->
-        <LinearGradientBrush x:Key="BrushSpecularTop" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Offset="0.0" Color="#66FFFFFF" />
-            <GradientStop Offset="0.45" Color="#2EFFFFFF" />
-            <GradientStop Offset="1.0" Color="#00FFFFFF" />
-        </LinearGradientBrush>
-
-        <!-- Frosted milk tint that makes panels read as glass over the ambient glow -->
-        <LinearGradientBrush x:Key="BrushGlassFill" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Offset="0.0" Color="#1AFFFFFF" />
-            <GradientStop Offset="0.08" Color="#0DFFFFFF" />
-            <GradientStop Offset="0.5" Color="#00000000" />
-            <GradientStop Offset="1.0" Color="#12000000" />
-        </LinearGradientBrush>
-
-        <!-- Frosted glass surface: white-milk translucency (not dark) so tinted backdrop bleeds through like real glass -->
-        <LinearGradientBrush x:Key="BrushGlassSurface" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Offset="0.0" Color="#59FFFFFF" />
-            <GradientStop Offset="0.3" Color="#2EFFFFFF" />
-            <GradientStop Offset="0.7" Color="#1AFFFFFF" />
-            <GradientStop Offset="1.0" Color="#33FFFFFF" />
-        </LinearGradientBrush>
-
-        <!-- Asymmetric glass rim: bright on top where light hits, fading toward the bottom -->
-        <LinearGradientBrush x:Key="BrushGlassRim" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Offset="0.0" Color="#C8FFFFFF" />
-            <GradientStop Offset="0.08" Color="#59FFFFFF" />
-            <GradientStop Offset="0.35" Color="#1EFFFFFF" />
-            <GradientStop Offset="0.7" Color="#0CFFFFFF" />
-            <GradientStop Offset="1.0" Color="#33FFFFFF" />
-        </LinearGradientBrush>
-
-        <!-- Drop shadow for floating glass panels -->
-        <DropShadowEffect x:Key="GlassShadow" BlurRadius="24" ShadowDepth="10" Direction="270" Opacity="0.5" Color="#000000" />
-        <DropShadowEffect x:Key="GlassShadowSoft" BlurRadius="16" ShadowDepth="6" Direction="270" Opacity="0.35" Color="#000000" />
-        <!-- Warm amber halo for the selected glass card -->
-        <DropShadowEffect x:Key="AmberHalo" BlurRadius="18" ShadowDepth="1" Direction="270" Opacity="0.4" Color="#D89B2B" />
-        <!-- Soft resting shadow under buttons -->
-        <DropShadowEffect x:Key="ButtonShadow" BlurRadius="9" ShadowDepth="3" Direction="270" Opacity="0.4" Color="#000000" />
-        <!-- Amber glow when hovering an actionable control -->
-        <DropShadowEffect x:Key="AmberGlowHover" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.45" Color="#D89B2B" />
-        <!-- Provider logo: soft shadow cast beneath the logo shape onto the backdrop -->
-        <DropShadowEffect x:Key="LogoShadow" BlurRadius="12" ShadowDepth="5" Direction="270" Opacity="0.6" Color="#000000" />
-        <!-- Provider logo hover: warm amber glow lifts the logo -->
-        <DropShadowEffect x:Key="LogoGlowHover" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.65" Color="#D89B2B" />
-
-        <!-- Window backdrop: neutral cool charcoal (NOT pure black, NO brown) so translucent panels show color through the frost -->
-        <LinearGradientBrush x:Key="BrushWindow" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Offset="0.0" Color="#FF1C1B26" />
-            <GradientStop Offset="0.4" Color="#FF10101A" />
-            <GradientStop Offset="0.75" Color="#FF141417" />
-            <GradientStop Offset="1.0" Color="#FF1A1815" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="BrushContentScrim" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Offset="0.0" Color="#FF110F19" />
-            <GradientStop Offset="1.0" Color="#FF171513" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="BrushTitleScrim" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Offset="0.0" Color="#2EFFFFFF" />
-            <GradientStop Offset="0.5" Color="#0EFFFFFF" />
-            <GradientStop Offset="1.0" Color="#00000000" />
-        </LinearGradientBrush>
-
-        <!-- App font: Barlow embedded in Assets/Fonts (Regular 400 / Medium 500 / SemiBold 600 / Bold 700,
-             full Vietnamese coverage). Composite "Segoe UI" fallback keeps rare glyphs (✓, ⭐, emoji) safe. -->
         <FontFamily x:Key="FontBarlow">/Assets/Fonts/#Barlow, Segoe UI</FontFamily>
 
         <Thickness x:Key="ControlPadding">12,8</Thickness>
@@ -154,8 +27,8 @@
 
         <!-- ============ Window chrome ============ -->
         <Style x:Key="AppWindow" TargetType="Window">
-            <Setter Property="Background" Value="{StaticResource BrushWindow}" />
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Background" Value="{DynamicResource BrushWindow}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
             <Setter Property="FontFamily" Value="{StaticResource FontBarlow}" />
             <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -167,7 +40,7 @@
 
         <!-- ============ Buttons ============ -->
         <Style TargetType="Button">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
             <Setter Property="Background">
                 <Setter.Value>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -177,7 +50,7 @@
                     </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
-            <Setter Property="BorderBrush" Value="{StaticResource BrushGlassRim}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushGlassRim}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="{StaticResource ControlPadding}" />
             <Setter Property="MinHeight" Value="34" />
@@ -254,19 +127,19 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#4DFFFFFF" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushOverlayPressed}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushGold}" />
                                 <Setter TargetName="Root" Property="BorderThickness" Value="1" />
                                 <Setter Property="Effect" Value="{StaticResource AmberGlowHover}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushGold}" />
                                 <Setter TargetName="Root" Property="BorderThickness" Value="1.5" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Root" Property="Opacity" Value="0.92" />
                                 <Setter Property="Effect" Value="{x:Null}" />
-                                <Setter TargetName="Root" Property="Background" Value="#38FFFFFF" />
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushOverlayPressed}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Root" Property="Opacity" Value="0.4" />
@@ -287,27 +160,27 @@
                     </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
-            <Setter Property="Foreground" Value="{StaticResource BrushBackground}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushBackground}" />
             <Setter Property="BorderBrush" Value="#B3D89B2B" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Effect" Value="{StaticResource AmberHalo}" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BrushGold}" />
+                    <Setter Property="Background" Value="{DynamicResource BrushGold}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="{StaticResource BrushDangerSurface}" />
-            <Setter Property="Foreground" Value="{StaticResource BrushDanger}" />
+            <Setter Property="Background" Value="{DynamicResource BrushDangerSurface}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushDanger}" />
             <Setter Property="BorderBrush" Value="#59E66A6A" />
         </Style>
 
         <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushMuted}" />
         </Style>
 
         <Style x:Key="NavButton" TargetType="Button">
@@ -316,7 +189,7 @@
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="Margin" Value="0,2" />
             <Setter Property="Padding" Value="12,9" />
-            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushMuted}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -371,7 +244,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#1FFFFFFF" />
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushOverlayHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Root" Property="Opacity" Value="0.7" />
@@ -433,33 +306,33 @@
         <Style x:Key="PageHeading" TargetType="TextBlock">
             <Setter Property="FontSize" Value="26" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
         </Style>
 
         <Style x:Key="SectionLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource BrushGold}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushGold}" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
         </Style>
 
         <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushMuted}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Margin" Value="0,0,0,5" />
         </Style>
 
         <Style TargetType="TextBox">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
-            <Setter Property="Background" Value="{StaticResource BrushCardGlassStrong}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrushHairline}" />
-            <Setter Property="CaretBrush" Value="{StaticResource BrushCream}" />
-            <Setter Property="SelectionBrush" Value="{StaticResource BrushGold}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Background" Value="{DynamicResource BrushCardGlassStrong}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource BrushCream}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource BrushGold}" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="MinHeight" Value="34" />
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource BrushGold}" />
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Opacity" Value="0.5" />
@@ -468,16 +341,16 @@
         </Style>
 
         <Style TargetType="PasswordBox">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
-            <Setter Property="Background" Value="{StaticResource BrushCardGlassStrong}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrushHairline}" />
-            <Setter Property="CaretBrush" Value="{StaticResource BrushCream}" />
-            <Setter Property="SelectionBrush" Value="{StaticResource BrushGold}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Background" Value="{DynamicResource BrushCardGlassStrong}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource BrushCream}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource BrushGold}" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="MinHeight" Value="34" />
             <Style.Triggers>
                 <Trigger Property="IsKeyboardFocused" Value="True">
-                    <Setter Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource BrushGold}" />
                 </Trigger>
                 <Trigger Property="IsEnabled" Value="False">
                     <Setter Property="Opacity" Value="0.5" />
@@ -486,12 +359,12 @@
         </Style>
 
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
         <Style TargetType="ToggleButton">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
             <Setter Property="Background">
                 <Setter.Value>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -501,7 +374,7 @@
                     </LinearGradientBrush>
                 </Setter.Value>
             </Setter>
-            <Setter Property="BorderBrush" Value="{StaticResource BrushGlassRim}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushGlassRim}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="12,7" />
             <Setter Property="MinHeight" Value="34" />
@@ -576,15 +449,15 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#4DFFFFFF" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushOverlayPressed}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushGold}" />
                                 <Setter Property="Effect" Value="{StaticResource AmberGlowHover}" />
                             </Trigger>
                             <!-- Checked: unmistakable ON state — solid amber, dark text -->
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{StaticResource BrushGold}" />
-                                <Setter TargetName="Root" Property="BorderBrush" Value="{StaticResource BrushGold}" />
-                                <Setter Property="Foreground" Value="{StaticResource BrushBackground}" />
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource BrushGold}" />
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource BrushGold}" />
+                                <Setter Property="Foreground" Value="{DynamicResource BrushBackground}" />
                                 <Setter Property="FontWeight" Value="SemiBold" />
                                 <Setter Property="Effect" Value="{StaticResource AmberHalo}" />
                             </Trigger>
@@ -595,7 +468,7 @@
         </Style>
 
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -610,11 +483,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsHighlighted" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#33FFFFFF" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource BrushOverlayHoverStrong}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="{StaticResource BrushSidebarActive}" />
-                                <Setter Property="Foreground" Value="{StaticResource BrushWhite}" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource BrushSidebarActive}" />
+                                <Setter Property="Foreground" Value="{DynamicResource BrushWhite}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="ItemBorder" Property="Opacity" Value="0.45" />
@@ -626,9 +499,9 @@
         </Style>
 
         <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
-            <Setter Property="Background" Value="{StaticResource BrushCardGlassStrong}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrushHairline}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Background" Value="{DynamicResource BrushCardGlassStrong}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="8,6" />
             <Setter Property="MinHeight" Value="34" />
@@ -684,7 +557,7 @@
                                                 <Setter TargetName="ToggleBorder" Property="Background" Value="#B3FFFFFF" />
                                             </Trigger>
                                             <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                                                <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{DynamicResource BrushGold}" />
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -713,8 +586,8 @@
                                 <Border MinWidth="{Binding ActualWidth, ElementName=Root}"
                                         MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                         Margin="0,4,0,0"
-                                        Background="{StaticResource BrushCard}"
-                                        BorderBrush="{StaticResource BrushHairline}"
+                                        Background="{DynamicResource BrushCard}"
+                                        BorderBrush="{DynamicResource BrushHairline}"
                                         BorderThickness="1"
                                         CornerRadius="{StaticResource ControlRadius}">
                                     <ScrollViewer CanContentScroll="True">
@@ -728,7 +601,7 @@
                                 <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                <Setter TargetName="DropDownToggle" Property="BorderBrush" Value="{StaticResource BrushGold}" />
+                                <Setter TargetName="DropDownToggle" Property="BorderBrush" Value="{DynamicResource BrushGold}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Root" Property="Opacity" Value="0.45" />
@@ -743,7 +616,7 @@
         <Style TargetType="ListBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
         </Style>
 
         <Style TargetType="ListBoxItem">
@@ -762,7 +635,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Row" Property="Background" Value="#14FFFFFF" />
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource BrushOverlayHover}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Row" Property="Background" Value="#26D89B2B" />
@@ -775,12 +648,12 @@
 
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrushHairlineSoft}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushHairlineSoft}" />
             <Setter Property="GridLinesVisibility" Value="Horizontal" />
-            <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource BrushHairlineSoft}" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BrushHairlineSoft}" />
             <Setter Property="RowBackground" Value="Transparent" />
-            <Setter Property="AlternatingRowBackground" Value="#0DFFFFFF" />
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource BrushOverlayMilk}" />
             <Setter Property="HeadersVisibility" Value="Column" />
             <Setter Property="CanUserAddRows" Value="False" />
             <Setter Property="CanUserDeleteRows" Value="False" />
@@ -791,8 +664,8 @@
 
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrushHairlineSoft}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushMuted}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushHairlineSoft}" />
             <Setter Property="Padding" Value="10,9" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FontSize" Value="11" />
@@ -805,16 +678,16 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource BrushSidebarActive}" />
-                    <Setter Property="Foreground" Value="{StaticResource BrushWhite}" />
+                    <Setter Property="Background" Value="{DynamicResource BrushSidebarActive}" />
+                    <Setter Property="Foreground" Value="{DynamicResource BrushWhite}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <!-- ============ Surfaces ============ -->
         <Style x:Key="GlassPanel" TargetType="Border">
-            <Setter Property="Background" Value="{StaticResource BrushGlassSurface}" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrushGlassRim}" />
+            <Setter Property="Background" Value="{DynamicResource BrushGlassSurface}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushGlassRim}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="{StaticResource PanelRadius}" />
             <Setter Property="Padding" Value="18" />
@@ -831,17 +704,17 @@
         </Style>
 
         <Style TargetType="ToolTip">
-            <Setter Property="Foreground" Value="{StaticResource BrushCream}" />
-            <Setter Property="Background" Value="#E6161616" />
-            <Setter Property="BorderBrush" Value="{StaticResource BrushHairline}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Background" Value="{DynamicResource BrushTooltip}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
             <Setter Property="FontFamily" Value="{StaticResource FontBarlow}" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="HasDropShadow" Value="True" />
         </Style>
 
         <Style TargetType="ProgressBar">
-            <Setter Property="Foreground" Value="{StaticResource BrushGold}" />
-            <Setter Property="Background" Value="{StaticResource BrushHairlineSoft}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushGold}" />
+            <Setter Property="Background" Value="{DynamicResource BrushHairlineSoft}" />
         </Style>
         </ResourceDictionary>
     </Application.Resources>

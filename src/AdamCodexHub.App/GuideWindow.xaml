@@ -28,9 +28,9 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="{DynamicResource L10n_Guide_WindowTitle}" FontSize="22" FontWeight="Bold"
-                               Foreground="{StaticResource BrushCream}" />
+                               Foreground="{DynamicResource BrushCream}" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Subtitle}"
-                               Foreground="{StaticResource BrushMuted}" FontSize="12" Margin="0,3,0,0" />
+                               Foreground="{DynamicResource BrushMuted}" FontSize="12" Margin="0,3,0,0" />
                 </StackPanel>
                 <Button Grid.Column="1" Content="✕" Click="Close_Click"
                         Style="{StaticResource NavButton}" Padding="10,6"
@@ -44,33 +44,33 @@
                     <TextBlock Text="{DynamicResource L10n_Guide_Sec1}"
                                Style="{StaticResource SectionLabel}" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Sec1Body}"
-                               TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}"
+                               TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushCream}"
                                Margin="0,7,0,12" LineHeight="20" />
 
                     <!-- Each application tab has its own screenshot and its own numbered legend. -->
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab1Title}" Style="{StaticResource SectionLabel}" />
                     <Image Source="Assets/guide-tab1-choose-provider.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab1Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab1Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
 
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab2Title}" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab2Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
                     <Image Source="Assets/guide-tab2-providers.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab2Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab2Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
 
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab3Title}" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab3Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
                     <Image Source="Assets/guide-tab3-sessions.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab3Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab3Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
 
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab4Title}" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab4Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
                     <Image Source="Assets/guide-tab4-diagnostics.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab4Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab4Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
 
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab5Title}" Style="{StaticResource SectionLabel}" Foreground="{StaticResource BrushAqua}" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab5Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
                     <Image Source="Assets/guide-tab5-settings.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
-                    <TextBlock Text="{DynamicResource L10n_Guide_Tab5Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
+                    <TextBlock Text="{DynamicResource L10n_Guide_Tab5Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushCream}" LineHeight="20" Margin="0,0,0,18" />
 
                     <!-- Architecture diagram: fit-width by default, zoomable + pannable -->
-                    <Border CornerRadius="14" Padding="10" Background="#0AFFFFFF"
-                            BorderBrush="{StaticResource BrushHairlineSoft}" BorderThickness="1" Margin="0,0,0,20">
+                    <Border CornerRadius="14" Padding="10" Background="{DynamicResource BrushOverlayMilk}"
+                            BorderBrush="{DynamicResource BrushHairlineSoft}" BorderThickness="1" Margin="0,0,0,20">
                         <Grid>
                             <ScrollViewer x:Name="DiagramScroller"
                                           HorizontalScrollBarVisibility="Auto"
@@ -129,12 +129,12 @@
                                        HorizontalAlignment="Right"
                                        VerticalAlignment="Bottom"
                                        Margin="0,0,6,4"
-                                       Foreground="{StaticResource BrushMuted}"
+                                       Foreground="{DynamicResource BrushMuted}"
                                        FontSize="11" />
                         </Grid>
                     </Border>
 
-                    <Border Height="1" Background="{StaticResource BrushHairlineSoft}" Margin="0,0,0,18" />
+                    <Border Height="1" Background="{DynamicResource BrushHairlineSoft}" Margin="0,0,0,18" />
 
                     <!-- Shared operating notes are explained in tab 1 above. -->
 
@@ -142,9 +142,9 @@
                     <Border CornerRadius="12" Padding="16,13" Background="#14D89B2B"
                             BorderBrush="#59D89B2B" BorderThickness="1" Margin="0,14,0,0">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource L10n_Guide_TipsTitle}" Foreground="{StaticResource BrushGold}"
+                            <TextBlock Text="{DynamicResource L10n_Guide_TipsTitle}" Foreground="{DynamicResource BrushGold}"
                                        FontWeight="Bold" FontSize="12" />
-                            <TextBlock TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource BrushCream}" Margin="0,6,0,0" LineHeight="20">
+                            <TextBlock TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushCream}" Margin="0,6,0,0" LineHeight="20">
                                 <Run FontWeight="SemiBold" Text="1. " /><Run Text="{DynamicResource L10n_Guide_Tip1}" /><LineBreak />
                                 <Run FontWeight="SemiBold" Text="2. " /><Run Text="{DynamicResource L10n_Guide_Tip2}" /><LineBreak />
                                 <Run FontWeight="SemiBold" Text="3. " /><Run Text="{DynamicResource L10n_Guide_Tip3}" /><LineBreak />

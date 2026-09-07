@@ -28,6 +28,10 @@ public partial class App : Application
 {
     private const int RequiredSessionAcknowledgementVersion = 2;
     private const string SingleInstanceMutexName = "Global\\AdamCodexHub.SingleInstance.v1";
+
+    public const string ThemeDark = "dark";
+    public const string ThemeLight = "light";
+    public static string CurrentTheme { get; private set; } = ThemeDark;
     private static Mutex? _singleInstanceMutex;
     private IHost? _host;
     private WinForms.NotifyIcon? _trayIcon;
@@ -52,9 +56,9 @@ public partial class App : Application
 
         try
         {
-            if (Current?.Resources is { MergedDictionaries.Count: > 0 } resources)
+            if (Current?.Resources is { MergedDictionaries.Count: > 1 } resources)
             {
-                var dict = resources.MergedDictionaries[0];
+                var dict = resources.MergedDictionaries[1];
                 dict.Source = new Uri(
                     $"Resources/Locales/Locale.{target.ToUpperInvariant()}.xaml",
                     UriKind.Relative);
@@ -69,6 +73,35 @@ public partial class App : Application
 
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         UiSettingsStore.SaveLanguage(Path.Combine(localAppData, "AdamCodexHub"), target);
+    }
+
+    /// <summary>
+    /// Swaps the merged color-theme dictionary (index 0) so every {DynamicResource ...}
+    /// palette reference re-resolves; persists the choice for the next launch.
+    /// </summary>
+    public static void ApplyTheme(string theme)
+    {
+        var target = theme == ThemeLight ? ThemeLight : ThemeDark;
+
+        try
+        {
+            if (Current?.Resources is { MergedDictionaries.Count: > 0 } resources)
+            {
+                var dict = resources.MergedDictionaries[0];
+                dict.Source = new Uri(
+                    $"Resources/Themes/Theme.{char.ToUpperInvariant(target[0])}{target[1..]}.xaml",
+                    UriKind.Relative);
+            }
+        }
+        catch
+        {
+            // Fall through: keep the static state in sync even if the swap failed.
+        }
+
+        CurrentTheme = target;
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        UiSettingsStore.SaveTheme(Path.Combine(localAppData, "AdamCodexHub"), target);
     }
 
     [DllImport("user32.dll")]
@@ -95,12 +128,13 @@ public partial class App : Application
                 return;
             }
 
-            // Restore the persisted UI language BEFORE any window is created so the very
-            // first frame is already localized (English is the default).
+            // Restore the persisted UI language and color theme BEFORE any window is created so
+            // the very first frame is already localized and themed correctly.
             var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var appDataRoot = Path.Combine(localAppData, "AdamCodexHub");
             ApplyLanguage(UiSettingsStore.LoadLanguage(appDataRoot));
-            LogStartup($"UI language: {L10n.CurrentLanguage}");
+            ApplyTheme(UiSettingsStore.LoadTheme(appDataRoot));
+            LogStartup($"UI language: {L10n.CurrentLanguage}, theme: {CurrentTheme}");
 
             _host = Host.CreateDefaultBuilder()
                 .ConfigureServices(services =>

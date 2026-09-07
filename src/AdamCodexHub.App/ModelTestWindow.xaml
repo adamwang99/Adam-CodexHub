@@ -30,13 +30,13 @@
                 <TextBlock Text="{DynamicResource L10n_MT_Title}"
                            FontSize="20"
                            FontWeight="Bold"
-                           Foreground="{StaticResource BrushWhite}" />
+                           Foreground="{DynamicResource BrushWhite}" />
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
                     <TextBlock Text="{Binding ModelName}"
-                               Foreground="{StaticResource BrushAqua}"
+                               Foreground="{DynamicResource BrushAqua}"
                                FontWeight="SemiBold" />
                     <TextBlock Text="{Binding ProviderName}"
-                               Foreground="{StaticResource BrushMuted}"
+                               Foreground="{DynamicResource BrushMuted}"
                                FontSize="12" />
                 </StackPanel>
                 <Button Grid.Column="2" Content="✕" Click="Close_Click"
@@ -64,19 +64,19 @@
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="·" />
-                                            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource BrushMuted}" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                                     <Setter Property="Text" Value="⟳" />
-                                                    <Setter Property="Foreground" Value="{StaticResource BrushGold}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource BrushGold}" />
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Passed}" Value="True">
                                                     <Setter Property="Text" Value="✓" />
-                                                    <Setter Property="Foreground" Value="{StaticResource BrushAqua}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource BrushAqua}" />
                                                 </DataTrigger>
                                                 <DataTrigger Binding="{Binding Failed}" Value="True">
                                                     <Setter Property="Text" Value="✗" />
-                                                    <Setter Property="Foreground" Value="{StaticResource BrushDanger}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource BrushDanger}" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -86,7 +86,7 @@
                                 <TextBlock Grid.Column="2" Text="{Binding Detail}"
                                            VerticalAlignment="Center"
                                            TextWrapping="Wrap"
-                                           Foreground="{StaticResource BrushMuted}"
+                                           Foreground="{DynamicResource BrushMuted}"
                                            FontSize="11"
                                            MaxHeight="60" />
                             </Grid>
@@ -103,16 +103,16 @@
                         <TextBlock Text="{Binding ScoreText}"
                                    FontSize="30"
                                    FontWeight="Bold"
-                                   Foreground="{StaticResource BrushGold}"
+                                   Foreground="{DynamicResource BrushGold}"
                                    VerticalAlignment="Center" />
                         <TextBlock Text="{Binding Summary}"
-                                   Foreground="{StaticResource BrushCream}"
+                                   Foreground="{DynamicResource BrushCream}"
                                    VerticalAlignment="Center"
                                    TextWrapping="Wrap"
                                    Margin="14,0,0,0" />
                     </StackPanel>
                     <TextBlock Text="{Binding Notes}"
-                               Foreground="{StaticResource BrushMuted}"
+                               Foreground="{DynamicResource BrushMuted}"
                                TextWrapping="Wrap"
                                Margin="0,10,0,0"
                                LineHeight="19" />
@@ -125,7 +125,7 @@
                          Height="6"
                          IsIndeterminate="{Binding IsRunning}"
                          Visibility="{Binding IsRunning, Converter={StaticResource BooleanToVisibilityConverter}}"
-                         Foreground="{StaticResource BrushGold}" />
+                         Foreground="{DynamicResource BrushGold}" />
 
             <!-- Close -->
             <Grid Grid.Row="5" Margin="0,20,0,0">

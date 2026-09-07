@@ -44,6 +44,45 @@ public static class UiSettingsStore
 
     public static void SaveLanguage(string appDataRoot, string language)
     {
+        Save(appDataRoot, doc =>
+        {
+            doc.Language = language;
+        });
+    }
+
+    /// <summary>Reads the persisted color theme ("dark" or "light"); defaults to dark.</summary>
+    public static string LoadTheme(string appDataRoot)
+    {
+        try
+        {
+            var path = SettingsPath(appDataRoot);
+            if (!File.Exists(path))
+            {
+                return App.ThemeDark;
+            }
+
+            var json = File.ReadAllText(path);
+            var doc = JsonSerializer.Deserialize<UiSettingsDocument>(json, Json);
+            return string.Equals(doc?.Theme, App.ThemeLight, StringComparison.OrdinalIgnoreCase)
+                ? App.ThemeLight
+                : App.ThemeDark;
+        }
+        catch
+        {
+            return App.ThemeDark;
+        }
+    }
+
+    public static void SaveTheme(string appDataRoot, string theme)
+    {
+        Save(appDataRoot, doc =>
+        {
+            doc.Theme = theme;
+        });
+    }
+
+    private static void Save(string appDataRoot, Action<UiSettingsDocument> mutate)
+    {
         try
         {
             var path = SettingsPath(appDataRoot);
@@ -53,7 +92,21 @@ public static class UiSettingsStore
                 Directory.CreateDirectory(directory);
             }
 
-            var doc = new UiSettingsDocument { Language = language };
+            var doc = new UiSettingsDocument();
+            try
+            {
+                if (File.Exists(path))
+                {
+                    var json = File.ReadAllText(path);
+                    doc = JsonSerializer.Deserialize<UiSettingsDocument>(json, Json) ?? doc;
+                }
+            }
+            catch
+            {
+                // Start from defaults if the existing settings file is unreadable.
+            }
+
+            mutate(doc);
             var temp = path + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(doc, Json));
             File.Move(temp, path, overwrite: true);
@@ -67,5 +120,6 @@ public static class UiSettingsStore
     private sealed class UiSettingsDocument
     {
         public string Language { get; set; } = L10n.English;
+        public string Theme { get; set; } = App.ThemeDark;
     }
 }

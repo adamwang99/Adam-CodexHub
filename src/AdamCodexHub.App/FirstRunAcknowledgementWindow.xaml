@@ -21,50 +21,50 @@
             <TextBlock Text="{DynamicResource L10n_FR_Heading}"
                        FontSize="24"
                        FontWeight="Bold"
-                       Foreground="{StaticResource BrushWhite}" />
+                       Foreground="{DynamicResource BrushWhite}" />
 
             <ScrollViewer Grid.Row="1"
                           Margin="0,16,0,16"
                           VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,12,0">
                     <TextBlock Text="{DynamicResource L10n_FR_Sec1}"
-                               Foreground="{StaticResource BrushGold}"
+                               Foreground="{DynamicResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec1Body}"
                                TextWrapping="Wrap"
-                               Foreground="{StaticResource BrushCream}"
+                               Foreground="{DynamicResource BrushCream}"
                                LineHeight="21" />
 
                     <TextBlock Text="{DynamicResource L10n_FR_Sec2}"
-                               Foreground="{StaticResource BrushGold}"
+                               Foreground="{DynamicResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec2Body}"
                                TextWrapping="Wrap"
-                               Foreground="{StaticResource BrushCream}"
+                               Foreground="{DynamicResource BrushCream}"
                                LineHeight="21" />
 
                     <TextBlock Text="{DynamicResource L10n_FR_Sec3}"
-                               Foreground="{StaticResource BrushGold}"
+                               Foreground="{DynamicResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec3Body}"
                                TextWrapping="Wrap"
-                               Foreground="{StaticResource BrushCream}"
+                               Foreground="{DynamicResource BrushCream}"
                                LineHeight="21" />
 
                     <TextBlock Text="{DynamicResource L10n_FR_Sec4}"
-                               Foreground="{StaticResource BrushGold}"
+                               Foreground="{DynamicResource BrushGold}"
                                FontWeight="SemiBold" />
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec4Body}"
                                TextWrapping="Wrap"
-                               Foreground="{StaticResource BrushCream}"
+                               Foreground="{DynamicResource BrushCream}"
                                LineHeight="21" />
 
                     <TextBlock Margin="0,0,0,16"
-                               Foreground="{StaticResource BrushAqua}"
+                               Foreground="{DynamicResource BrushAqua}"
                                TextWrapping="Wrap">
                         <Hyperlink x:Name="PrivacyLink"
                                    NavigateUri="https://github.com/adamwang99/Adam-CodexHub/blob/main/PRIVACY.md"
@@ -82,7 +82,7 @@
                     <CheckBox x:Name="SessionAcknowledgementCheckBox"
                               Checked="AcknowledgementChanged"
                               Unchecked="AcknowledgementChanged"
-                              Foreground="{StaticResource BrushCream}"
+                              Foreground="{DynamicResource BrushCream}"
                               Margin="0,0,0,10">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
@@ -92,7 +92,7 @@
                     <CheckBox x:Name="DataAcknowledgementCheckBox"
                               Checked="AcknowledgementChanged"
                               Unchecked="AcknowledgementChanged"
-                              Foreground="{StaticResource BrushCream}"
+                              Foreground="{DynamicResource BrushCream}"
                               Margin="0,0,0,10">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
@@ -102,7 +102,7 @@
                     <CheckBox x:Name="ResponsibilityAcknowledgementCheckBox"
                               Checked="AcknowledgementChanged"
                               Unchecked="AcknowledgementChanged"
-                              Foreground="{StaticResource BrushCream}">
+                              Foreground="{DynamicResource BrushCream}">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
                                    Text="{DynamicResource L10n_FR_Check3}" />

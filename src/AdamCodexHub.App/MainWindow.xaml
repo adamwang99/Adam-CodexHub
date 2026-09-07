@@ -570,7 +570,7 @@
                                                     <DataTrigger Binding="{Binding IsValid}" Value="True">
                                                         <Setter Property="Background" Value="{DynamicResource BrushActiveDisc}" />
                                                         <Setter Property="BorderBrush" Value="{DynamicResource BrushActiveDiscRim}" />
-                                                        <Setter Property="BorderThickness" Value="1.8" />
+                                                        <Setter Property="BorderThickness" Value="1" />
                                                         <Setter Property="Effect" Value="{StaticResource LogoGlowActive}" />
                                                     </DataTrigger>
                                                 </Style.Triggers>

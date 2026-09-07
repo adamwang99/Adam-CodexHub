@@ -132,10 +132,15 @@
     <DropShadowEffect x:Key="AmberGlowHover" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.35" Color="#A87905" />
     <DropShadowEffect x:Key="LogoShadow" BlurRadius="12" ShadowDepth="4" Direction="270" Opacity="0.4" Color="#9A9A9A" />
     <DropShadowEffect x:Key="LogoGlowHover" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.45" Color="#A87905" />
-    <DropShadowEffect x:Key="LogoGlowActive" BlurRadius="16" ShadowDepth="0" Opacity="0.55" Color="#D89B2B" />
+    <DropShadowEffect x:Key="LogoGlowActive" BlurRadius="16" ShadowDepth="0" Opacity="0.58" Color="#2FD0C8" />
     <SolidColorBrush x:Key="BrushLogoDisc" Color="#00FFFFFF" />
-    <SolidColorBrush x:Key="BrushActiveDisc" Color="#46E8AE38" />
-    <SolidColorBrush x:Key="BrushActiveDiscRim" Color="#C7E8AE38" />
+    <!-- Active disc: deep aqua at the outer edge fading inward (radial) -> raised rounded look. -->
+    <RadialGradientBrush x:Key="BrushActiveDisc" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.55" RadiusY="0.55">
+        <GradientStop Offset="0.0" Color="#222FD0C8" />
+        <GradientStop Offset="0.7" Color="#582FD0C8" />
+        <GradientStop Offset="1.0" Color="#A82FD0C8" />
+    </RadialGradientBrush>
+    <SolidColorBrush x:Key="BrushActiveDiscRim" Color="#B22FD0C8" />
     <DropShadowEffect x:Key="AquaGlowToggle" BlurRadius="9" ShadowDepth="0" Opacity="0.6" Color="#16857F" />
 
     <LinearGradientBrush x:Key="BrushWindow" StartPoint="0,0" EndPoint="1,1">

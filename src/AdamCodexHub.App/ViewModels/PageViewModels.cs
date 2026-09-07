@@ -224,7 +224,7 @@ public sealed class HomeViewModel : PageViewModel
     }
 
     /// <summary>Height cap for the provider grid (one row collapsed, tall when expanded).</summary>
-    public double ProvidersViewHeight => (ShowAllProviders || ProvidersExpanded) ? 4000 : 173;
+    public double ProvidersViewHeight => (ShowAllProviders || ProvidersExpanded) ? 4000 : 203;
 
     /// <summary>Segoe MDL2 chevron glyph flipped when expanded.</summary>
     public string ProvidersExpandGlyph => ProvidersExpanded ? "\uE70E" : "\uE70D";

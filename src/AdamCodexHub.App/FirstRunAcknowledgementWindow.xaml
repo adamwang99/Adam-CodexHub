@@ -33,7 +33,7 @@
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec1Body}"
                                TextWrapping="Wrap"
-                               Foreground="{DynamicResource BrushCream}"
+                               Foreground="{DynamicResource BrushTextHigh}"
                                LineHeight="21" />
 
                     <TextBlock Text="{DynamicResource L10n_FR_Sec2}"
@@ -42,7 +42,7 @@
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec2Body}"
                                TextWrapping="Wrap"
-                               Foreground="{DynamicResource BrushCream}"
+                               Foreground="{DynamicResource BrushTextHigh}"
                                LineHeight="21" />
 
                     <TextBlock Text="{DynamicResource L10n_FR_Sec3}"
@@ -51,7 +51,7 @@
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec3Body}"
                                TextWrapping="Wrap"
-                               Foreground="{DynamicResource BrushCream}"
+                               Foreground="{DynamicResource BrushTextHigh}"
                                LineHeight="21" />
 
                     <TextBlock Text="{DynamicResource L10n_FR_Sec4}"
@@ -60,7 +60,7 @@
                     <TextBlock Margin="0,5,0,12"
                                Text="{DynamicResource L10n_FR_Sec4Body}"
                                TextWrapping="Wrap"
-                               Foreground="{DynamicResource BrushCream}"
+                               Foreground="{DynamicResource BrushTextHigh}"
                                LineHeight="21" />
 
                     <TextBlock Margin="0,0,0,16"
@@ -82,7 +82,7 @@
                     <CheckBox x:Name="SessionAcknowledgementCheckBox"
                               Checked="AcknowledgementChanged"
                               Unchecked="AcknowledgementChanged"
-                              Foreground="{DynamicResource BrushCream}"
+                              Foreground="{DynamicResource BrushTextHigh}"
                               Margin="0,0,0,10">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
@@ -92,7 +92,7 @@
                     <CheckBox x:Name="DataAcknowledgementCheckBox"
                               Checked="AcknowledgementChanged"
                               Unchecked="AcknowledgementChanged"
-                              Foreground="{DynamicResource BrushCream}"
+                              Foreground="{DynamicResource BrushTextHigh}"
                               Margin="0,0,0,10">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
@@ -102,7 +102,7 @@
                     <CheckBox x:Name="ResponsibilityAcknowledgementCheckBox"
                               Checked="AcknowledgementChanged"
                               Unchecked="AcknowledgementChanged"
-                              Foreground="{DynamicResource BrushCream}">
+                              Foreground="{DynamicResource BrushTextHigh}">
                         <TextBlock Width="590"
                                    TextWrapping="Wrap"
                                    Text="{DynamicResource L10n_FR_Check3}" />

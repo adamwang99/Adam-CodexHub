@@ -204,7 +204,7 @@
 
         <!-- ============ "Show all providers" pill switch (ON / OFF unmistakable) ============ -->
         <Style x:Key="ShowAllToggleStyle" TargetType="ToggleButton">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Padding" Value="12,7" />
             <Setter Property="MinHeight" Value="34" />
             <Setter Property="Cursor" Value="Hand" />
@@ -743,7 +743,7 @@
                                 <TextBlock Text="{DynamicResource L10n_Home_Flow_Title}"
                                            FontSize="15.5"
                                            FontWeight="SemiBold"
-                                           Foreground="{DynamicResource BrushCream}" />
+                                           Foreground="{DynamicResource BrushTextHigh}" />
                                 <TextBlock Text="{DynamicResource L10n_Home_Flow_Subtitle}"
                                            FontSize="11.5"
                                            Foreground="{DynamicResource BrushMuted}"
@@ -1201,7 +1201,7 @@
                     </Border.Style>
                     <StackPanel>
                         <TextBlock Text="{DynamicResource L10n_Diag_WarningsSection}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushGold}" />
-                        <TextBlock Text="{Binding ProviderWarnings}" FontSize="13" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{DynamicResource BrushCream}" />
+                        <TextBlock Text="{Binding ProviderWarnings}" FontSize="13" Margin="0,10,0,0" TextWrapping="Wrap" Foreground="{DynamicResource BrushTextHigh}" />
                     </StackPanel>
                 </Border>
                 <Button Content="{DynamicResource L10n_Diag_Refresh}" Command="{Binding RefreshCommand}" HorizontalAlignment="Left" />

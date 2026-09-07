@@ -28,7 +28,7 @@
         <!-- ============ Window chrome ============ -->
         <Style x:Key="AppWindow" TargetType="Window">
             <Setter Property="Background" Value="{DynamicResource BrushWindow}" />
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="FontFamily" Value="{StaticResource FontBarlow}" />
             <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -40,7 +40,7 @@
 
         <!-- ============ Buttons ============ -->
         <Style TargetType="Button">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Background">
                 <Setter.Value>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -306,7 +306,7 @@
         <Style x:Key="PageHeading" TargetType="TextBlock">
             <Setter Property="FontSize" Value="26" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
         </Style>
 
         <Style x:Key="SectionLabel" TargetType="TextBlock">
@@ -323,10 +323,10 @@
         </Style>
 
         <Style TargetType="TextBox">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Background" Value="{DynamicResource BrushCardGlassStrong}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource BrushCream}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="SelectionBrush" Value="{DynamicResource BrushGold}" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="MinHeight" Value="34" />
@@ -341,10 +341,10 @@
         </Style>
 
         <Style TargetType="PasswordBox">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Background" Value="{DynamicResource BrushCardGlassStrong}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource BrushCream}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="SelectionBrush" Value="{DynamicResource BrushGold}" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="MinHeight" Value="34" />
@@ -359,12 +359,12 @@
         </Style>
 
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
         <Style TargetType="ToggleButton">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Background">
                 <Setter.Value>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -468,7 +468,7 @@
         </Style>
 
         <Style TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Padding" Value="10,7" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -499,7 +499,7 @@
         </Style>
 
         <Style TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Background" Value="{DynamicResource BrushCardGlassStrong}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
             <Setter Property="BorderThickness" Value="1" />
@@ -616,7 +616,7 @@
         <Style TargetType="ListBox">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
         </Style>
 
         <Style TargetType="ListBoxItem">
@@ -648,7 +648,7 @@
 
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BrushHairlineSoft}" />
             <Setter Property="GridLinesVisibility" Value="Horizontal" />
             <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource BrushHairlineSoft}" />
@@ -704,7 +704,7 @@
         </Style>
 
         <Style TargetType="ToolTip">
-            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+            <Setter Property="Foreground" Value="{DynamicResource BrushTextHigh}" />
             <Setter Property="Background" Value="{DynamicResource BrushTooltip}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BrushHairline}" />
             <Setter Property="FontFamily" Value="{StaticResource FontBarlow}" />

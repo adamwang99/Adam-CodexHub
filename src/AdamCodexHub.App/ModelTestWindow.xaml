@@ -106,7 +106,7 @@
                                    Foreground="{DynamicResource BrushGold}"
                                    VerticalAlignment="Center" />
                         <TextBlock Text="{Binding Summary}"
-                                   Foreground="{DynamicResource BrushCream}"
+                                   Foreground="{DynamicResource BrushTextHigh}"
                                    VerticalAlignment="Center"
                                    TextWrapping="Wrap"
                                    Margin="14,0,0,0" />

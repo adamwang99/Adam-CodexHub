@@ -11,7 +11,7 @@
     <Color x:Key="ColorCream">#3A3226</Color>
     <Color x:Key="ColorWhite">#FFFFFF</Color>
     <Color x:Key="ColorAqua">#16857F</Color>
-    <Color x:Key="ColorMuted">#4F483C</Color>
+    <Color x:Key="ColorMuted">#332C22</Color>
     <Color x:Key="ColorBorder">#C6BBA2</Color>
     <Color x:Key="ColorDanger">#C0392B</Color>
     <Color x:Key="ColorDangerSurface">#FCEAE7</Color>
@@ -42,7 +42,7 @@
     <!-- Text ramp (semantic) -->
     <Color x:Key="ColorTextHigh">#FA1E1813</Color>
     <Color x:Key="ColorTextMid">#D1241D18</Color>
-    <Color x:Key="ColorTextLow">#AA241D18</Color>
+    <Color x:Key="ColorTextLow">#B5241D18</Color>
     <!-- Overlay tints (inverted: black-tinted on light) -->
     <Color x:Key="ColorOverlayHover">#17000000</Color>
     <Color x:Key="ColorOverlayHoverStrong">#28000000</Color>

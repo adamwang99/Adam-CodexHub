@@ -64,9 +64,9 @@ public partial class App : Application
                     UriKind.Relative);
             }
         }
-        catch
+        catch (Exception swapEx)
         {
-            // Fall through: keep L10n state in sync even if the dictionary swap failed.
+            LogStartup("ApplyLanguage dictionary swap failed", swapEx);
         }
 
         L10n.SetLanguage(target);
@@ -93,9 +93,9 @@ public partial class App : Application
                     UriKind.Relative);
             }
         }
-        catch
+        catch (Exception swapEx)
         {
-            // Fall through: keep the static state in sync even if the swap failed.
+            LogStartup("ApplyTheme dictionary swap failed", swapEx);
         }
 
         CurrentTheme = target;

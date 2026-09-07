@@ -560,16 +560,17 @@
                                     <!-- Logo disc: clear glass — transparent center, hairline rim, shadow cast by the logo itself.
                                          Active (SẴN SÀNG) discs get a warm amber fill + rim + soft glow so they stand out. -->
                                     <Border Width="80" Height="80" CornerRadius="21"
-                                            HorizontalAlignment="Center"
-                                            BorderThickness="1">
+                                            HorizontalAlignment="Center">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Background" Value="{DynamicResource BrushLogoDisc}" />
                                                 <Setter Property="BorderBrush" Value="{DynamicResource BrushOverlayHoverStrong}" />
+                                                <Setter Property="BorderThickness" Value="1" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsValid}" Value="True">
                                                         <Setter Property="Background" Value="{DynamicResource BrushActiveDisc}" />
                                                         <Setter Property="BorderBrush" Value="{DynamicResource BrushActiveDiscRim}" />
+                                                        <Setter Property="BorderThickness" Value="1.8" />
                                                         <Setter Property="Effect" Value="{StaticResource LogoGlowActive}" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -621,7 +622,7 @@
                                     <!-- Status badge -->
                                     <Border HorizontalAlignment="Right" VerticalAlignment="Top"
                                             CornerRadius="7" Padding="6,2"
-                                            Margin="0,-6,-6,0">
+                                            Margin="0,0,-4,0">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Background" Value="{DynamicResource BrushBadgeGlass}" />
@@ -640,7 +641,7 @@
                                     <!-- Target badge: W = Windows Desktop (blue), CLI = terminal (black) -->
                                     <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
                                             CornerRadius="7" Padding="5,2"
-                                            Margin="-4,0,-2,-4"
+                                            Margin="-4,0,-2,0"
                                             ToolTip="{Binding TargetTooltip}">
                                         <Border.Style>
                                             <Style TargetType="Border">

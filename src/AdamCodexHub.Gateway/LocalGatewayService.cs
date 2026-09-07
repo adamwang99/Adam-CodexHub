@@ -16,12 +16,13 @@ public sealed class LocalGatewayService : IGatewayService
 {
     private const long MaxRequestBodySize = 10 * 1024 * 1024;
     private const int MaxKeyAttempts = 3;
+    private const int DefaultGatewayPort = 20129;
     private readonly IProviderManager _providers;
     private readonly IKeyPoolService _keys;
     private readonly IModelStore _models;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
-    private string _localToken = CreateLocalToken();
+    private string _localToken = string.Empty;
     private WebApplication? _app;
 
     public LocalGatewayService(
@@ -50,31 +51,48 @@ public sealed class LocalGatewayService : IGatewayService
                 return;
             }
 
-            _localToken = CreateLocalToken();
-            var builder = WebApplication.CreateSlimBuilder();
-            builder.WebHost.UseUrls("http://127.0.0.1:0");
-            builder.WebHost.ConfigureKestrel(options =>
+            // A stable loopback port + persisted token keep the Codex Desktop overlay
+            // (~/.codex/config.toml base_url/bearer) valid across app restarts — an ephemeral
+            // port or a fresh token every run would strand Codex Desktop on a dead gateway and
+            // silently drop it back to the account model list.
+            _localToken = LoadOrCreateLocalToken();
+            WebApplication? app = null;
+            foreach (var url in new[] { $"http://127.0.0.1:{DefaultGatewayPort}", "http://127.0.0.1:0" })
             {
-                options.Limits.MaxRequestBodySize = MaxRequestBodySize;
-                options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
-            });
+                var builder = WebApplication.CreateSlimBuilder();
+                builder.WebHost.UseUrls(url);
+                builder.WebHost.ConfigureKestrel(options =>
+                {
+                    options.Limits.MaxRequestBodySize = MaxRequestBodySize;
+                    options.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
+                });
 
-            var app = builder.Build();
-            MapEndpoints(app);
+                var candidate = builder.Build();
+                MapEndpoints(candidate);
 
-            try
-            {
-                await app.StartAsync(cancellationToken);
-                var address = app.Urls.FirstOrDefault()
-                    ?? throw new InvalidOperationException("Gateway did not publish a loopback address.");
-                Port = new Uri(address).Port;
-                _app = app;
+                try
+                {
+                    await candidate.StartAsync(cancellationToken);
+                    app = candidate;
+                    break;
+                }
+                catch (IOException)
+                {
+                    // Preferred port is taken (e.g. another instance) — fall back to an
+                    // ephemeral port so the gateway still comes up.
+                    await candidate.DisposeAsync();
+                }
             }
-            catch
+
+            if (app is null)
             {
-                await app.DisposeAsync();
-                throw;
+                throw new InvalidOperationException("Gateway could not bind a loopback address.");
             }
+
+            var address = app.Urls.FirstOrDefault()
+                ?? throw new InvalidOperationException("Gateway did not publish a loopback address.");
+            Port = new Uri(address).Port;
+            _app = app;
         }
         finally
         {
@@ -397,6 +415,44 @@ public sealed class LocalGatewayService : IGatewayService
 
     private static string CreateLocalToken() =>
         Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+
+    private static string LoadOrCreateLocalToken()
+    {
+        var directory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AdamCodexHub",
+            "data");
+        var path = Path.Combine(directory, "gateway-token");
+
+        try
+        {
+            if (File.Exists(path))
+            {
+                var existing = File.ReadAllText(path).Trim();
+                if (existing.Length == 64)
+                {
+                    return existing;
+                }
+            }
+        }
+        catch (IOException)
+        {
+            // Fall through and regenerate.
+        }
+
+        var token = CreateLocalToken();
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(path, token);
+        }
+        catch (IOException)
+        {
+            // Persisting is best-effort; a fresh in-memory token still keeps this run working.
+        }
+
+        return token;
+    }
 
     private static bool IsLoopback(HttpContext context) =>
         context.Connection.RemoteIpAddress is { } address && IPAddress.IsLoopback(address);

@@ -70,7 +70,7 @@ public sealed class LocalGatewayServiceTests
     }
 
     [Fact]
-    public async Task GatewayRotatesLocalTokenWhenRestarted()
+    public async Task GatewayKeepsLocalTokenStableAcrossRestarts()
     {
         await using var fixture = new GatewayFixture();
         await fixture.InitializeAsync();
@@ -79,7 +79,9 @@ public sealed class LocalGatewayServiceTests
         await fixture.Gateway.StopAsync();
         await fixture.Gateway.StartAsync();
 
-        Assert.NotEqual(firstToken, fixture.Gateway.LocalToken);
+        // The overlay Codex Desktop reads must survive app restarts; a rotated token would
+        // strand it on the old credential.
+        Assert.Equal(firstToken, fixture.Gateway.LocalToken);
         Assert.Equal(64, fixture.Gateway.LocalToken.Length);
     }
 

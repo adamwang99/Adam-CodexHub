@@ -2,17 +2,17 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ============ Day (warm cream) — brand palette, light surfaces ============ -->
-    <Color x:Key="ColorBackground">#F1EDE4</Color>
-    <Color x:Key="ColorPanel">#F7F4EC</Color>
+    <Color x:Key="ColorBackground">#EAE4D8</Color>
+    <Color x:Key="ColorPanel">#F1ECDF</Color>
     <Color x:Key="ColorCard">#FFFFFF</Color>
-    <Color x:Key="ColorCardHover">#EAE4D7</Color>
-    <Color x:Key="ColorGold">#B8860B</Color>
-    <Color x:Key="ColorGoldHover">#A3760A</Color>
+    <Color x:Key="ColorCardHover">#E2DAC8</Color>
+    <Color x:Key="ColorGold">#A87905</Color>
+    <Color x:Key="ColorGoldHover">#966D07</Color>
     <Color x:Key="ColorCream">#3A3226</Color>
     <Color x:Key="ColorWhite">#FFFFFF</Color>
-    <Color x:Key="ColorAqua">#1B9C96</Color>
-    <Color x:Key="ColorMuted">#6E675A</Color>
-    <Color x:Key="ColorBorder">#D8D0C0</Color>
+    <Color x:Key="ColorAqua">#16857F</Color>
+    <Color x:Key="ColorMuted">#4F483C</Color>
+    <Color x:Key="ColorBorder">#C6BBA2</Color>
     <Color x:Key="ColorDanger">#C0392B</Color>
     <Color x:Key="ColorDangerSurface">#FCEAE7</Color>
     <Color x:Key="ColorWarningSurface">#FCF4DE</Color>
@@ -20,9 +20,9 @@
     <Color x:Key="ColorGlassTop">#00FFFFFF</Color>
     <Color x:Key="ColorGlassMid">#00FFFFFF</Color>
     <Color x:Key="ColorGlassBottom">#0A000000</Color>
-    <Color x:Key="ColorHairline">#26000000</Color>
-    <Color x:Key="ColorHairlineSoft">#12000000</Color>
-    <Color x:Key="ColorHairlineStrong">#3D000000</Color>
+    <Color x:Key="ColorHairline">#3E000000</Color>
+    <Color x:Key="ColorHairlineSoft">#1C000000</Color>
+    <Color x:Key="ColorHairlineStrong">#4D000000</Color>
     <Color x:Key="ColorAmbientGold">#26B8860B</Color>
     <Color x:Key="ColorAmbientAqua">#221B9C96</Color>
     <Color x:Key="ColorAmbientAmberWarm">#2AC98F1B</Color>
@@ -33,25 +33,25 @@
     <Color x:Key="ColorContentGlass">#EFF7F4EC</Color>
     <Color x:Key="ColorCardGlass">#F2FFFFFF</Color>
     <Color x:Key="ColorCardGlassStrong">#FFFFFF</Color>
-    <Color x:Key="ColorScrimTop">#14000000</Color>
+    <Color x:Key="ColorScrimTop">#17000000</Color>
     <Color x:Key="ColorSpecularTop">#59FFFFFF</Color>
     <Color x:Key="ColorSpecularArc">#26FFFFFF</Color>
     <Color x:Key="ColorMilk">#0A000000</Color>
-    <Color x:Key="ColorMilkTop">#12000000</Color>
+    <Color x:Key="ColorMilkTop">#1C000000</Color>
 
     <!-- Text ramp (semantic) -->
-    <Color x:Key="ColorTextHigh">#EA241D18</Color>
-    <Color x:Key="ColorTextMid">#B3241D18</Color>
-    <Color x:Key="ColorTextLow">#8C241D18</Color>
+    <Color x:Key="ColorTextHigh">#FA1E1813</Color>
+    <Color x:Key="ColorTextMid">#D1241D18</Color>
+    <Color x:Key="ColorTextLow">#AA241D18</Color>
     <!-- Overlay tints (inverted: black-tinted on light) -->
-    <Color x:Key="ColorOverlayHover">#14000000</Color>
-    <Color x:Key="ColorOverlayHoverStrong">#1F000000</Color>
-    <Color x:Key="ColorOverlayPressed">#33000000</Color>
+    <Color x:Key="ColorOverlayHover">#17000000</Color>
+    <Color x:Key="ColorOverlayHoverStrong">#28000000</Color>
+    <Color x:Key="ColorOverlayPressed">#3E000000</Color>
     <Color x:Key="ColorOverlayMilk">#0D000000</Color>
     <!-- Bespoke surfaces -->
-    <Color x:Key="ColorSwitchTrack">#33000000</Color>
+    <Color x:Key="ColorSwitchTrack">#3E000000</Color>
     <Color x:Key="ColorSwitchThumb">#FFFFFF</Color>
-    <Color x:Key="ColorBadgeGlass">#26000000</Color>
+    <Color x:Key="ColorBadgeGlass">#3E000000</Color>
     <Color x:Key="ColorTooltip">#FFFDFAF4</Color>
     <Color x:Key="ColorTitleBar">#E6FFFFFF</Color>
     <Color x:Key="ColorFlowTop">#F7FFFFFF</Color>
@@ -121,18 +121,18 @@
     <LinearGradientBrush x:Key="BrushGlassRim" StartPoint="0,0" EndPoint="0,1">
         <GradientStop Offset="0.0" Color="#8CFFFFFF" />
         <GradientStop Offset="0.25" Color="#40000000" />
-        <GradientStop Offset="0.7" Color="#14000000" />
-        <GradientStop Offset="1.0" Color="#33000000" />
+        <GradientStop Offset="0.7" Color="#17000000" />
+        <GradientStop Offset="1.0" Color="#3E000000" />
     </LinearGradientBrush>
 
     <DropShadowEffect x:Key="GlassShadow" BlurRadius="24" ShadowDepth="8" Direction="270" Opacity="0.22" Color="#000000" />
     <DropShadowEffect x:Key="GlassShadowSoft" BlurRadius="16" ShadowDepth="4" Direction="270" Opacity="0.14" Color="#000000" />
-    <DropShadowEffect x:Key="AmberHalo" BlurRadius="18" ShadowDepth="1" Direction="270" Opacity="0.3" Color="#B8860B" />
+    <DropShadowEffect x:Key="AmberHalo" BlurRadius="18" ShadowDepth="1" Direction="270" Opacity="0.3" Color="#A87905" />
     <DropShadowEffect x:Key="ButtonShadow" BlurRadius="9" ShadowDepth="3" Direction="270" Opacity="0.18" Color="#000000" />
-    <DropShadowEffect x:Key="AmberGlowHover" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.35" Color="#B8860B" />
+    <DropShadowEffect x:Key="AmberGlowHover" BlurRadius="14" ShadowDepth="2" Direction="270" Opacity="0.35" Color="#A87905" />
     <DropShadowEffect x:Key="LogoShadow" BlurRadius="12" ShadowDepth="4" Direction="270" Opacity="0.3" Color="#000000" />
-    <DropShadowEffect x:Key="LogoGlowHover" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.45" Color="#B8860B" />
-    <DropShadowEffect x:Key="AquaGlowToggle" BlurRadius="9" ShadowDepth="0" Opacity="0.6" Color="#1B9C96" />
+    <DropShadowEffect x:Key="LogoGlowHover" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity="0.45" Color="#A87905" />
+    <DropShadowEffect x:Key="AquaGlowToggle" BlurRadius="9" ShadowDepth="0" Opacity="0.6" Color="#16857F" />
 
     <LinearGradientBrush x:Key="BrushWindow" StartPoint="0,0" EndPoint="1,1">
         <GradientStop Offset="0.0" Color="#FFF7F3EB" />

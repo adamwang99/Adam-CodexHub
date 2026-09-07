@@ -191,10 +191,15 @@ public sealed class HomeViewModel : PageViewModel
             if (SetProperty(ref _showAllProviders, value))
             {
                 UpdateShowAllTooltip();
+                OnPropertyChanged(nameof(ProvidersViewHeight));
+                OnPropertyChanged(nameof(ShowProvidersExpand));
                 _ = RunAsync(RefreshCoreAsync);
             }
         }
     }
+
+    /// <summary>Show-all mode expands the grid and hides the expand chevron.</summary>
+    public bool ShowProvidersExpand => !ShowAllProviders;
 
     public ICommand RefreshCommand { get; }
     public ICommand ActivateCommand { get; }
@@ -219,7 +224,7 @@ public sealed class HomeViewModel : PageViewModel
     }
 
     /// <summary>Height cap for the provider grid (one row collapsed, tall when expanded).</summary>
-    public double ProvidersViewHeight => ProvidersExpanded ? 4000 : 174;
+    public double ProvidersViewHeight => (ShowAllProviders || ProvidersExpanded) ? 4000 : 174;
 
     /// <summary>Segoe MDL2 chevron glyph flipped when expanded.</summary>
     public string ProvidersExpandGlyph => ProvidersExpanded ? "\uE70E" : "\uE70D";

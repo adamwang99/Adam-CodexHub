@@ -627,11 +627,17 @@
                         <Grid>
                             <ToggleButton x:Name="Toggle"
                                           Focusable="False"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
                                           Foreground="{TemplateBinding Foreground}"
                                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                                 <ToggleButton.Template>
                                     <ControlTemplate TargetType="ToggleButton">
-                                        <Border Background="Transparent">
+                                        <Border Background="{DynamicResource BrushOverlayMilk}"
+                                                BorderBrush="{DynamicResource BrushHairline}"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="10,3">
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Center">

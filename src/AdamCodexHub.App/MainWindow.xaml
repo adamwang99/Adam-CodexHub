@@ -668,8 +668,20 @@
                                         </Border.Style>
                                         <TextBlock Text="{Binding StatusLabel}"
                                                    FontSize="8"
-                                                   FontWeight="Bold"
-                                                   Foreground="{DynamicResource BrushBackground}" />
+                                                   FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource BrushBackground}" />
+                                                    <Style.Triggers>
+                                                        <!-- Active ("Đang mở") badge: white-cream label to stand apart -->
+                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource BrushCream}" />
+                                                            <Setter Property="FontWeight" Value="Bold" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Border>
                                     <!-- Target badge: W = Windows Desktop (blue), CLI = terminal (black) -->
                                     <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"

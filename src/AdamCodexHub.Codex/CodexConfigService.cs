@@ -234,7 +234,7 @@ public sealed class CodexConfigService : ICodexConfigService
             return null;
         }
 
-        var text = await File.ReadAllTextAsync(_configPath, cancellationToken);
+        var text = await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(text))
         {
             return null;

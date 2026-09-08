@@ -465,6 +465,36 @@
                     </WrapPanel>
                 </Border>
 
+                <!-- Model selector: pick which model of the selected provider to use -->
+                <Border Margin="0,0,0,12" Padding="12,8" CornerRadius="10"
+                        Background="{DynamicResource BrushOverlayMilk}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowModelPicker}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{DynamicResource L10n_Home_ModelLabel}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BrushTextHigh}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox ItemsSource="{Binding EnabledModels}"
+                                  SelectedValue="{Binding SelectedModelRemoteId, Mode=TwoWay}"
+                                  SelectedValuePath="RemoteId"
+                                  DisplayMemberPath="DisplayName"
+                                  MinWidth="240" Padding="8,4"
+                                  automation:AutomationProperties.Name="{DynamicResource L10n_Home_ModelLabel}" />
+                        <TextBlock Text="{Binding SelectedCard.Name, StringFormat=' · {0}'}"
+                                   FontSize="11" Foreground="{DynamicResource BrushMuted}"
+                                   VerticalAlignment="Center" Margin="8,0,0,0" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Provider grid: floating logos, no enclosing card. One row by default so the
                      "How it works" diagram stays visible; a subtle corner chevron expands the rest. -->
                 <Grid>

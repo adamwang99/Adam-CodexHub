@@ -44,6 +44,7 @@
     <sys:String x:Key="L10n_Home_ShowAllOnTip">'Hiện tất cả nhà cung cấp' đang BẬT — hiển thị các nhà cung cấp đã cấu hình và mọi preset có sẵn.</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOffTip">'Hiện tất cả nhà cung cấp' đang TẮT — chỉ hiển thị Codex Account và các nhà cung cấp bạn đã thiết lập.</sys:String>
     <sys:String x:Key="L10n_Home_On">ON</sys:String>
+    <sys:String x:Key="L10n_Home_ModelLabel">Mô hình dùng cho nhà cung cấp</sys:String>
     <sys:String x:Key="L10n_Home_Off">OFF</sys:String>
     <sys:String x:Key="L10n_Home_DoubleClickTip">Nhấp đúp để kích hoạt với Codex.</sys:String>
     <sys:String x:Key="L10n_Home_FooterHint">Nhấp đúp vào thẻ nhà cung cấp để kích hoạt với Codex. Codex Account trả về đăng nhập mặc định. Với nhà cung cấp bên thứ ba, hãy thêm API key và kiểm tra một mô hình trước.</sys:String>

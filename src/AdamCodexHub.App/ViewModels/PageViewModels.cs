@@ -339,15 +339,20 @@ public sealed class HomeViewModel : PageViewModel
 
             if (SelectedCard.Id != "codex-account")
             {
-                var enabledModel = (await _models.GetAllAsync(SelectedCard.Id))
-                    .FirstOrDefault(x => x.Enabled && x.State == ModelLifecycleState.Enabled);
-                if (enabledModel is null)
+                var enabledModels = (await _models.GetAllAsync(SelectedCard.Id))
+                    .Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)
+                    .ToList();
+                if (enabledModels.Count == 0)
                 {
                     StatusMessage = L10n.F("L10n_Home_NoEnabledModel", SelectedCard.Name);
                     return;
                 }
 
-                SelectedModelRemoteId = enabledModel.RemoteId;
+                // Respect the model the user picked in the model selector; fall back to the
+                // first enabled model only if the picker's choice is no longer available.
+                var chosen = enabledModels.FirstOrDefault(x => x.RemoteId == SelectedModelRemoteId)
+                             ?? enabledModels[0];
+                SelectedModelRemoteId = chosen.RemoteId;
             }
 
             if (UsesRemoteEndpoint(SelectedCard) &&
@@ -667,7 +672,13 @@ public sealed class HomeViewModel : PageViewModel
     public ProviderCard? SelectedCard
     {
         get => _selectedCard;
-        set => SetProperty(ref _selectedCard, value);
+        set
+        {
+            if (SetProperty(ref _selectedCard, value))
+            {
+                _ = RunAsync(LoadEnabledModelsAsync);
+            }
+        }
     }
 
     private string? _selectedModelRemoteId;
@@ -675,6 +686,39 @@ public sealed class HomeViewModel : PageViewModel
     {
         get => _selectedModelRemoteId;
         set => SetProperty(ref _selectedModelRemoteId, value);
+    }
+
+    /// <summary>Enabled models of the currently selected provider (for the model selector).</summary>
+    public ObservableCollection<ModelDescriptor> EnabledModels { get; } = new();
+
+    /// <summary>Show the model selector only for keyed providers that have enabled models.</summary>
+    public bool ShowModelPicker =>
+        SelectedCard is { Id: not "codex-account" } && EnabledModels.Count > 0;
+
+    /// <summary>Reload the model selector for the selected provider's enabled models.</summary>
+    public async Task LoadEnabledModelsAsync()
+    {
+        var card = SelectedCard;
+        EnabledModels.Clear();
+        if (card is null || card.Id == "codex-account")
+        {
+            OnPropertyChanged(nameof(ShowModelPicker));
+            return;
+        }
+
+        var all = await _models.GetAllAsync(card.Id);
+        foreach (var model in all.Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled))
+        {
+            EnabledModels.Add(model);
+        }
+
+        if (EnabledModels.Count > 0 &&
+            EnabledModels.All(x => x.RemoteId != SelectedModelRemoteId))
+        {
+            SelectedModelRemoteId = EnabledModels[0].RemoteId;
+        }
+
+        OnPropertyChanged(nameof(ShowModelPicker));
     }
 
     private static bool UsesRemoteEndpoint(ProviderCard card) =>

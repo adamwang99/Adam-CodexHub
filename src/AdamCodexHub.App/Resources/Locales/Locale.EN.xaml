@@ -44,6 +44,7 @@
     <sys:String x:Key="L10n_Home_ShowAllOnTip">Show all providers is ON — configured providers and every built-in preset are visible.</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOffTip">Show all providers is OFF — only Codex Account and providers you have set up are shown.</sys:String>
     <sys:String x:Key="L10n_Home_On">ON</sys:String>
+    <sys:String x:Key="L10n_Home_ModelLabel">Model for this provider</sys:String>
     <sys:String x:Key="L10n_Home_Off">OFF</sys:String>
     <sys:String x:Key="L10n_Home_DoubleClickTip">Double-click to activate with Codex.</sys:String>
     <sys:String x:Key="L10n_Home_FooterHint">Double-click a provider card to activate it with Codex. Codex Account returns to the default sign-in. For third-party providers, add an API key and verify a model first.</sys:String>

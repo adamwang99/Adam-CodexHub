@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "hhtech",
+  "name": "HHTech API",
+  "adapter": "openai-compatible",
+  "baseUrl": "https://hhtechapi.com/v1",
+  "trustLevel": "verified",
+  "auth": {
+    "type": "bearer",
+    "headerName": "Authorization"
+  },
+  "endpoints": {
+    "models": "/models",
+    "responses": "/responses",
+    "chatCompletions": "/chat/completions"
+  },
+  "extraHeaders": {},
+  "capabilities": [
+    "text",
+    "streaming",
+    "tools",
+    "vision",
+    "web-search"
+  ],
+  "notes": "HHTech API Gateway — one key for Claude, OpenAI, DeepSeek, Qwen. Supports OpenAI-compatible and Anthropic-compatible endpoints. Models: claude-opus-5, claude-sonnet-5, gpt-5.6-sol, gpt-6-astra, deepseek-v4-pro, qwen3-coder-plus, etc. Get key at https://hhtechapi.com/portal/#/login"
+}

@@ -775,7 +775,7 @@
                                           HorizontalAlignment="Center" Margin="0,6,0,0"
                                           automation:AutomationProperties.Name="{DynamicResource L10n_Home_ModelLabel}">
                                     <ComboBox.Style>
-                                        <Style TargetType="ComboBox">
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding ShowModelDropdown}" Value="True">

@@ -637,9 +637,15 @@
                                                         VerticalAlignment="Center">
                                                 <ContentPresenter
                                                     Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"
-                                                    ContentTemplate="{Binding SelectionBoxItemTemplate, RelativeSource={RelativeSource AncestorType=ComboBox}}"
                                                     VerticalAlignment="Center"
-                                                    TextElement.Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
+                                                    TextElement.Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}">
+                                                    <ContentPresenter.ContentTemplate>
+                                                        <DataTemplate>
+                                                            <TextBlock Text="{Binding DisplayName}"
+                                                                       Foreground="{DynamicResource BrushTextHigh}" />
+                                                        </DataTemplate>
+                                                    </ContentPresenter.ContentTemplate>
+                                                </ContentPresenter>
                                                 <Path Width="7" Height="4"
                                                       Data="M 0 0 L 3.5 3.5 L 7 0"
                                                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ComboBox}}"

@@ -58,6 +58,7 @@
     <sys:String x:Key="L10n_Home_Flow_Codex_Title">Codex Desktop / CLI</sys:String>
     <sys:String x:Key="L10n_Home_Flow_Codex_Sub">Bạn trò chuyện, lập kế hoạch và viết mã</sys:String>
     <sys:String x:Key="L10n_Card_Ready">SẴN SÀNG</sys:String>
+    <sys:String x:Key="L10n_Card_Active">ĐANG MỞ</sys:String>
     <sys:String x:Key="L10n_Card_Setup">THIẾT LẬP</sys:String>
     <sys:String x:Key="L10n_Card_KeyPresent">Có API key ✓</sys:String>
     <sys:String x:Key="L10n_Card_KeyNeeded">Cần API key</sys:String>

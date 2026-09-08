@@ -805,9 +805,11 @@ public sealed class ProviderCard : ObservableObject
     public bool ShowModelDropdown =>
         Id != ProviderManager.CodexAccountProviderId && HasUsableKey && EnabledModelCount > 0;
 
-    public string StatusLabel => IsValid
-        ? L10n.T("L10n_Card_Ready")
-        : L10n.T("L10n_Card_Setup");
+    public string StatusLabel => IsActive
+        ? L10n.T("L10n_Card_Active")
+        : IsValid
+            ? L10n.T("L10n_Card_Ready")
+            : L10n.T("L10n_Card_Setup");
 
     /// <summary>Small corner badge: "W" for Windows Desktop, "CLI" for the terminal.</summary>
     public string TargetLabel => Target == CodexTarget.Cli ? "CLI" : "W";

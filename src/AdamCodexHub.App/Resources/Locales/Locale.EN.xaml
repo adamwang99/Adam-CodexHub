@@ -58,6 +58,7 @@
     <sys:String x:Key="L10n_Home_Flow_Codex_Title">Codex Desktop / CLI</sys:String>
     <sys:String x:Key="L10n_Home_Flow_Codex_Sub">You chat, plan and write code</sys:String>
     <sys:String x:Key="L10n_Card_Ready">READY</sys:String>
+    <sys:String x:Key="L10n_Card_Active">OPEN</sys:String>
     <sys:String x:Key="L10n_Card_Setup">SETUP</sys:String>
     <sys:String x:Key="L10n_Card_KeyPresent">API key ✓</sys:String>
     <sys:String x:Key="L10n_Card_KeyNeeded">API key needed</sys:String>

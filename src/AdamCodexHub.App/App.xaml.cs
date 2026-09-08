@@ -402,7 +402,7 @@ public partial class App : Application
         _trayIcon.DoubleClick += (_, _) => ShowMainWindow(window);
     }
 
-    /// <summary>Build the tray "Model" submenu: keyed providers -> their enabled models.</summary>
+    /// <summary>Build the tray "Model" submenu: only the active provider's enabled models.</summary>
     private void PopulateTrayModelMenu(WinForms.ToolStripMenuItem modelMenu)
     {
         modelMenu.DropDownItems.Clear();
@@ -414,37 +414,40 @@ public partial class App : Application
 
         try
         {
-            var providers = _host.Services.GetRequiredService<IProviderStore>().GetAllAsync().GetAwaiter().GetResult();
+            var providers = _host.Services.GetRequiredService<IProviderManager>();
             var modelStore = _host.Services.GetRequiredService<IModelStore>();
             var activation = _host.Services.GetRequiredService<IProviderActivationService>();
             var window = MainWindow;
 
-            foreach (var provider in providers.Where(p => p.Id != "codex-account" && p.Enabled))
-            {
-                var enabled = modelStore.GetAllAsync(provider.Id).GetAwaiter().GetResult()
-                    .Where(m => m.Enabled && m.State == ModelLifecycleState.Enabled)
-                    .ToList();
-                if (enabled.Count == 0)
-                {
-                    continue;
-                }
-
-                var providerItem = new WinForms.ToolStripMenuItem(provider.Name);
-                foreach (var model in enabled)
-                {
-                    var providerId = provider.Id;
-                    var modelId = model.RemoteId;
-                    var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName);
-                    modelItem.Click += (_, _) => ActivateTrayModelAsync(activation, providerId, modelId, window);
-                    providerItem.DropDownItems.Add(modelItem);
-                }
-
-                modelMenu.DropDownItems.Add(providerItem);
-            }
-
-            if (modelMenu.DropDownItems.Count == 0)
+            var active = providers.GetActiveAsync().GetAwaiter().GetResult();
+            if (active is null || active.Id == "codex-account")
             {
                 modelMenu.DropDownItems.Add(L10n.T("L10n_Tray_NoModel"));
+                return;
+            }
+
+            var enabled = modelStore.GetAllAsync(active.Id).GetAwaiter().GetResult()
+                .Where(m => m.Enabled && m.State == ModelLifecycleState.Enabled)
+                .ToList();
+            if (enabled.Count == 0)
+            {
+                modelMenu.DropDownItems.Add(L10n.T("L10n_Tray_NoModel"));
+                return;
+            }
+
+            var header = new WinForms.ToolStripMenuItem(L10n.F("L10n_Tray_ProviderHeader", active.Name))
+            {
+                Enabled = false
+            };
+            modelMenu.DropDownItems.Add(header);
+
+            foreach (var model in enabled)
+            {
+                var providerId = active.Id;
+                var modelId = model.RemoteId;
+                var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName);
+                modelItem.Click += (_, _) => ActivateTrayModelAsync(activation, providerId, modelId, window);
+                modelMenu.DropDownItems.Add(modelItem);
             }
         }
         catch (Exception ex)

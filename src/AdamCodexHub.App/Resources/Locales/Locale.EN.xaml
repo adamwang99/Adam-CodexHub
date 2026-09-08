@@ -366,6 +366,7 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Tray_Show">Show Adam CodexHub</sys:String>
     <sys:String x:Key="L10n_Tray_Model">Model</sys:String>
     <sys:String x:Key="L10n_Tray_NoModel">No model available</sys:String>
+    <sys:String x:Key="L10n_Tray_ProviderHeader">Provider: {0}</sys:String>
     <sys:String x:Key="L10n_Tray_Exit">Exit</sys:String>
     <sys:String x:Key="L10n_FR_OpenLinkError">Could not open legal notice</sys:String>
 

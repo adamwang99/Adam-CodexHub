@@ -28,11 +28,13 @@ public partial class App : Application
 {
     private const int RequiredSessionAcknowledgementVersion = 2;
     private const string SingleInstanceMutexName = "Global\\AdamCodexHub.SingleInstance.v1";
+    private const string ShowSignalName = "Global\\AdamCodexHub.ShowWindow.v1";
 
     public const string ThemeDark = "dark";
     public const string ThemeLight = "light";
     public static string CurrentTheme { get; private set; } = ThemeDark;
     private static Mutex? _singleInstanceMutex;
+    private EventWaitHandle? _showSignal;
     private IHost? _host;
     private WinForms.NotifyIcon? _trayIcon;
     private Drawing.Icon? _trayIconImage;
@@ -119,11 +121,17 @@ public partial class App : Application
             if (!ownsMutex)
             {
                 LogStartup("Second instance blocked");
-                MessageBox.Show(
-                    "Adam CodexHub is already running in the system tray.\\n\\nClose the existing instance before launching another copy.",
-                    "Adam CodexHub",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                // Ask the running primary to bring its window up (it may be hidden in the tray).
+                try
+                {
+                    using var signal = EventWaitHandle.OpenExisting(ShowSignalName);
+                    signal.Set();
+                }
+                catch
+                {
+                    // Primary is still starting up; nothing to signal yet. Fall through.
+                }
+
                 Shutdown();
                 return;
             }
@@ -270,6 +278,33 @@ public partial class App : Application
             LogStartup("Tray icon initialized");
             LogStartup("Main window shown");
 
+            // A second launch signals us (a named event) to surface the window from the tray,
+            // so "open the app again" actually brings it to the front instead of doing nothing.
+            try
+            {
+                _showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSignalName);
+                _ = Task.Run(async () =>
+                {
+                    while (_showSignal is { } signal)
+                    {
+                        try
+                        {
+                            await Task.Run(() => signal.WaitOne());
+                        }
+                        catch
+                        {
+                            break;
+                        }
+
+                        await Dispatcher.InvokeAsync(() => ShowMainWindow(window));
+                    }
+                });
+            }
+            catch (Exception signalEx)
+            {
+                LogStartup("Show-signal listener unavailable", signalEx);
+            }
+
             // Keys left degraded (Offline / rate-limited / stale Unknown) by transient gateway
             // failures in the previous session get one quiet probe each, so an installed and
             // previously-tested provider is usable right away — no manual re-test required.
@@ -321,6 +356,8 @@ public partial class App : Application
 
         _singleInstanceMutex?.Dispose();
         _singleInstanceMutex = null;
+        _showSignal?.Dispose();
+        _showSignal = null;
         base.OnExit(e);
     }
 

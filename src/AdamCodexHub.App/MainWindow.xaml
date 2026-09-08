@@ -830,7 +830,7 @@
                     </Grid>
 
                     <!-- ============ How it works: simple feature flow (API keys → gateway → Codex) ============ -->
-                <Border Margin="0,28,0,0"
+                <Border Margin="0,10,0,0"
                         CornerRadius="18"
                         BorderThickness="1"
                         BorderBrush="{DynamicResource BrushGlassRim}"

@@ -642,7 +642,9 @@
                                                     <ContentPresenter.ContentTemplate>
                                                         <DataTemplate>
                                                             <TextBlock Text="{Binding DisplayName}"
-                                                                       Foreground="{DynamicResource BrushTextHigh}" />
+                                                                       Foreground="{DynamicResource BrushTextHigh}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       MaxWidth="104" />
                                                         </DataTemplate>
                                                     </ContentPresenter.ContentTemplate>
                                                 </ContentPresenter>

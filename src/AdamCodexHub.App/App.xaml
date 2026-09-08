@@ -637,7 +637,7 @@
                                                 BorderBrush="{DynamicResource BrushHairline}"
                                                 BorderThickness="1"
                                                 CornerRadius="6"
-                                                Padding="10,3">
+                                                Padding="6,3">
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Center">
@@ -650,7 +650,7 @@
                                                             <TextBlock Text="{Binding DisplayName}"
                                                                        Foreground="{DynamicResource BrushTextHigh}"
                                                                        TextTrimming="CharacterEllipsis"
-                                                                       MaxWidth="104" />
+                                                                       MaxWidth="110" />
                                                         </DataTemplate>
                                                     </ContentPresenter.ContentTemplate>
                                                 </ContentPresenter>

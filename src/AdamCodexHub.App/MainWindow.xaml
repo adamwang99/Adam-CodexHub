@@ -752,6 +752,24 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
+                                <!-- Per-card model selector (keyed providers only) -->
+                                <ComboBox ItemsSource="{Binding EnabledModels}"
+                                          SelectedValue="{Binding SelectedModelRemoteId, Mode=TwoWay}"
+                                          SelectedValuePath="RemoteId" DisplayMemberPath="DisplayName"
+                                          FontSize="10" MinWidth="104" MaxWidth="112"
+                                          HorizontalAlignment="Center" Margin="0,6,0,0"
+                                          automation:AutomationProperties.Name="{DynamicResource L10n_Home_ModelLabel}">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ShowModelDropdown}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

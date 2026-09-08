@@ -364,6 +364,8 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Dlg_TooBigTitle">Ảnh quá lớn</sys:String>
     <sys:String x:Key="L10n_App_StartupErrorTitle">Adam CodexHub không thể khởi động</sys:String>
     <sys:String x:Key="L10n_Tray_Show">Hiển thị Adam CodexHub</sys:String>
+    <sys:String x:Key="L10n_Tray_Model">Mô hình</sys:String>
+    <sys:String x:Key="L10n_Tray_NoModel">Không có mô hình để chọn</sys:String>
     <sys:String x:Key="L10n_Tray_Exit">Thoát</sys:String>
     <sys:String x:Key="L10n_FR_OpenLinkError">Không thể mở thông báo pháp lý</sys:String>
 

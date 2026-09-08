@@ -224,7 +224,7 @@ public sealed class HomeViewModel : PageViewModel
     }
 
     /// <summary>Height cap for the provider grid (one row collapsed, tall when expanded).</summary>
-    public double ProvidersViewHeight => (ShowAllProviders || ProvidersExpanded) ? 4000 : 203;
+    public double ProvidersViewHeight => (ShowAllProviders || ProvidersExpanded) ? 4000 : 200;
 
     /// <summary>Segoe MDL2 chevron glyph flipped when expanded.</summary>
     public string ProvidersExpandGlyph => ProvidersExpanded ? "\uE70E" : "\uE70D";
@@ -246,9 +246,8 @@ public sealed class HomeViewModel : PageViewModel
         var built = new List<ProviderCard>();
         foreach (var provider in all)
         {
-            var enabledModels = (await _models.GetAllAsync(provider.Id))
-                .Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)
-                .Count();
+            var models = await _models.GetAllAsync(provider.Id);
+            var enabledModels = models.Count(x => x.Enabled && x.State == ModelLifecycleState.Enabled);
 
             var hasUsableKey = provider.Id == "codex-account" ||
                 (await _keys.ListAsync(provider.Id)).Any(key =>
@@ -261,7 +260,7 @@ public sealed class HomeViewModel : PageViewModel
             ProviderCard NewCard(CodexTarget target, string? nameOverride = null)
             {
                 var (hasLogo, logoSource) = ResolveLogo(provider.Id);
-                return new ProviderCard
+                var card = new ProviderCard
                 {
                     Id = provider.Id,
                     Name = nameOverride ?? provider.Name,
@@ -275,6 +274,9 @@ public sealed class HomeViewModel : PageViewModel
                     LogoSource = logoSource,
                     IsActive = string.Equals(provider.Id, active?.Id, StringComparison.OrdinalIgnoreCase)
                 };
+                card.LoadEnabledModels(models, null);
+                card.ModelChanged += OnCardModelChanged;
+                return card;
             }
 
             if (provider.Id == ProviderManager.CodexAccountProviderId)
@@ -318,6 +320,18 @@ public sealed class HomeViewModel : PageViewModel
 
         OnPropertyChanged(nameof(HasProviders));
         StatusMessage = L10n.F("L10n_Home_StatusShown", Providers.Count, DateTime.Now);
+    }
+
+    /// <summary>User changed a provider card's model: sync the home selection so activation uses it.</summary>
+    private void OnCardModelChanged(ProviderCard card, string? modelRemoteId)
+    {
+        if (card is null)
+        {
+            return;
+        }
+
+        SelectedCard = card;
+        SelectedModelRemoteId = modelRemoteId;
     }
 
     private async Task ActivateAsync()
@@ -787,6 +801,10 @@ public sealed class ProviderCard : ObservableObject
     public bool IsValid =>
         Id == "codex-account" || (HasUsableKey && EnabledModelCount > 0);
 
+    /// <summary>Show the per-card model dropdown only for keyed providers that have enabled models.</summary>
+    public bool ShowModelDropdown =>
+        Id != ProviderManager.CodexAccountProviderId && HasUsableKey && EnabledModelCount > 0;
+
     public string StatusLabel => IsValid
         ? L10n.T("L10n_Card_Ready")
         : L10n.T("L10n_Card_Setup");
@@ -804,6 +822,42 @@ public sealed class ProviderCard : ObservableObject
 
     /// <summary>Enabled-model counter line under the logo (localized "{0} model(s)").</summary>
     public string EnabledModelLabel => L10n.F("L10n_Card_ModelCount", EnabledModelCount);
+
+    /// <summary>Enabled models of this provider, shown in the per-card model selector.</summary>
+    public ObservableCollection<ModelDescriptor> EnabledModels { get; } = new();
+
+    /// <summary>The model currently chosen for this provider (the one written to Codex on activation).</summary>
+    private string? _selectedModelRemoteId;
+    public string? SelectedModelRemoteId
+    {
+        get => _selectedModelRemoteId;
+        set
+        {
+            if (SetProperty(ref _selectedModelRemoteId, value))
+            {
+                ModelChanged?.Invoke(this, value);
+            }
+        }
+    }
+
+    /// <summary>Raised when the user picks a different model on this card.</summary>
+    public event Action<ProviderCard, string?>? ModelChanged;
+
+    /// <summary>Reload this card's enabled models (kept in sync with the model store).</summary>
+    public void LoadEnabledModels(IReadOnlyList<ModelDescriptor> all, string? preferredRemoteId)
+    {
+        var previous = SelectedModelRemoteId;
+        EnabledModels.Clear();
+        foreach (var model in all.Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled))
+        {
+            EnabledModels.Add(model);
+        }
+
+        var chosen = EnabledModels.FirstOrDefault(x => x.RemoteId == preferredRemoteId)
+                     ?? EnabledModels.FirstOrDefault(x => x.RemoteId == previous)
+                     ?? EnabledModels.FirstOrDefault();
+        SelectedModelRemoteId = chosen?.RemoteId;
+    }
 
     /// <summary>Two-letter abbreviation shown when the provider has no logo image.</summary>
     public string Initials

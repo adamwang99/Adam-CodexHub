@@ -6,6 +6,7 @@ using AdamCodexHub.App.ViewModels;
 using AdamCodexHub.App.Services;
 using AdamCodexHub.Codex;
 using AdamCodexHub.Core.Interfaces;
+using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Gateway;
 using AdamCodexHub.Infrastructure.Database;
 using AdamCodexHub.Infrastructure.Keys;
@@ -378,9 +379,12 @@ public partial class App : Application
         var menu = new WinForms.ContextMenuStrip();
         var showItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_Show"));
         showItem.Click += (_, _) => ShowMainWindow(window);
+        var modelItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_Model"));
+        modelItem.DropDownOpening += (_, _) => PopulateTrayModelMenu(modelItem);
         var exitItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_Exit"));
         exitItem.Click += (_, _) => ExitApplication();
         menu.Items.Add(showItem);
+        menu.Items.Add(modelItem);
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(exitItem);
 
@@ -396,6 +400,73 @@ public partial class App : Application
             Visible = true
         };
         _trayIcon.DoubleClick += (_, _) => ShowMainWindow(window);
+    }
+
+    /// <summary>Build the tray "Model" submenu: keyed providers -> their enabled models.</summary>
+    private void PopulateTrayModelMenu(WinForms.ToolStripMenuItem modelMenu)
+    {
+        modelMenu.DropDownItems.Clear();
+        if (_host is null)
+        {
+            modelMenu.DropDownItems.Add(L10n.T("L10n_Tray_NoModel"));
+            return;
+        }
+
+        try
+        {
+            var providers = _host.Services.GetRequiredService<IProviderStore>().GetAllAsync().GetAwaiter().GetResult();
+            var modelStore = _host.Services.GetRequiredService<IModelStore>();
+            var activation = _host.Services.GetRequiredService<IProviderActivationService>();
+            var window = MainWindow;
+
+            foreach (var provider in providers.Where(p => p.Id != "codex-account" && p.Enabled))
+            {
+                var enabled = modelStore.GetAllAsync(provider.Id).GetAwaiter().GetResult()
+                    .Where(m => m.Enabled && m.State == ModelLifecycleState.Enabled)
+                    .ToList();
+                if (enabled.Count == 0)
+                {
+                    continue;
+                }
+
+                var providerItem = new WinForms.ToolStripMenuItem(provider.Name);
+                foreach (var model in enabled)
+                {
+                    var providerId = provider.Id;
+                    var modelId = model.RemoteId;
+                    var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName);
+                    modelItem.Click += (_, _) => ActivateTrayModelAsync(activation, providerId, modelId, window);
+                    providerItem.DropDownItems.Add(modelItem);
+                }
+
+                modelMenu.DropDownItems.Add(providerItem);
+            }
+
+            if (modelMenu.DropDownItems.Count == 0)
+            {
+                modelMenu.DropDownItems.Add(L10n.T("L10n_Tray_NoModel"));
+            }
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Tray model menu build failed", ex);
+            modelMenu.DropDownItems.Add(L10n.T("L10n_Tray_NoModel"));
+        }
+    }
+
+    /// <summary>Activate the chosen provider + model straight from the tray, then surface the window.</summary>
+    private static async void ActivateTrayModelAsync(
+        IProviderActivationService activation, string providerId, string modelId, Window window)
+    {
+        try
+        {
+            await activation.ActivateDesktopAsync(providerId, modelId);
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => ShowMainWindow(window));
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Tray model activation failed", ex);
+        }
     }
 
     private void ExitApplication()

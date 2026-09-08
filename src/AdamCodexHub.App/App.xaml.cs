@@ -417,6 +417,7 @@ public partial class App : Application
             var providers = _host.Services.GetRequiredService<IProviderManager>();
             var modelStore = _host.Services.GetRequiredService<IModelStore>();
             var activation = _host.Services.GetRequiredService<IProviderActivationService>();
+            var configService = _host.Services.GetRequiredService<ICodexConfigService>();
             var window = MainWindow;
 
             var active = providers.GetActiveAsync().GetAwaiter().GetResult();
@@ -435,6 +436,10 @@ public partial class App : Application
                 return;
             }
 
+            // Mark the model Codex is currently using (the live gateway overlay model in
+            // ~/.codex/config.toml) so the user can tell which one is active and switch away.
+            var currentModelId = configService.GetCurrentModelAsync().GetAwaiter().GetResult();
+
             var header = new WinForms.ToolStripMenuItem(L10n.F("L10n_Tray_ProviderHeader", active.Name))
             {
                 Enabled = false
@@ -445,7 +450,11 @@ public partial class App : Application
             {
                 var providerId = active.Id;
                 var modelId = model.RemoteId;
-                var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName);
+                var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName)
+                {
+                    Checked = string.Equals(model.RemoteId, currentModelId, StringComparison.Ordinal),
+                    CheckOnClick = false
+                };
                 modelItem.Click += (_, _) => ActivateTrayModelAsync(activation, providerId, modelId, window);
                 modelMenu.DropDownItems.Add(modelItem);
             }

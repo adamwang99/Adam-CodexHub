@@ -51,4 +51,11 @@ public interface ICodexConfigService
     /// native account configuration.
     /// </summary>
     Task<bool> RestoreAccountIfGatewayOverlayAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads the <c>model</c> value currently written in the live <c>~/.codex/config.toml</c> —
+    /// the model the active desktop gateway overlay is serving to Codex. Null when the file is
+    /// missing or has no model set. Used to mark the in-use model in the tray menu.
+    /// </summary>
+    Task<string?> GetCurrentModelAsync(CancellationToken cancellationToken = default);
 }

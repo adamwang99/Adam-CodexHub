@@ -226,6 +226,25 @@ public sealed class CodexConfigService : ICodexConfigService
         return true;
     }
 
+    public async Task<string?> GetCurrentModelAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(_configPath))
+        {
+            return null;
+        }
+
+        var text = await File.ReadAllTextAsync(_configPath, cancellationToken);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var table = ParseToml(text);
+        var model = table.TryGetValue("model", out var value) ? value as string : null;
+        return string.IsNullOrWhiteSpace(model) ? null : model.Trim();
+    }
+
     public async Task RestoreLastKnownGoodAsync(
         CancellationToken cancellationToken = default)
     {

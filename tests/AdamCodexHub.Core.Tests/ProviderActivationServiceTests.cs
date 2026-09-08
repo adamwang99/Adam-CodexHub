@@ -386,6 +386,9 @@ public sealed class ProviderActivationServiceTests
         public Task<string?> BackupCurrentAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<string?>(null);
 
+        public Task<string?> GetCurrentModelAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
+
         public Task RestoreLastKnownGoodAsync(CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
     }

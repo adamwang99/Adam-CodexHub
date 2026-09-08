@@ -767,15 +767,15 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <!-- Per-card model selector (keyed providers only) -->
+                                <!-- Per-card model selector (keyed providers only, flat + themed) -->
                                 <ComboBox ItemsSource="{Binding EnabledModels}"
                                           SelectedValue="{Binding SelectedModelRemoteId, Mode=TwoWay}"
                                           SelectedValuePath="RemoteId" DisplayMemberPath="DisplayName"
-                                          FontSize="10" MinWidth="116"
-                                          HorizontalAlignment="Center" Margin="0,6,0,0"
+                                          FontSize="10" Margin="0,4,0,0"
+                                          HorizontalAlignment="Center"
                                           automation:AutomationProperties.Name="{DynamicResource L10n_Home_ModelLabel}">
                                     <ComboBox.Style>
-                                        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                        <Style TargetType="ComboBox" BasedOn="{StaticResource FlatComboBox}">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding ShowModelDropdown}" Value="True">

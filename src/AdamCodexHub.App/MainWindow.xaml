@@ -771,7 +771,7 @@
                                 <ComboBox ItemsSource="{Binding EnabledModels}"
                                           SelectedValue="{Binding SelectedModelRemoteId, Mode=TwoWay}"
                                           SelectedValuePath="RemoteId" DisplayMemberPath="DisplayName"
-                                          FontSize="10" Margin="0,4,0,0"
+                                          FontSize="10" Margin="0,4,0,5"
                                           HorizontalAlignment="Center"
                                           automation:AutomationProperties.Name="{DynamicResource L10n_Home_ModelLabel}">
                                     <ComboBox.Style>
@@ -830,7 +830,7 @@
                     </Grid>
 
                     <!-- ============ How it works: simple feature flow (API keys → gateway → Codex) ============ -->
-                <Border Margin="0,14,0,0"
+                <Border Margin="0,28,0,0"
                         CornerRadius="18"
                         BorderThickness="1"
                         BorderBrush="{DynamicResource BrushGlassRim}"

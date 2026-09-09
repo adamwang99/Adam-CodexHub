@@ -51,6 +51,12 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 > [!NOTE]
 > Adam CodexHub is an independent open-source project. It is not affiliated with, sponsored by or endorsed by OpenAI, Microsoft, GitHub or any provider included as a preset. Provider names and marks belong to their respective owners. See [TRADEMARKS.md](TRADEMARKS.md).
 
+## Screenshots
+
+![Adam CodexHub home — choose a provider, pick a model, activate for Codex](docs/images/screenshot-home-v1.1.1.png)
+
+*Home (v1.1.1): provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below.*
+
 ## Why Adam CodexHub?
 
 | Common problem | Adam CodexHub approach |

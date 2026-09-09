@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using AdamCodexHub.Core.Interfaces;
 using Tomlyn;
 using Tomlyn.Model;
@@ -376,7 +377,7 @@ public sealed class CodexConfigService : ICodexConfigService
             model.Remove("model_provider");
         }
 
-        sanitized = Toml.FromModel(model);
+        sanitized = TomlSerializer.Serialize(model);
         return true;
     }
 
@@ -416,7 +417,7 @@ public sealed class CodexConfigService : ICodexConfigService
             ["experimental_bearer_token"] = gatewayToken
         };
 
-        return Toml.FromModel(model);
+        return TomlSerializer.Serialize(model);
     }
 
     private static void ValidateGatewayCandidate(
@@ -540,7 +541,16 @@ public sealed class CodexConfigService : ICodexConfigService
     {
         try
         {
-            return Toml.ToModel(contents);
+            // Codex Desktop has emitted a split table header such as "[\\nplugins ]".
+            // It is accepted by Codex itself but rejected by strict TOML parsers. Normalize
+            // only table-header whitespace before parsing; values and comments are untouched.
+            var normalized = Regex.Replace(
+                contents,
+                @"(?m)^\[\s*\r?\n\s*([A-Za-z0-9_.-]+)\s*\]",
+                "[$1]");
+
+            return TomlSerializer.Deserialize<TomlTable>(normalized)
+                ?? throw new InvalidDataException("Codex configuration is not valid TOML.");
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

@@ -28,7 +28,7 @@ public sealed class CodexConfigServiceTests
 
         await fixture.Service.ActivateGatewayAsync("remote-model", "DeepSeek", 18771, TestGatewayToken);
 
-        var current = Toml.ToModel(await fixture.ReadConfigAsync());
+        var current = TomlSerializer.Deserialize<TomlTable>(await fixture.ReadConfigAsync())!;
         Assert.Equal("remote-model", current["model"]);
         Assert.Equal("adam_codexhub", current["model_provider"]);
         Assert.Equal(true, current["custom_setting"]);
@@ -74,6 +74,29 @@ public sealed class CodexConfigServiceTests
     }
 
     [Fact]
+    public async Task SplitPluginHeaderFromCodexIsNormalizedBeforeParsing()
+    {
+        await using var fixture = new ConfigFixture();
+        const string splitHeader = """
+            model = "gpt-account"
+            model_provider = "openai"
+
+            [
+            plugins ]
+            "browser@openai-bundled" = { enabled = true }
+            """;
+        await fixture.WriteConfigAsync(splitHeader);
+
+        await fixture.Service.ActivateGatewayAsync("remote-model", "DeepSeek", 18771, TestGatewayToken);
+
+        var current = TomlSerializer.Deserialize<TomlTable>(await fixture.ReadConfigAsync())!;
+        Assert.Equal("remote-model", current["model"]);
+        Assert.Equal("adam_codexhub", current["model_provider"]);
+        Assert.True(current.ContainsKey("plugins"));
+        Assert.True(await fixture.Service.HasAccountProfileAsync());
+    }
+
+    [Fact]
     public async Task AccountProfileNeverRetainsGatewayOverlay()
     {
         await using var fixture = new ConfigFixture();
@@ -104,7 +127,7 @@ public sealed class CodexConfigServiceTests
         Assert.Contains("gpt-account", profile);
 
         Assert.True(await fixture.Service.RestoreAccountIfGatewayOverlayAsync());
-        var restored = Toml.ToModel(await fixture.ReadConfigAsync());
+        var restored = TomlSerializer.Deserialize<TomlTable>(await fixture.ReadConfigAsync())!;
         Assert.DoesNotContain("adam_codexhub", await fixture.ReadConfigAsync());
         Assert.False(restored.ContainsKey("model_provider"));
         Assert.Equal(true, restored["custom_setting"]);

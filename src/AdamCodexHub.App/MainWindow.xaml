@@ -1128,6 +1128,8 @@
                             <DataGrid ItemsSource="{Binding Keys}"
                                       SelectedItem="{Binding SelectedKey, Mode=TwoWay}"
                                       AutoGenerateColumns="False"
+                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                      ScrollViewer.CanContentScroll="False"
                                       automation:AutomationProperties.Name="API key pool">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="{DynamicResource L10n_Common_Label}" Binding="{Binding Label}" Width="2*" />
@@ -1170,6 +1172,8 @@
                             <DataGrid ItemsSource="{Binding Models}"
                                       SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
                                       AutoGenerateColumns="False"
+                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                      ScrollViewer.CanContentScroll="False"
                                       automation:AutomationProperties.Name="Discovered models">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="{DynamicResource L10n_Common_Model}" Binding="{Binding DisplayName}" Width="2.4*" />

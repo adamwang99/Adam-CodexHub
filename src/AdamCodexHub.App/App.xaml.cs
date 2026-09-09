@@ -467,13 +467,28 @@ public partial class App : Application
     }
 
     /// <summary>Activate the chosen provider + model straight from the tray, then surface the window.</summary>
-    private static async void ActivateTrayModelAsync(
+    private async void ActivateTrayModelAsync(
         IProviderActivationService activation, string providerId, string modelId, Window window)
     {
         try
         {
             await activation.ActivateDesktopAsync(providerId, modelId);
+
+            MainViewModel? main = null;
+            if (_host is not null)
+            {
+                try { main = _host.Services.GetRequiredService<MainViewModel>(); }
+                catch (Exception ex) { LogStartup("Tray model UI refresh resolve failed", ex); }
+            }
+
+            // Sync the UI to the tray-side switch: reload the Home/provider view models so the
+            // per-card dropdown + Home selector show the model just written to config.
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => ShowMainWindow(window));
+            if (main is not null)
+            {
+                try { await main.InitializeAsync(); }
+                catch (Exception ex) { LogStartup("Tray model UI refresh failed", ex); }
+            }
         }
         catch (Exception ex)
         {

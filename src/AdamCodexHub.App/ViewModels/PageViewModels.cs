@@ -236,6 +236,13 @@ public sealed class HomeViewModel : PageViewModel
         var active = await _providers.GetActiveAsync();
         var all = await _providers.GetAllAsync();
 
+        // The model Codex is actually using right now (written in ~/.codex/config.toml by the
+        // last activation, incl. one triggered from the tray). Used to sync the active card's
+        // dropdown so the UI reflects a tray-side model switch.
+        string? currentModelId = null;
+        try { currentModelId = await _config.GetCurrentModelAsync(); }
+        catch { /* config unreadable — fall back to per-card default */ }
+
         var selectedId = SelectedCard?.Id;
         var selectedTarget = SelectedCard?.Target ?? CodexTarget.Windows;
 
@@ -274,7 +281,10 @@ public sealed class HomeViewModel : PageViewModel
                     LogoSource = logoSource,
                     IsActive = string.Equals(provider.Id, active?.Id, StringComparison.OrdinalIgnoreCase)
                 };
-                card.LoadEnabledModels(models, null);
+                var isActiveProvider = string.Equals(provider.Id, active?.Id, StringComparison.OrdinalIgnoreCase);
+                // Only the active provider's card reflects the live config model; others keep
+                // their own enabled default.
+                card.LoadEnabledModels(models, isActiveProvider ? currentModelId : null);
                 card.ModelChanged += OnCardModelChanged;
                 return card;
             }

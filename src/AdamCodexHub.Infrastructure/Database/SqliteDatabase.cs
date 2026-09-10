@@ -99,6 +99,8 @@ CREATE TABLE IF NOT EXISTS compatibility_results (
     vision_supported INTEGER NOT NULL,
     score INTEGER NOT NULL,
     notes TEXT NULL,
+    first_byte_ms INTEGER NULL,
+    total_ms INTEGER NULL,
     PRIMARY KEY (provider_id, model_id, verified_at)
 );
 
@@ -126,11 +128,67 @@ ON provider_keys(provider_id, priority);
 ";
 
             await command.ExecuteNonQueryAsync(cancellationToken);
+
+            // ---- Idempotent migrations ------------------------------------------------------
+            // Columns added after the first release: new databases already declare them in the
+            // CREATE TABLE above, existing databases get them through ALTER TABLE ... ADD COLUMN.
+            // Purely additive and skip-if-present, so an existing DB (and its data) is untouched.
+            await EnsureColumnAsync(
+                connection,
+                "compatibility_results",
+                "first_byte_ms",
+                "INTEGER NULL",
+                cancellationToken);
+            await EnsureColumnAsync(
+                connection,
+                "compatibility_results",
+                "total_ms",
+                "INTEGER NULL",
+                cancellationToken);
+
             _initialized = true;
         }
         finally
         {
             _initializationGate.Release();
         }
+    }
+
+    /// <summary>
+    /// Adds a nullable column when the table does not have it yet. Idempotent: reading
+    /// <c>PRAGMA table_info</c> first makes a second call (or a fresh database that already
+    /// declares the column) a no-op instead of a "duplicate column name" error.
+    /// </summary>
+    private static async Task EnsureColumnAsync(
+        SqliteConnection connection,
+        string table,
+        string column,
+        string definition,
+        CancellationToken cancellationToken)
+    {
+        var exists = false;
+        var pragma = connection.CreateCommand();
+        pragma.CommandText = $"PRAGMA table_info({table});";
+        await using (var reader = await pragma.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                // table_info columns: cid, name, type, notnull, dflt_value, pk
+                if (string.Equals(reader.GetString(1), column, StringComparison.OrdinalIgnoreCase))
+                {
+                    exists = true;
+                    break;
+                }
+            }
+        }
+
+        if (exists)
+        {
+            return;
+        }
+
+        var alter = connection.CreateCommand();
+        alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {column} {definition};";
+        await alter.ExecuteNonQueryAsync(cancellationToken);
     }
 }

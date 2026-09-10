@@ -81,6 +81,37 @@ public static class UiSettingsStore
         });
     }
 
+    /// <summary>
+    /// Reads the "show all models" preference used by the tray model submenu: when false the
+    /// models classified as Skip are hidden. Defaults to false (hide them).
+    /// </summary>
+    public static bool LoadShowAllModels(string appDataRoot)
+    {
+        try
+        {
+            var path = SettingsPath(appDataRoot);
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+
+            var doc = JsonSerializer.Deserialize<UiSettingsDocument>(File.ReadAllText(path), Json);
+            return doc?.ShowAllModels ?? false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static void SaveShowAllModels(string appDataRoot, bool showAllModels)
+    {
+        Save(appDataRoot, doc =>
+        {
+            doc.ShowAllModels = showAllModels;
+        });
+    }
+
     private static void Save(string appDataRoot, Action<UiSettingsDocument> mutate)
     {
         try
@@ -121,5 +152,8 @@ public static class UiSettingsStore
     {
         public string Language { get; set; } = L10n.English;
         public string Theme { get; set; } = App.ThemeDark;
+
+        /// <summary>Show models classified as Skip in the tray model submenu.</summary>
+        public bool ShowAllModels { get; set; }
     }
 }

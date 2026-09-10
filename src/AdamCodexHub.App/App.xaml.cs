@@ -4,6 +4,7 @@ using System.Threading;
 using System.Windows;
 using AdamCodexHub.App.ViewModels;
 using AdamCodexHub.App.Services;
+using AdamCodexHub.App.Converters;
 using AdamCodexHub.Codex;
 using AdamCodexHub.Core.Interfaces;
 using AdamCodexHub.Core.Domain;
@@ -18,6 +19,7 @@ using AdamCodexHub.Infrastructure.Settings;
 using AdamCodexHub.Providers;
 using AdamCodexHub.Providers.Adapters;
 using AdamCodexHub.Providers.Registry;
+using AdamCodexHub.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Drawing = System.Drawing;
@@ -169,6 +171,8 @@ public partial class App : Application
                 services.AddSingleton<IModelDiscoveryService, ModelDiscoveryService>();
                 services.AddSingleton<ICompatibilityService, CompatibilityService>();
                 services.AddSingleton<IKeyTestService, KeyTestService>();
+                // Background refresher for the active provider's models (latency-aware badges).
+                services.AddSingleton<ModelAutoPingService>();
 
                 services.AddSingleton<ICodexConfigService, CodexConfigService>();
                 services.AddSingleton<IProjectStateService, FileProjectStateService>();
@@ -306,6 +310,26 @@ public partial class App : Application
                 LogStartup("Show-signal listener unavailable", signalEx);
             }
 
+            // Latency-aware model classification: start the bounded background refresher that
+            // re-tests a few models of the ACTIVE provider every 15 minutes and publishes the
+            // result to ModelStatusState (the single source of truth the badges read).
+            try
+            {
+                var autoPing = _host.Services.GetRequiredService<ModelAutoPingService>();
+                autoPing.LogMessage += (message, pingException) =>
+                    LogStartup($"Model auto-ping: {message}", pingException);
+                autoPing.TickCompleted += tick => Dispatcher.InvokeAsync(
+                    () => ModelStatusState.Current.Apply(tick));
+                autoPing.Start();
+                LogStartup(
+                    $"Model auto-ping started (every {autoPing.Interval.TotalMinutes:0} min, " +
+                    $"up to {autoPing.BatchSize} model(s) per tick)");
+            }
+            catch (Exception pingEx)
+            {
+                LogStartup("Model auto-ping could not start", pingEx);
+            }
+
             // Keys left degraded (Offline / rate-limited / stale Unknown) by transient gateway
             // failures in the previous session get one quiet probe each, so an installed and
             // previously-tested provider is usable right away — no manual re-test required.
@@ -402,7 +426,20 @@ public partial class App : Application
         _trayIcon.DoubleClick += (_, _) => ShowMainWindow(window);
     }
 
-    /// <summary>Build the tray "Model" submenu: only the active provider's enabled models.</summary>
+    /// <summary>Colour of a tray model entry, matching the in-app callability badges:
+    /// green = callable, amber = slow, red = skipped, grey = not classified yet.</summary>
+    private static Drawing.Color TrayCallabilityColor(Callability callability) => callability switch
+    {
+        Callability.Callable => Drawing.Color.FromArgb(0x2F, 0xD0, 0xC8),
+        Callability.Slow => Drawing.Color.FromArgb(0xE0, 0xA8, 0x3C),
+        Callability.Skip => Drawing.Color.FromArgb(0xE6, 0x6A, 0x6A),
+        _ => Drawing.Color.FromArgb(0xC4, 0xC4, 0xC4)
+    };
+
+    /// <summary>Build the tray "Model" submenu: only the active provider's enabled models,
+    /// each coloured by its latency-aware callability. Models classified "Skip" are hidden
+    /// unless the "show all models" preference is on; the pause / show-all switches live at
+    /// the bottom of the same submenu.</summary>
     private void PopulateTrayModelMenu(WinForms.ToolStripMenuItem modelMenu)
     {
         modelMenu.DropDownItems.Clear();
@@ -418,6 +455,8 @@ public partial class App : Application
             var modelStore = _host.Services.GetRequiredService<IModelStore>();
             var activation = _host.Services.GetRequiredService<IProviderActivationService>();
             var configService = _host.Services.GetRequiredService<ICodexConfigService>();
+            var autoPing = _host.Services.GetRequiredService<ModelAutoPingService>();
+            var status = ModelStatusState.Current;
             var window = MainWindow;
 
             var active = providers.GetActiveAsync().GetAwaiter().GetResult();
@@ -446,18 +485,61 @@ public partial class App : Application
             };
             modelMenu.DropDownItems.Add(header);
 
-            foreach (var model in enabled)
+            // Same selection order as the in-app pickers (callable → slow → unknown → skip, then
+            // alphabetical); Skip entries stay hidden unless "show all" is on.
+            var visible = CallabilityVisuals
+                .OrderForSelection(enabled)
+                .Where(m => CallabilityFilter.IsVisible(
+                    status.GetCallability(active.Id, m.RemoteId),
+                    status.ShowAllModels))
+                .ToList();
+            if (visible.Count == 0)
+            {
+                // Everything is currently marked Skip; the switches below can reveal them again.
+                modelMenu.DropDownItems.Add(L10n.T("L10n_Tray_NoModel"));
+            }
+
+            foreach (var model in visible)
             {
                 var providerId = active.Id;
                 var modelId = model.RemoteId;
+                var callability = status.GetCallability(providerId, modelId);
                 var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName)
                 {
                     Checked = string.Equals(model.RemoteId, currentModelId, StringComparison.Ordinal),
-                    CheckOnClick = false
+                    CheckOnClick = false,
+                    ForeColor = TrayCallabilityColor(callability),
+                    ToolTipText = status.DescribeTooltip(providerId, modelId)
                 };
                 modelItem.Click += (_, _) => ActivateTrayModelAsync(activation, providerId, modelId, window);
                 modelMenu.DropDownItems.Add(modelItem);
             }
+
+            modelMenu.DropDownItems.Add(new WinForms.ToolStripSeparator());
+
+            var lastChecked = new WinForms.ToolStripMenuItem(status.LastRefreshedText)
+            {
+                Enabled = false
+            };
+            modelMenu.DropDownItems.Add(lastChecked);
+
+            var pauseItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_PauseAutoPing"))
+            {
+                Checked = autoPing.IsPaused,
+                CheckOnClick = true,
+                ToolTipText = L10n.T("L10n_Tray_PauseAutoPingTip")
+            };
+            pauseItem.CheckedChanged += (_, _) => autoPing.IsPaused = pauseItem.Checked;
+            modelMenu.DropDownItems.Add(pauseItem);
+
+            var showAllItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_ShowAllModels"))
+            {
+                Checked = status.ShowAllModels,
+                CheckOnClick = true,
+                ToolTipText = L10n.T("L10n_Tray_ShowAllModelsTip")
+            };
+            showAllItem.CheckedChanged += (_, _) => status.ShowAllModels = showAllItem.Checked;
+            modelMenu.DropDownItems.Add(showAllItem);
         }
         catch (Exception ex)
         {

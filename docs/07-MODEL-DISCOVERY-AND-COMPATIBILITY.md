@@ -108,3 +108,27 @@ Do not spam providers with frequent scans.
 Only enabled models go to Codex.
 
 Do not display hundreds of discovered models in the primary picker.
+
+## 10. Latency-aware status
+
+A model that responds is not necessarily a model that is comfortable to use.
+
+Store the measured latency next to every compatibility result:
+
+```text
+first_byte_ms
+total_ms
+```
+
+Classify each model for the pickers:
+
+```text
+Callable   green   text + Responses + streaming work, first byte within 15 s
+Slow       amber   everything works, but first byte or total above 15 s
+Unknown    grey    never probed, or the stored result is older than 6 h
+Skip       red     a required capability failed (hidden unless "show all")
+```
+
+Model pickers colour the model name itself and order models `Callable -> Slow -> Unknown -> Skip`, alphabetical inside a group, without changing which model is selected.
+
+A bounded background re-check may refresh at most 3 models of the **active** provider every 15 minutes. Never two checks at once, never a model with a manual test in flight, and never a provider the user has not activated.

@@ -1,5 +1,23 @@
 # Changelog
 
+## v1.4.0
+
+### Added
+
+- latency-aware model status: every compatibility probe now records `first_byte_ms` / `total_ms` (SQLite migration) and classifies the model as `Callable`, `Slow`, `Skip` or `Unknown` (`ModelCallability`, 15 s slow threshold, 6 h result TTL)
+- the model name itself carries that status colour — green callable, amber slow, red skip, grey not checked yet — in the Home selector, each provider card's model dropdown and the tray **Model** submenu, with a tooltip showing the last check time and the measured latency
+- every model picker is ordered callable → slow → unknown → skip (alphabetical inside a group) without changing the selected model, and the Providers page groups the model list under matching headers with a *Latency* column
+- bounded background model re-check (`ModelAutoPingService`): up to 3 models of the ACTIVE provider every 15 minutes, never two checks at once, never a model whose manual test is in flight; the tray submenu gains *Pause background checks* and *Show skipped models*
+- probe budget raised from 30 s to 150 s per attempt, so a genuinely slow gateway model is measured instead of being reported as broken
+
+### Fixed
+
+- the launch helpers (`LaunchCodexAsync`, `ChooseLogoCoreAsync`) no longer declare a pointless `async`, clearing the CS1998 build warnings
+
+### Changed
+
+- all README screenshots and both in-app guide sets re-shot at v1.4.0
+
 ## Unreleased
 
 ### Added

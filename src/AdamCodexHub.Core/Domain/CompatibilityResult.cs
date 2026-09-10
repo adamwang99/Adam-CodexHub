@@ -16,4 +16,12 @@ public sealed record CompatibilityResult
 
     public int Score { get; init; }
     public string? Notes { get; init; }
+
+    /// <summary>Time to the first streamed SSE event of the streaming probe, in milliseconds.
+    /// Null when the streaming probe could not be attempted or never produced a byte.</summary>
+    public int? FirstByteMs { get; init; }
+
+    /// <summary>Wall-clock duration of the non-stream request (responses or chat completions),
+    /// in milliseconds. Null when no non-stream probe ran.</summary>
+    public int? TotalMs { get; init; }
 }

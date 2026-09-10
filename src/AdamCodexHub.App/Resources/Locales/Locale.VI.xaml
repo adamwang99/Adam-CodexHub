@@ -385,6 +385,24 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Tray_NoModel">Không có mô hình để chọn</sys:String>
     <sys:String x:Key="L10n_Tray_ProviderHeader">Nhà cung cấp: {0}</sys:String>
     <sys:String x:Key="L10n_Tray_Exit">Thoát</sys:String>
+
+    <!-- Phân loại model theo độ trễ (v1.4.0) -->
+    <sys:String x:Key="L10n_Callability_Unknown">Chưa rõ</sys:String>
+    <sys:String x:Key="L10n_Callability_Callable">Có thể gọi</sys:String>
+    <sys:String x:Key="L10n_Callability_Slow">Chậm</sys:String>
+    <sys:String x:Key="L10n_Callability_Skip">Bỏ qua</sys:String>
+    <sys:String x:Key="L10n_Callability_Column">Độ trễ</sys:String>
+    <sys:String x:Key="L10n_Callability_ColumnTip">Trạng thái model theo độ trễ: xanh = gọi được, vàng = chậm nhưng vẫn chạy, đỏ = bỏ qua, xám = chưa kiểm tra.</sys:String>
+    <sys:String x:Key="L10n_Callability_Tooltip">{0} · kiểm tra lúc {1} · byte đầu {2}s · tổng {3}s</sys:String>
+    <sys:String x:Key="L10n_Callability_TooltipNoLatency">{0} · kiểm tra lúc {1}</sys:String>
+    <sys:String x:Key="L10n_Callability_TooltipNoResult">{0} · chưa kiểm tra</sys:String>
+    <sys:String x:Key="L10n_Callability_LastChecked">Tự kiểm tra lúc {0} · {1}</sys:String>
+    <sys:String x:Key="L10n_Callability_NeverChecked">Chưa tự kiểm tra lần nào</sys:String>
+    <sys:String x:Key="L10n_Tray_ShowAllModels">Hiện cả model bỏ qua</sys:String>
+    <sys:String x:Key="L10n_Tray_ShowAllModelsTip">Model không đạt text, responses hoặc streaming bị đánh dấu "Bỏ qua" và ẩn đi. Bật mục này để vẫn thấy và chọn được mọi model.</sys:String>
+    <sys:String x:Key="L10n_Tray_PauseAutoPing">Tạm dừng tự kiểm tra</sys:String>
+    <sys:String x:Key="L10n_Tray_PauseAutoPingTip">Dừng việc tự kiểm tra lại model của nhà cung cấp đang mở. Kiểm tra thủ công vẫn chạy bình thường.</sys:String>
+
     <sys:String x:Key="L10n_FR_OpenLinkError">Không thể mở thông báo pháp lý</sys:String>
 
     <sys:String x:Key="L10n_Common_Enable">Bật</sys:String>

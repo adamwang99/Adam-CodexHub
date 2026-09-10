@@ -1,4 +1,5 @@
 using System.Windows;
+using AdamCodexHub.App.Services;
 using AdamCodexHub.App.ViewModels;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
@@ -40,6 +41,10 @@ public partial class ModelTestWindow : Window
             var progress = new Progress<ModelTestProgress>(_viewModel.Apply);
             var result = await _compatibility.TestAsync(_providerId, _modelId, progress);
             _viewModel.Complete(result);
+
+            // Publish into the shared callability state so every badge (Home dropdowns, model
+            // list, tray) reflects what this manual test just measured.
+            ModelStatusState.Current.Apply(result);
         }
         catch (Exception ex)
         {

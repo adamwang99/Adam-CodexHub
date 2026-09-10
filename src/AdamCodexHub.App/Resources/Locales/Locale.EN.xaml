@@ -385,6 +385,24 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Tray_NoModel">No model available</sys:String>
     <sys:String x:Key="L10n_Tray_ProviderHeader">Provider: {0}</sys:String>
     <sys:String x:Key="L10n_Tray_Exit">Exit</sys:String>
+
+    <!-- Latency-aware model classification (v1.4.0) -->
+    <sys:String x:Key="L10n_Callability_Unknown">Unknown</sys:String>
+    <sys:String x:Key="L10n_Callability_Callable">Callable</sys:String>
+    <sys:String x:Key="L10n_Callability_Slow">Slow</sys:String>
+    <sys:String x:Key="L10n_Callability_Skip">Skip</sys:String>
+    <sys:String x:Key="L10n_Callability_Column">Latency</sys:String>
+    <sys:String x:Key="L10n_Callability_ColumnTip">Latency-aware status of this model: green = callable, amber = slow but working, red = skipped, grey = not checked yet.</sys:String>
+    <sys:String x:Key="L10n_Callability_Tooltip">{0} · checked at {1} · first byte {2}s · total {3}s</sys:String>
+    <sys:String x:Key="L10n_Callability_TooltipNoLatency">{0} · checked at {1}</sys:String>
+    <sys:String x:Key="L10n_Callability_TooltipNoResult">{0} · not checked yet</sys:String>
+    <sys:String x:Key="L10n_Callability_LastChecked">Last auto-check {0} · {1}</sys:String>
+    <sys:String x:Key="L10n_Callability_NeverChecked">No background check yet</sys:String>
+    <sys:String x:Key="L10n_Tray_ShowAllModels">Show skipped models</sys:String>
+    <sys:String x:Key="L10n_Tray_ShowAllModelsTip">A model that fails text, responses or streaming is marked "Skip" and hidden. Turn this on to see and pick every model anyway.</sys:String>
+    <sys:String x:Key="L10n_Tray_PauseAutoPing">Pause background checks</sys:String>
+    <sys:String x:Key="L10n_Tray_PauseAutoPingTip">Stop the automatic re-check of the active provider's models. Manual tests still work.</sys:String>
+
     <sys:String x:Key="L10n_FR_OpenLinkError">Could not open legal notice</sys:String>
 
     <sys:String x:Key="L10n_Common_Enable">Enable</sys:String>

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -8,6 +9,19 @@ namespace AdamCodexHub.Providers.Adapters;
 
 public sealed class OpenAiCompatibleAdapter : IProviderAdapter
 {
+    /// <summary>
+    /// Budget for a single probe request. It must NOT be short: on a slow gateway a model that
+    /// works perfectly well can take 60-90s to answer (measured 2026-09-10: HHTech returns
+    /// claude-opus-4-7 in 77s while other models on the same provider answer in 4s). The old
+    /// 30s cap marked those models as failed. 150s leaves headroom above the slowest observed
+    /// response while still bounding the probe.
+    /// </summary>
+    private static readonly TimeSpan ProbeTimeout = TimeSpan.FromSeconds(150);
+
+    /// <summary>Bytes read from a streaming response before giving up on finding an SSE event.
+    /// The streaming probe stops at the first `data:` line, this only bounds pathological streams.</summary>
+    private const int StreamingReadCapBytes = 64 * 1024;
+
     private readonly IHttpClientFactory _httpClientFactory;
 
     public OpenAiCompatibleAdapter(IHttpClientFactory httpClientFactory)
@@ -185,13 +199,19 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         var responsesSupported = responses?.Success == true;
         var chatSupported = chat?.Success == true;
         var text = responsesSupported || chatSupported;
-        var streaming = text && await TestStreamingAsync(
-            provider,
-            modelId,
-            apiKey,
-            preferResponses: responsesSupported,
-            progress,
-            cancellationToken);
+        var streaming = false;
+        int? firstByteMs = null;
+        if (text)
+        {
+            (streaming, firstByteMs) = await TestStreamingAsync(
+                provider,
+                modelId,
+                apiKey,
+                preferResponses: responsesSupported,
+                progress,
+                cancellationToken);
+        }
+
         var toolCalling = text && await TestToolCallingAsync(
             provider,
             modelId,
@@ -215,6 +235,23 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             (toolCalling ? 20 : 0) +
             (structuredJson ? 10 : 0);
 
+        // TotalMs = the whole non-stream request. When both the responses and the chat probe ran,
+        // report the faster successful one — the classification only needs "is this provider/model
+        // fast or slow", and the faster path is what the gateway would use.
+        int? totalMs = null;
+        if (responses is { Success: true, TotalMs: { } responsesMs })
+        {
+            totalMs = responsesMs;
+        }
+
+        if (chat is { Success: true, TotalMs: { } chatMs } &&
+            (totalMs is null || chatMs < totalMs))
+        {
+            totalMs = chatMs;
+        }
+
+        totalMs ??= responses?.TotalMs ?? chat?.TotalMs;
+
         return new CompatibilityResult
         {
             ProviderId = provider.Id,
@@ -228,11 +265,13 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             StructuredJson = structuredJson,
             Vision = false,
             Score = score,
-            Notes = notes.Count == 0 ? null : string.Join(" ", notes)
+            Notes = notes.Count == 0 ? null : string.Join(" ", notes),
+            FirstByteMs = firstByteMs,
+            TotalMs = totalMs
         };
     }
 
-    private async Task<bool> TestStreamingAsync(
+    private async Task<(bool Ok, int? FirstByteMs)> TestStreamingAsync(
         ProviderProfile provider,
         string modelId,
         string? apiKey,
@@ -245,7 +284,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             : provider.ChatCompletionsEndpoint;
         if (string.IsNullOrWhiteSpace(endpoint))
         {
-            return false;
+            return (false, null);
         }
 
         object payload = preferResponses
@@ -268,7 +307,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             };
 
         progress?.Report(new ModelTestProgress("Streaming", ModelTestStepStatus.Running));
-        var result = await SendProbeAsync(provider, apiKey, endpoint, payload, cancellationToken);
+        var result = await SendStreamingProbeAsync(provider, apiKey, endpoint, payload, cancellationToken);
         var ok = result.Success &&
             (result.ContentType?.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase) == true ||
              result.Body?.Contains("data:", StringComparison.OrdinalIgnoreCase) == true);
@@ -276,7 +315,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
             "Streaming",
             ok ? ModelTestStepStatus.Passed : ModelTestStepStatus.Failed,
             ok ? null : (result.Success ? "No SSE stream detected." : result.Error)));
-        return ok;
+        return (ok, result.FirstByteMs);
     }
 
     private async Task<bool> TestToolCallingAsync(
@@ -409,6 +448,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         object payload,
         CancellationToken cancellationToken)
     {
+        var stopwatch = Stopwatch.StartNew();
         using var request = new HttpRequestMessage(HttpMethod.Post, Join(provider.BaseUrl, endpoint))
         {
             Content = new StringContent(
@@ -424,11 +464,14 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         }
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        timeout.CancelAfter(ProbeTimeout);
 
         try
         {
             var client = _httpClientFactory.CreateClient(nameof(OpenAiCompatibleAdapter));
+            // The factory hands out a fresh HttpClient per call, so its own timeout can be raised
+            // to the probe budget: the default 100s would silently cut a 150s budget short.
+            client.Timeout = ProbeTimeout;
             using var response = await client.SendAsync(
                 request,
                 HttpCompletionOption.ResponseContentRead,
@@ -440,7 +483,9 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
                     false,
                     null,
                     response.Content.Headers.ContentType?.MediaType,
-                    $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
+                    $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}",
+                    null,
+                    ElapsedMs(stopwatch));
             }
 
             var body = await response.Content.ReadAsStringAsync(timeout.Token);
@@ -448,7 +493,9 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
                 true,
                 body,
                 response.Content.Headers.ContentType?.MediaType,
-                null);
+                null,
+                null,
+                ElapsedMs(stopwatch));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -456,13 +503,124 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         }
         catch (OperationCanceledException)
         {
-            return new ProbeResponse(false, null, null, "Timed out after 30 seconds.");
+            return new ProbeResponse(
+                false,
+                null,
+                null,
+                $"Timed out after {ProbeTimeout.TotalSeconds:0} seconds.",
+                null,
+                ElapsedMs(stopwatch));
         }
         catch (HttpRequestException ex)
         {
-            return new ProbeResponse(false, null, null, ex.Message);
+            return new ProbeResponse(false, null, null, ex.Message, null, ElapsedMs(stopwatch));
         }
     }
+
+    /// <summary>
+    /// Streaming variant of <see cref="SendProbeAsync"/>: only the response headers are awaited
+    /// first, then the body is read incrementally so the time to the FIRST streamed byte can be
+    /// measured (the number the UI shows as "byte đầu 37,7s"). Reading stops as soon as a `data:`
+    /// SSE line has been seen, which keeps the probe short on a model that streams for minutes;
+    /// the pass/fail semantics are unchanged (success + an SSE stream).
+    /// </summary>
+    private async Task<ProbeResponse> SendStreamingProbeAsync(
+        ProviderProfile provider,
+        string? apiKey,
+        string endpoint,
+        object payload,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        using var request = new HttpRequestMessage(HttpMethod.Post, Join(provider.BaseUrl, endpoint))
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(payload),
+                Encoding.UTF8,
+                "application/json")
+        };
+        ApplyAuth(request, provider, apiKey);
+
+        foreach (var header in provider.ExtraHeaders)
+        {
+            request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(ProbeTimeout);
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient(nameof(OpenAiCompatibleAdapter));
+            client.Timeout = ProbeTimeout;
+            using var response = await client.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                timeout.Token);
+
+            var contentType = response.Content.Headers.ContentType?.MediaType;
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ProbeResponse(
+                    false,
+                    null,
+                    contentType,
+                    $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}",
+                    null,
+                    ElapsedMs(stopwatch));
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+            var buffer = new byte[1024];
+            var body = new StringBuilder();
+            int? firstByteMs = null;
+            while (body.Length < StreamingReadCapBytes)
+            {
+                var read = await stream.ReadAsync(buffer, timeout.Token);
+                if (read <= 0)
+                {
+                    break;
+                }
+
+                firstByteMs ??= ElapsedMs(stopwatch);
+                body.Append(Encoding.UTF8.GetString(buffer, 0, read));
+                if (body.ToString().Contains("data:", StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+            }
+
+            return new ProbeResponse(
+                true,
+                body.ToString(),
+                contentType,
+                null,
+                firstByteMs,
+                ElapsedMs(stopwatch));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
+        {
+            return new ProbeResponse(
+                false,
+                null,
+                null,
+                $"Timed out after {ProbeTimeout.TotalSeconds:0} seconds.",
+                null,
+                ElapsedMs(stopwatch));
+        }
+        catch (HttpRequestException ex)
+        {
+            return new ProbeResponse(false, null, null, ex.Message, null, ElapsedMs(stopwatch));
+        }
+    }
+
+    private static int ElapsedMs(Stopwatch stopwatch) => (int)Math.Min(
+        int.MaxValue,
+        Math.Round(stopwatch.Elapsed.TotalMilliseconds));
 
     private static void ApplyAuth(
         HttpRequestMessage request,
@@ -492,5 +650,7 @@ public sealed class OpenAiCompatibleAdapter : IProviderAdapter
         bool Success,
         string? Body,
         string? ContentType,
-        string? Error);
+        string? Error,
+        int? FirstByteMs,
+        int? TotalMs);
 }

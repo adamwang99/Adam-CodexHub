@@ -1,5 +1,6 @@
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
+using AdamCodexHub.Core.Services;
 
 namespace AdamCodexHub.Providers;
 
@@ -49,6 +50,9 @@ public sealed class CompatibilityService : ICompatibilityService
             ?? throw new NotSupportedException(
                 $"No adapter is registered for '{provider.Adapter}'.");
         var key = await _keys.GetActiveSecretAsync(provider.Id, cancellationToken);
+        // Mark the probe as in flight so the background auto-ping never probes the same model
+        // at the same time as this (manual) verification.
+        using var probeLease = ModelProbeGate.Enter(provider.Id, model.RemoteId);
         var tested = await adapter.TestModelAsync(provider, model.RemoteId, key, progress, cancellationToken);
         await _providers.SetHealthAsync(
             provider.Id,

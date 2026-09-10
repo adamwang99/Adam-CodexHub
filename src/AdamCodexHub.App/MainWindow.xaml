@@ -573,9 +573,33 @@
                         <ComboBox ItemsSource="{Binding EnabledModels}"
                                   SelectedValue="{Binding SelectedModelRemoteId, Mode=TwoWay}"
                                   SelectedValuePath="RemoteId"
-                                  DisplayMemberPath="DisplayName"
                                   MinWidth="240" Padding="8,4"
-                                  automation:AutomationProperties.Name="{DynamicResource L10n_Home_ModelLabel}" />
+                                  automation:AutomationProperties.Name="{DynamicResource L10n_Home_ModelLabel}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Callability colour on the model name (also used by the closed box). -->
+                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center">
+                                        <TextBlock.Foreground>
+                                            <MultiBinding Converter="{StaticResource CallabilityBrushConverter}">
+                                                <Binding />
+                                                <Binding Source="{x:Static services:ModelStatusState.Current}" Path="Revision" />
+                                            </MultiBinding>
+                                        </TextBlock.Foreground>
+                                        <TextBlock.ToolTip>
+                                            <TextBlock MaxWidth="320" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource BrushTextHigh}">
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{StaticResource CallabilityTooltipConverter}">
+                                                        <Binding />
+                                                        <Binding Source="{x:Static services:ModelStatusState.Current}" Path="Revision" />
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </TextBlock.ToolTip>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <TextBlock Text="{Binding SelectedCard.Name, StringFormat=' · {0}'}"
                                    FontSize="11" Foreground="{DynamicResource BrushMuted}"
                                    VerticalAlignment="Center" Margin="8,0,0,0" />
@@ -902,7 +926,25 @@
                                     </ComboBox.Style>
                                     <ComboBox.ItemTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding DisplayName}" FontSize="11" />
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="11">
+                                                <TextBlock.Foreground>
+                                                    <MultiBinding Converter="{StaticResource CallabilityBrushConverter}">
+                                                        <Binding />
+                                                        <Binding Source="{x:Static services:ModelStatusState.Current}" Path="Revision" />
+                                                    </MultiBinding>
+                                                </TextBlock.Foreground>
+                                                <TextBlock.ToolTip>
+                                                    <TextBlock MaxWidth="320" TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource BrushTextHigh}">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding Converter="{StaticResource CallabilityTooltipConverter}">
+                                                                <Binding />
+                                                                <Binding Source="{x:Static services:ModelStatusState.Current}" Path="Revision" />
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
+                                                </TextBlock.ToolTip>
+                                            </TextBlock>
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
@@ -1286,14 +1328,54 @@
                             <Button Content="{DynamicResource L10n_Common_Refresh}" Command="{Binding RefreshCommand}" />
                         </WrapPanel>
                         <Border Style="{StaticResource CardBorder}" Padding="8" Margin="0,0,0,10">
-                            <DataGrid ItemsSource="{Binding Models}"
+                            <DataGrid ItemsSource="{Binding ModelsView}"
                                       SelectedItem="{Binding SelectedModel, Mode=TwoWay}"
                                       AutoGenerateColumns="False"
                                       ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                       ScrollViewer.CanContentScroll="False"
                                       automation:AutomationProperties.Name="Discovered models">
+                                <DataGrid.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <!-- Callability group header: "Có thể gọi" / "Chậm" / "Bỏ qua" / "Chưa rõ" -->
+                                                <Border Background="Transparent" Padding="0,8,0,2">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="11"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource BrushGold}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </DataGrid.GroupStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{DynamicResource L10n_Common_Model}" Binding="{Binding DisplayName}" Width="2.4*" />
+                                    <DataGridTemplateColumn Header="{DynamicResource L10n_Common_Model}" Width="2.4*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <!-- Status lives in the model NAME's colour (green callable / amber slow /
+                                                     grey unknown / red skip) - there is no separate status-dot column. -->
+                                                <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center">
+                                                    <TextBlock.Foreground>
+                                                        <MultiBinding Converter="{StaticResource CallabilityBrushConverter}">
+                                                            <Binding />
+                                                            <Binding Source="{x:Static services:ModelStatusState.Current}" Path="Revision" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Foreground>
+                                                    <TextBlock.ToolTip>
+                                                        <TextBlock MaxWidth="320" TextWrapping="Wrap">
+                                                            <TextBlock.Text>
+                                                                <MultiBinding Converter="{StaticResource CallabilityTooltipConverter}">
+                                                                    <Binding />
+                                                                    <Binding Source="{x:Static services:ModelStatusState.Current}" Path="Revision" />
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </TextBlock.ToolTip>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTemplateColumn Header="{DynamicResource L10n_Common_Status}" Width="90">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>

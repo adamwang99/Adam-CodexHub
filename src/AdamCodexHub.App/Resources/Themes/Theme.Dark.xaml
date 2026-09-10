@@ -159,4 +159,10 @@
         <GradientStop Offset="0.5" Color="#0EFFFFFF" />
         <GradientStop Offset="1.0" Color="#00000000" />
     </LinearGradientBrush>
+    <!-- ============ Model callability badges (latency-aware) ============ -->
+    <!-- Green = callable, amber = slow but working, red = skipped/failed. -->
+    <SolidColorBrush x:Key="BrushStatusCallable" Color="#2FD0C8" />
+    <SolidColorBrush x:Key="BrushStatusSlow" Color="#E0A83C" />
+    <SolidColorBrush x:Key="BrushStatusSkip" Color="#E66A6A" />
+    <SolidColorBrush x:Key="BrushStatusUnknown" Color="#8C8C8C" />
 </ResourceDictionary>

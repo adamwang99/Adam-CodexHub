@@ -53,27 +53,44 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 
 ## Screenshots
 
-*All screenshots below are captured from the real app (v1.3.0, English UI). The in-app guide ships both language sets — the Vietnamese guide shows Vietnamese shots, the English guide shows these English ones.*
+*All screenshots below are captured from the real app (v1.4.0, English UI). The in-app guide ships both language sets — the Vietnamese guide shows Vietnamese shots, the English guide shows these English ones.*
 
-**Choose Provider** — provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below.
+**Choose Provider** — provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below. Model names are coloured by their measured status (green = callable, amber = slow, grey = not checked yet, red = skipped).
 
-![Choose Provider](docs/images/screenshot-home-v1.3.0.png)
+![Choose Provider](docs/images/screenshot-home-v1.4.0.png)
 
 **Providers** — provider profile, encrypted key pool (DPAPI) and the verified model list in one place.
 
-![Providers](docs/images/screenshot-providers-v1.3.0.png)
+![Providers](docs/images/screenshot-providers-v1.4.0.png)
 
 **Sessions** — provider-safe project state and continuation handoffs.
 
-![Sessions](docs/images/screenshot-sessions-v1.3.0.png)
+![Sessions](docs/images/screenshot-sessions-v1.4.0.png)
 
 **Diagnostics** — local gateway state and Codex configuration recovery.
 
-![Diagnostics](docs/images/screenshot-diagnostics-v1.3.0.png)
+![Diagnostics](docs/images/screenshot-diagnostics-v1.4.0.png)
 
 **Settings** — enforced security and session defaults.
 
-![Settings](docs/images/screenshot-settings-v1.3.0.png)
+![Settings](docs/images/screenshot-settings-v1.4.0.png)
+
+## Model status: callable, slow or skip
+
+A model that answers in 4 seconds and a model that needs 90 seconds are both "working", but only one of them is pleasant to use. Adam CodexHub measures the latency of every real compatibility probe and colours the model name accordingly, so you can tell the difference before a Codex session stalls.
+
+| Colour | Status | Meaning |
+| --- | --- | --- |
+| Green | **Callable** | text, Responses API and streaming all work, and the first byte arrives within 15 s |
+| Amber | **Slow** | every capability works, but the first byte or the whole request takes longer than 15 s |
+| Grey | **Unknown** | never probed, or the stored result is older than 6 hours (the result expires) |
+| Red | **Skip** | a required capability failed — the model is hidden from the pickers |
+
+- The **model name itself carries the colour**; hovering it shows the localized tooltip with the time of the last check plus the measured first-byte and total latency.
+- Every picker lists models **green → amber → grey → red, alphabetical inside each group**, so usable models stay at the top: the Home selector, each provider card's model dropdown, the tray **Model** submenu and the Providers page model list (grouped under **Callable / Slow / Skip / Unknown** headers with the same colour on each row's model name - hover it for the last check time and the measured latency).
+- A **bounded background check** re-tests up to **3 models of the active provider every 15 minutes** (never two checks at once, never a model while a manual test of it is running) and keeps the colours current. Only the active provider is ever probed, and a background check costs real provider requests.
+- Tray menu → **Model** → **Pause background checks** stops the automatic re-checks; **Show skipped models** reveals the red entries again (both are remembered across restarts).
+- Re-ordering never changes the model you selected, and the latency values are stored next to each compatibility result, so a manual *Test compatibility* run updates the same colours.
 
 ## Why Adam CodexHub?
 
@@ -116,6 +133,7 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 - **Automated Catalog Scanning**: Scans `/models` endpoints dynamically.
 - **Four-Stage Verification**: `Discovered -> Tested -> Verified -> Enabled`. Models are never enabled blindly.
 - **Active Capability Probes**: Executes live probes to verify text generation, SSE streaming, function/tool calling, vision inputs, and reasoning capabilities before activation.
+- **Latency-Aware Model Status**: Every probe records the first-byte and total latency. Model pickers colour the model name green (callable), amber (working but slow), red (skipped) or grey (not checked yet), order models by that status, and the Providers page groups the list under the matching headers.
 
 ### 4. Local Gateway & Loopback Security
 - **Strict Loopback Binding**: Binds exclusively to `127.0.0.1:<dynamic-port>`, never exposing network interfaces.
@@ -202,7 +220,7 @@ The source-of-truth order is:
 Download the latest ZIP and checksum file from the [Releases page](https://github.com/adamwang99/Adam-CodexHub/releases/latest), place them in the same directory, then run PowerShell:
 
 ```powershell
-$zip = '.\AdamCodexHub-v0.1.0-win-x64.zip'
+$zip = '.\AdamCodexHub-v1.4.0-win-x64.zip'
 $checksum = "$zip.sha256"
 
 $expected = ((Get-Content $checksum -Raw).Trim() -split '\s+')[0]

@@ -181,11 +181,13 @@ WHERE provider_id = $providerId
 INSERT INTO compatibility_results
 (provider_id, model_id, verified_at, text_supported, responses_supported,
  chat_completions_supported, streaming_supported, tool_calling_supported,
- structured_json_supported, vision_supported, score, notes)
+ structured_json_supported, vision_supported, score, notes,
+ first_byte_ms, total_ms)
 VALUES
 ($providerId, $modelId, $verifiedAt, $text, $responses,
  $chatCompletions, $streaming, $toolCalling,
- $structuredJson, $vision, $score, $notes);
+ $structuredJson, $vision, $score, $notes,
+ $firstByteMs, $totalMs);
 ";
         AddCompatibilityParameters(insert, result);
         await insert.ExecuteNonQueryAsync(cancellationToken);
@@ -232,7 +234,8 @@ WHERE provider_id = $providerId AND remote_id = $modelId;
         command.CommandText = @"
 SELECT provider_id, model_id, verified_at, text_supported, responses_supported,
        chat_completions_supported, streaming_supported, tool_calling_supported,
-       structured_json_supported, vision_supported, score, notes
+       structured_json_supported, vision_supported, score, notes,
+       first_byte_ms, total_ms
 FROM compatibility_results
 WHERE provider_id = $providerId AND model_id = $modelId
 ORDER BY verified_at DESC
@@ -260,7 +263,9 @@ LIMIT 1;
             StructuredJson = reader.GetInt32(8) != 0,
             Vision = reader.GetInt32(9) != 0,
             Score = reader.GetInt32(10),
-            Notes = reader.IsDBNull(11) ? null : reader.GetString(11)
+            Notes = reader.IsDBNull(11) ? null : reader.GetString(11),
+            FirstByteMs = reader.IsDBNull(12) ? null : reader.GetInt32(12),
+            TotalMs = reader.IsDBNull(13) ? null : reader.GetInt32(13)
         };
     }
 
@@ -301,6 +306,8 @@ FROM models";
         command.Parameters.AddWithValue("$vision", result.Vision ? 1 : 0);
         command.Parameters.AddWithValue("$score", Math.Clamp(result.Score, 0, 100));
         command.Parameters.AddWithValue("$notes", (object?)result.Notes ?? DBNull.Value);
+        command.Parameters.AddWithValue("$firstByteMs", (object?)result.FirstByteMs ?? DBNull.Value);
+        command.Parameters.AddWithValue("$totalMs", (object?)result.TotalMs ?? DBNull.Value);
     }
 
     private static ModelDescriptor ReadModel(SqliteDataReader reader)

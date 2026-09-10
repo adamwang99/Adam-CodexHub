@@ -1,8 +1,11 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
+using AdamCodexHub.App.Converters;
 using AdamCodexHub.App.Mvvm;
 using AdamCodexHub.App.Services;
 using AdamCodexHub.Codex;
@@ -693,7 +696,7 @@ public sealed class HomeViewModel : PageViewModel
     /// private sandboxed home passed through CODEX_HOME; the native Codex Account is launched with
     /// no override so it keeps using the real ~/.codex untouched.
     /// </summary>
-    private async Task<bool> LaunchCodexAsync(bool desktop, string? codexHome, bool startFreshChat = false)
+    private Task<bool> LaunchCodexAsync(bool desktop, string? codexHome, bool startFreshChat = false)
     {
         if (desktop)
         {
@@ -716,7 +719,7 @@ public sealed class HomeViewModel : PageViewModel
                     "Disabled in Settings: CodexHandoffPreferences.OpenFreshChat = false.");
             }
 
-            return true;
+            return Task.FromResult(true);
         }
 
         // Codex CLI
@@ -726,7 +729,7 @@ public sealed class HomeViewModel : PageViewModel
 
         if (!Directory.Exists(binRoot))
         {
-            return false;
+            return Task.FromResult(false);
         }
 
         var codexPath = Directory.GetDirectories(binRoot)
@@ -758,7 +761,7 @@ public sealed class HomeViewModel : PageViewModel
                 // Best-effort notification only; never throw from a launch helper.
             }
 
-            return false;
+            return Task.FromResult(false);
         }
 
         try
@@ -778,14 +781,14 @@ public sealed class HomeViewModel : PageViewModel
             }
 
             Process.Start(startInfo);
-            return true;
+            return Task.FromResult(true);
         }
         catch
         {
             // Launching Codex is best-effort; never fail activation on this.
         }
 
-        return false;
+        return Task.FromResult(false);
     }
 
     private ProviderCard? _selectedCard;
@@ -819,6 +822,11 @@ public sealed class HomeViewModel : PageViewModel
     public async Task LoadEnabledModelsAsync()
     {
         var card = SelectedCard;
+
+        // Capture the current choice BEFORE the collection is cleared: clearing a ComboBox's items
+        // re-writes its selection (and the TwoWay SelectedValue binding) and would otherwise lose
+        // which model the user had picked.
+        var preferred = SelectedModelRemoteId;
         EnabledModels.Clear();
         if (card is null || card.Id == "codex-account")
         {
@@ -827,15 +835,23 @@ public sealed class HomeViewModel : PageViewModel
         }
 
         var all = await _models.GetAllAsync(card.Id);
-        foreach (var model in all.Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled))
+
+        // Green (callable) first, then amber (slow), grey (unknown) and red (skip), alphabetical
+        // inside each group — the same order the per-card selector and the tray menu use.
+        foreach (var model in CallabilityVisuals.OrderForSelection(
+                     all.Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)))
         {
             EnabledModels.Add(model);
         }
 
-        if (EnabledModels.Count > 0 &&
-            EnabledModels.All(x => x.RemoteId != SelectedModelRemoteId))
+        // Re-ordering must never change which model is selected: keep the previous choice while it
+        // is still enabled, otherwise fall back to the first (highest-priority) model.
+        var chosen = EnabledModels.FirstOrDefault(x => x.RemoteId == preferred)
+                     ?? EnabledModels.FirstOrDefault();
+        if (chosen is not null &&
+            !string.Equals(chosen.RemoteId, SelectedModelRemoteId, StringComparison.Ordinal))
         {
-            SelectedModelRemoteId = EnabledModels[0].RemoteId;
+            SelectedModelRemoteId = chosen.RemoteId;
         }
 
         OnPropertyChanged(nameof(ShowModelPicker));
@@ -951,12 +967,14 @@ public sealed class ProviderCard : ObservableObject
     /// <summary>Raised when the user picks a different model on this card.</summary>
     public event Action<ProviderCard, string?>? ModelChanged;
 
-    /// <summary>Reload this card's enabled models (kept in sync with the model store).</summary>
+    /// <summary>Reload this card's enabled models (kept in sync with the model store), ordered
+    /// green (callable) → amber (slow) → grey (unknown) → red (skip), alphabetical inside a group.</summary>
     public void LoadEnabledModels(IReadOnlyList<ModelDescriptor> all, string? preferredRemoteId)
     {
         var previous = SelectedModelRemoteId;
         EnabledModels.Clear();
-        foreach (var model in all.Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled))
+        foreach (var model in CallabilityVisuals.OrderForSelection(
+                     all.Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)))
         {
             EnabledModels.Add(model);
         }
@@ -1087,11 +1105,24 @@ public sealed class ProviderSetupViewModel : PageViewModel
         ToggleModelCommand = new AsyncRelayCommand(p => RunAsync(() => ToggleModelCoreAsync(p as ModelDescriptor)));
         ChooseLogoCommand = new AsyncRelayCommand(() => RunAsync(ChooseLogoCoreAsync));
         RefreshCommand = new AsyncRelayCommand(() => RunAsync(LoadAsync));
+
+        // The model list is grouped by callability ("Có thể gọi" / "Chậm" / "Bỏ qua" / "Chưa rõ").
+        // A grouping description over the shared status state keeps the headers in sync with the
+        // background auto-ping; Revision is the notification that a model changed class.
+        _modelsView = CollectionViewSource.GetDefaultView(Models);
+        _modelsView.GroupDescriptions.Add(new CallabilityGroupDescription());
+        ModelStatusState.Current.PropertyChanged += OnModelStatusChanged;
     }
+
+    private readonly ICollectionView _modelsView;
 
     public ObservableCollection<ProviderProfile> Providers { get; } = new();
     public ObservableCollection<ProviderKeyInfo> Keys { get; } = new();
     public ObservableCollection<ModelDescriptor> Models { get; } = new();
+
+    /// <summary>The model list as the page shows it: same items as <see cref="Models"/>, grouped
+    /// by callability (green "Có thể gọi" first, then "Chậm", "Chưa rõ", "Bỏ qua").</summary>
+    public ICollectionView ModelsView => _modelsView;
 
     // ---- Provider selection -------------------------------------------------
     public ProviderProfile? SelectedProvider
@@ -1259,7 +1290,7 @@ public sealed class ProviderSetupViewModel : PageViewModel
         StatusMessage = L10n.T("L10n_Setup_NewProfileMsg");
     }
 
-    private async Task ChooseLogoCoreAsync()
+    private Task ChooseLogoCoreAsync()
     {
         var provider = SelectedProvider
             ?? throw new InvalidOperationException(L10n.T("L10n_Msg_NoProviderSelected"));
@@ -1268,10 +1299,11 @@ public sealed class ProviderSetupViewModel : PageViewModel
         if (saved is null)
         {
             StatusMessage = L10n.T("L10n_Setup_LogoCanceled");
-            return;
+            return Task.CompletedTask;
         }
 
         StatusMessage = L10n.F("L10n_Setup_LogoUpdated", provider.Name);
+        return Task.CompletedTask;
     }
 
     // ---- API keys ------------------------------------------------------------
@@ -1432,9 +1464,59 @@ public sealed class ProviderSetupViewModel : PageViewModel
             return;
         }
 
+        var providerId = SelectedProvider.Id;
         var selectedId = SelectedModel?.RemoteId;
-        Replace(Models, await _models.GetAllAsync(SelectedProvider.Id));
+        var loaded = await _models.GetAllAsync(providerId);
+
+        // Seed the shared callability state from the stored results, so the status dots are
+        // correct as soon as the page loads instead of waiting for the next background tick.
+        await ModelStatusState.Current.PopulateFromStoreAsync(_models, providerId, loaded);
+
+        OrderModels(loaded);
         SelectedModel = Models.FirstOrDefault(x => x.RemoteId == selectedId) ?? Models.FirstOrDefault();
+    }
+
+    /// <summary>Keeps the list ordered "callable, slow, unknown, skip" then alphabetical, which is
+    /// also the order the grouping headers come out in.</summary>
+    private void OrderModels(IEnumerable<ModelDescriptor> models) =>
+        Replace(Models, CallabilityVisuals.OrderForSelection(models));
+
+    private void OnModelStatusChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ModelStatusState.Revision))
+        {
+            return;
+        }
+
+        try
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is not null && !dispatcher.CheckAccess())
+            {
+                _ = dispatcher.InvokeAsync(RefreshModelGroups);
+                return;
+            }
+
+            RefreshModelGroups();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Model group refresh failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>Re-runs the grouping so a model that just changed class moves under the right
+    /// header (e.g. from "Có thể gọi" to "Chậm" after a slow auto-ping result).</summary>
+    private void RefreshModelGroups()
+    {
+        try
+        {
+            _modelsView.Refresh();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Model group refresh failed: {ex.Message}");
+        }
     }
 
     private async Task ScanModelsCoreAsync()
@@ -1474,6 +1556,8 @@ public sealed class ProviderSetupViewModel : PageViewModel
             {
                 var result = await _compatibility.TestAsync(provider.Id, model.RemoteId);
                 verified++;
+                // Keep the latency-aware badges in sync with this manual run.
+                ModelStatusState.Current.Apply(result);
                 if (!result.Text && !result.Streaming && !result.ToolCalling)
                 {
                     notes.Add($"{model.DisplayName}: score {result.Score}");

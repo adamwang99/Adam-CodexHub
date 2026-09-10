@@ -7,7 +7,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <!-- Real multi-size application icon (taskbar, alt-tab, explorer) — fixes the black blob. -->
     <ApplicationIcon>Assets\adam-codexhub.ico</ApplicationIcon>
-    <Version>1.1.5</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <!-- UseWindowsForms pulls framework global usings for System.Windows.Forms/System.Drawing that
@@ -30,11 +30,16 @@
     <Resource Include="Assets\adam-codexhub.ico" />
     <Resource Include="Assets\adam-codexhub-architecture.png" />
     <Resource Include="Assets\adam-wang-about.png" />
-    <Resource Include="Assets\guide-tab1-choose-provider.png" />
-    <Resource Include="Assets\guide-tab2-providers.png" />
-    <Resource Include="Assets\guide-tab3-sessions.png" />
-    <Resource Include="Assets\guide-tab4-diagnostics.png" />
-    <Resource Include="Assets\guide-tab5-settings.png" />
+    <Resource Include="Assets\guide-tab1-choose-provider.vi.png" />
+    <Resource Include="Assets\guide-tab2-providers.vi.png" />
+    <Resource Include="Assets\guide-tab3-sessions.vi.png" />
+    <Resource Include="Assets\guide-tab4-diagnostics.vi.png" />
+    <Resource Include="Assets\guide-tab5-settings.vi.png" />
+    <Resource Include="Assets\guide-tab1-choose-provider.en.png" />
+    <Resource Include="Assets\guide-tab2-providers.en.png" />
+    <Resource Include="Assets\guide-tab3-sessions.en.png" />
+    <Resource Include="Assets\guide-tab4-diagnostics.en.png" />
+    <Resource Include="Assets\guide-tab5-settings.en.png" />
     <Resource Include="Assets\Fonts\Barlow-Regular.ttf" />
     <Resource Include="Assets\Fonts\Barlow-Medium.ttf" />
     <Resource Include="Assets\Fonts\Barlow-SemiBold.ttf" />

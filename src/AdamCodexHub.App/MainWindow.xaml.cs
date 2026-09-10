@@ -32,6 +32,11 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         SourceInitialized += OnSourceInitialized;
         ThemeToggle.IsChecked = App.CurrentTheme == App.ThemeLight;
+
+        // The XAML default (False) lies when the session starts in Vietnamese: the switch has to
+        // mirror the language that App.ApplyLanguage() already applied, otherwise the header says
+        // "EN" while the whole UI is Vietnamese (and the next toggle applies the wrong language).
+        LanguageToggle.IsChecked = L10n.IsVietnamese;
         _viewModel.CodexLaunched += OnCodexLaunched;
     }
 

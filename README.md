@@ -57,23 +57,23 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 
 **Choose Provider** — provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below.
 
-![Choose Provider](docs/images/screenshot-home-v1.1.5.png)
+![Choose Provider](docs/images/screenshot-home-v1.2.0.png)
 
 **Providers** — provider profile, encrypted key pool (DPAPI) and the verified model list in one place.
 
-![Providers](docs/images/screenshot-providers-v1.1.5.png)
+![Providers](docs/images/screenshot-providers-v1.2.0.png)
 
 **Sessions** — provider-safe project state and continuation handoffs.
 
-![Sessions](docs/images/screenshot-sessions-v1.1.5.png)
+![Sessions](docs/images/screenshot-sessions-v1.2.0.png)
 
 **Diagnostics** — local gateway state and Codex configuration recovery.
 
-![Diagnostics](docs/images/screenshot-diagnostics-v1.1.5.png)
+![Diagnostics](docs/images/screenshot-diagnostics-v1.2.0.png)
 
 **Settings** — enforced security and session defaults.
 
-![Settings](docs/images/screenshot-settings-v1.1.5.png)
+![Settings](docs/images/screenshot-settings-v1.2.0.png)
 
 ## Why Adam CodexHub?
 

@@ -49,23 +49,23 @@
 
                     <!-- Each application tab has its own screenshot and its own numbered legend. -->
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab1Title}" Style="{StaticResource SectionLabel}" />
-                    <Image Source="Assets/guide-tab1-choose-provider.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
+                    <Image Source="{DynamicResource L10n_Guide_Tab1Image}" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab1Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushTextHigh}" LineHeight="20" Margin="0,0,0,18" />
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab2Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
-                    <Image Source="Assets/guide-tab2-providers.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
+                    <Image Source="{DynamicResource L10n_Guide_Tab2Image}" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab2Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushTextHigh}" LineHeight="20" Margin="0,0,0,18" />
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab3Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
-                    <Image Source="Assets/guide-tab3-sessions.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
+                    <Image Source="{DynamicResource L10n_Guide_Tab3Image}" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab3Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushTextHigh}" LineHeight="20" Margin="0,0,0,18" />
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab4Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
-                    <Image Source="Assets/guide-tab4-diagnostics.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
+                    <Image Source="{DynamicResource L10n_Guide_Tab4Image}" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab4Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushTextHigh}" LineHeight="20" Margin="0,0,0,18" />
 
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab5Title}" Style="{StaticResource SectionLabel}" Foreground="{DynamicResource BrushAqua}" />
-                    <Image Source="Assets/guide-tab5-settings.png" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
+                    <Image Source="{DynamicResource L10n_Guide_Tab5Image}" Stretch="Uniform" MaxWidth="900" Margin="0,8,0,6" />
                     <TextBlock Text="{DynamicResource L10n_Guide_Tab5Legend}" TextWrapping="Wrap" FontSize="12.5" Foreground="{DynamicResource BrushTextHigh}" LineHeight="20" Margin="0,0,0,18" />
 
                     <!-- Architecture diagram: fit-width by default, zoomable + pannable -->

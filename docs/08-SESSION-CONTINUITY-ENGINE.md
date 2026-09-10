@@ -240,6 +240,13 @@ persisted at `%LOCALAPPDATA%\AdamCodexHub\data\codex-handoff.json`; a missing fi
 Auto-submit follows the fresh-chat switch: with the hand-off off there is no new chat to submit into,
 so the second switch is greyed out on screen and ignored in code (`ShouldSubmitRecap`).
 
+The same fresh-chat switch also sits in the **Choose Provider toolbar**, right before *Show all
+providers*, so it can be flipped where the providers are. Both places (and the two Settings
+checkboxes) bind to one shared object, `HandoffState.Current`: the Home switch and the Settings
+checkboxes read and write the same state and the same file, so they can never drift apart, and the
+switch carries a hover tooltip that spells out what the current state does. Verified end to end:
+flipping either switch moves the other, greys auto-submit out, and rewrites `codex-handoff.json`.
+
 Details worth keeping (each one cost a debugging round):
 
 - Codex writes a chat's rollout when its first message is *submitted*, so a rollout file that did not

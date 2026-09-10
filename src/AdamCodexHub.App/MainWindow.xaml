@@ -5,6 +5,7 @@
         xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
         xmlns:mvvm="clr-namespace:AdamCodexHub.App.Mvvm"
         xmlns:vm="clr-namespace:AdamCodexHub.App.ViewModels"
+        xmlns:services="clr-namespace:AdamCodexHub.App.Services"
         Title="Adam CodexHub"
         Style="{StaticResource AppWindow}"
         Width="1200"
@@ -380,6 +381,92 @@
                                 <TextBlock Text="{DynamicResource L10n_Home_RefreshTip}" />
                             </Button.ToolTip>
                         </Button>
+                        <!-- Session hand-off switch — the visible twin of Settings → NỐI PHIÊN LÀM VIỆC.
+                             It binds straight to the shared HandoffState (not to a view model copy),
+                             so this switch and the Settings checkboxes can never drift apart:
+                             flipping either one updates the other and writes the preference file. -->
+                        <ToggleButton x:Name="HandoffToggle"
+                                      Style="{StaticResource ShowAllToggleStyle}"
+                                      IsChecked="{Binding Source={x:Static services:HandoffState.Current}, Path=OpenFreshChat, Mode=TwoWay}"
+                                      ToolTip="{Binding Source={x:Static services:HandoffState.Current}, Path=OpenFreshChatTooltip}"
+                                      automation:AutomationProperties.Name="{Binding Source={x:Static services:HandoffState.Current}, Path=OpenFreshChatTooltip}"
+                                      Margin="0,0,10,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource L10n_Home_Handoff}"
+                                           FontSize="12.5"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0" />
+                                <!-- Track -->
+                                <Border Grid.Column="1" Width="40" Height="20" CornerRadius="10"
+                                        BorderThickness="1"
+                                        VerticalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource BrushSwitchTrack}" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource BrushOverlayPressed}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                    <Setter Property="Background" Value="#262FD0C8" />
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource BrushAqua}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <!-- Sliding thumb -->
+                                    <Border Width="18" Height="18" CornerRadius="9"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Margin="1,0,0,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource BrushSwitchThumb}" />
+                                                <Setter Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <TranslateTransform X="0" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource BrushGold}" />
+                                                        <Setter Property="RenderTransform">
+                                                            <Setter.Value>
+                                                                <TranslateTransform X="19" />
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                </Border>
+                                <!-- ON / OFF caption -->
+                                <TextBlock Grid.Column="2"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center"
+                                           Margin="8,0,0,0"
+                                           MinWidth="24">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{DynamicResource L10n_Home_Off}" />
+                                            <Setter Property="Foreground" Value="{DynamicResource BrushMuted}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource AncestorType=ToggleButton}}" Value="True">
+                                                    <Setter Property="Text" Value="{DynamicResource L10n_Home_On}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource BrushAqua}" />
+                                                    <Setter Property="Effect" Value="{StaticResource AquaGlowToggle}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </ToggleButton>
                         <!-- Show-all switch: track + sliding thumb + ON/OFF state label -->
                         <ToggleButton x:Name="ShowAllToggle"
                                       Style="{StaticResource ShowAllToggleStyle}"
@@ -1378,7 +1465,9 @@
                     <StackPanel>
                         <TextBlock Text="{DynamicResource L10n_Set_HandoffSection}" Style="{StaticResource SectionLabel}" />
                         <CheckBox Content="{DynamicResource L10n_Set_HandoffOpenChat}"
-                                  IsChecked="{Binding OpenFreshChat, Mode=TwoWay}"
+                                  IsChecked="{Binding Source={x:Static services:HandoffState.Current}, Path=OpenFreshChat, Mode=TwoWay}"
+                                  ToolTip="{Binding Source={x:Static services:HandoffState.Current}, Path=OpenFreshChatTooltip}"
+                                  automation:AutomationProperties.Name="{Binding Source={x:Static services:HandoffState.Current}, Path=OpenFreshChatTooltip}"
                                   Margin="0,16,0,4" />
                         <TextBlock Text="{DynamicResource L10n_Set_HandoffOpenChatHint}"
                                    Foreground="{DynamicResource BrushMuted}"
@@ -1386,9 +1475,13 @@
                                    TextWrapping="Wrap"
                                    Margin="21,0,0,10" />
                         <CheckBox Content="{DynamicResource L10n_Set_HandoffAutoSend}"
-                                  IsChecked="{Binding AutoSubmitRecap, Mode=TwoWay}"
-                                  IsEnabled="{Binding CanAutoSubmitRecap, Mode=OneWay}"
-                                  Margin="0,0,0,4" />
+                                  IsChecked="{Binding Source={x:Static services:HandoffState.Current}, Path=AutoSubmitRecap, Mode=TwoWay}"
+                                  IsEnabled="{Binding Source={x:Static services:HandoffState.Current}, Path=CanAutoSubmitRecap, Mode=OneWay}"
+                                  Margin="0,0,0,4">
+                            <CheckBox.ToolTip>
+                                <TextBlock Text="{DynamicResource L10n_Set_HandoffAutoSendHint}" MaxWidth="360" TextWrapping="Wrap" />
+                            </CheckBox.ToolTip>
+                        </CheckBox>
                         <TextBlock Text="{DynamicResource L10n_Set_HandoffAutoSendHint}"
                                    Foreground="{DynamicResource BrushMuted}"
                                    FontSize="11"

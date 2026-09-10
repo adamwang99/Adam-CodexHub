@@ -1781,64 +1781,62 @@ public sealed class SettingsViewModel : PageViewModel
 {
     private const string DefaultsStatusKey = "L10n_Set_DefaultsMsg";
 
-    private bool _openFreshChat;
-    private bool _autoSubmitRecap;
     private string _statusKey = DefaultsStatusKey;
 
     public SettingsViewModel()
         : base("L10n_Set_Title", "L10n_Set_Subtitle")
     {
-        var preferences = CodexHandoffPreferences.Load();
-        _openFreshChat = preferences.OpenFreshChat;
-        _autoSubmitRecap = preferences.AutoSubmit;
+        // The switches live in one shared object (HandoffState), so this page and the Home
+        // toolbar always show the same state; this VM mirrors them for the XAML + status line.
+        Handoff.PropertyChanged += OnHandoffChanged;
         StatusMessage = L10n.T(_statusKey);
     }
+
+    /// <summary>Shared hand-off state — Home toolbar and this page both bind to it.</summary>
+    private static HandoffState Handoff => HandoffState.Current;
 
     /// <summary>Open a fresh Codex chat and carry the session over when a provider is activated.</summary>
     public bool OpenFreshChat
     {
-        get => _openFreshChat;
-        set
-        {
-            if (SetProperty(ref _openFreshChat, value))
-            {
-                Persist();
-            }
-        }
+        get => Handoff.OpenFreshChat;
+        set => Handoff.OpenFreshChat = value;
     }
 
     /// <summary>Submit the recap instead of leaving it in the composer for Enter.</summary>
     public bool AutoSubmitRecap
     {
-        get => _autoSubmitRecap;
-        set
-        {
-            if (SetProperty(ref _autoSubmitRecap, value))
-            {
-                Persist();
-            }
-        }
+        get => Handoff.AutoSubmitRecap;
+        set => Handoff.AutoSubmitRecap = value;
     }
 
     /// <summary>Without a fresh chat there is nothing to submit, so the second switch greys out.</summary>
-    public bool CanAutoSubmitRecap => OpenFreshChat;
+    public bool CanAutoSubmitRecap => Handoff.CanAutoSubmitRecap;
+
+    /// <summary>Hover text of the hand-off switch (Home toolbar and Settings both show it):
+    /// spells out what the current state does, so the switch is self-explanatory.</summary>
+    public string OpenFreshChatTooltip => Handoff.OpenFreshChatTooltip;
 
     protected override void NotifyLanguageChanged()
     {
         base.NotifyLanguageChanged();
         StatusMessage = L10n.T(_statusKey);
+        OnPropertyChanged(nameof(OpenFreshChatTooltip));
     }
 
-    private void Persist()
+    /// <summary>Mirrors the shared switch state into this VM (and confirms the save in the status line).</summary>
+    private void OnHandoffChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        new CodexHandoffPreferences
+        if (string.IsNullOrEmpty(e.PropertyName))
         {
-            OpenFreshChat = _openFreshChat,
-            AutoSubmit = _autoSubmitRecap
-        }.Save();
+            return;
+        }
 
-        OnPropertyChanged(nameof(CanAutoSubmitRecap));
-        _statusKey = "L10n_Set_HandoffSaved";
-        StatusMessage = L10n.T(_statusKey);
+        OnPropertyChanged(e.PropertyName);
+
+        if (e.PropertyName == nameof(HandoffState.OpenFreshChat))
+        {
+            _statusKey = "L10n_Set_HandoffSaved";
+            StatusMessage = L10n.T(_statusKey);
+        }
     }
 }

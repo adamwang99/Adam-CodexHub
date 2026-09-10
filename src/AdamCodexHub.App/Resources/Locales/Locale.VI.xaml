@@ -41,6 +41,7 @@
     <sys:String x:Key="L10n_Home_RefreshTip">Tải lại danh sách nhà cung cấp và cập nhật trạng thái sức khỏe, key và mô hình.</sys:String>
     <sys:String x:Key="L10n_Home_ExpandProvidersTip">Mở rộng / thu gọn danh sách nhà cung cấp</sys:String>
     <sys:String x:Key="L10n_Home_ShowAll">Hiện tất cả nhà cung cấp</sys:String>
+    <sys:String x:Key="L10n_Home_Handoff">Nối phiên làm việc</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOnTip">'Hiện tất cả nhà cung cấp' đang BẬT — hiển thị các nhà cung cấp đã cấu hình và mọi preset có sẵn.</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOffTip">'Hiện tất cả nhà cung cấp' đang TẮT — chỉ hiển thị Codex Account và các nhà cung cấp bạn đã thiết lập.</sys:String>
     <sys:String x:Key="L10n_Home_On">ON</sys:String>
@@ -130,6 +131,8 @@
     <sys:String x:Key="L10n_Set_HandoffSection">NỐI PHIÊN LÀM VIỆC (CODEX)</sys:String>
     <sys:String x:Key="L10n_Set_HandoffOpenChat">Mở chat Codex mới khi kích hoạt nhà cung cấp</sys:String>
     <sys:String x:Key="L10n_Set_HandoffOpenChatHint">Codex ghim mỗi chat vào nhà cung cấp lúc tạo, nên chat cũ vẫn tính vào tài khoản trước đó. Tắt: kích hoạt nhà cung cấp mà không đụng tới Codex.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChatTipOn">Đang BẬT nối phiên: khi anh kích hoạt một nhà cung cấp khác, CodexHub tự mở chat Codex mới và dán bối cảnh phiên đang làm, để việc mới không bị tính tiếp vào tài khoản cũ. Công tắc này và mục Cài Đặt → Nối phiên làm việc luôn giống nhau.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChatTipOff">Đang TẮT nối phiên: kích hoạt nhà cung cấp chỉ đổi nhà cung cấp, Codex giữ nguyên phiên hiện tại nên chat cũ vẫn tính vào tài khoản đã ghim lúc tạo. Bật để CodexHub tự mở chat mới và nối bối cảnh sang nhà cung cấp vừa chọn.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSend">Tự gửi bối cảnh phiên làm việc</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSendHint">Tắt: bối cảnh được dán vào chat mới và chờ anh nhấn Enter.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Đã lưu tuỳ chọn nối phiên.</sys:String>
@@ -146,7 +149,7 @@
     <sys:String x:Key="L10n_Guide_FitLabel">Vừa khung</sys:String>
     <sys:String x:Key="L10n_Guide_Tab1Title">ẢNH TAB 1 · CHỌN NHÀ CUNG CẤP</sys:String>
     <BitmapImage x:Key="L10n_Guide_Tab1Image" UriSource="pack://application:,,,/Assets/guide-tab1-choose-provider.vi.png" />
-    <sys:String x:Key="L10n_Guide_Tab1Legend">① Menu chung: chuyển giữa các tab. ② Trạng thái provider và gateway. ③ Làm mới tất cả. ④ Làm mới provider. ⑤ Hiện/ẩn toàn bộ provider. ⑥ Các card nhà cung cấp (mỗi nhà cung cấp có thẻ W cho Codex Windows và thẻ CLI): nhấp đúp để kích hoạt. ⑦ Sơ đồ API key → gateway → Codex. ⑧ Mở About hoặc Guide.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab1Legend">① Menu chung: chuyển giữa các tab. ② Trạng thái provider và gateway. ③ Làm mới tất cả. ④ Làm mới provider. ⑤ Nối phiên làm việc: bật/tắt việc tự mở chat Codex mới khi kích hoạt nhà cung cấp (khớp với Cài Đặt). ⑥ Hiện/ẩn toàn bộ provider. ⑦ Các card nhà cung cấp (mỗi nhà cung cấp có thẻ W cho Codex Windows và thẻ CLI): nhấp đúp để kích hoạt. ⑧ Sơ đồ API key → gateway → Codex. ⑨ Mở About hoặc Guide.</sys:String>
     <sys:String x:Key="L10n_Guide_Tab2Title">ẢNH TAB 2 · NHÀ CUNG CẤP</sys:String>
     <BitmapImage x:Key="L10n_Guide_Tab2Image" UriSource="pack://application:,,,/Assets/guide-tab2-providers.vi.png" />
     <sys:String x:Key="L10n_Guide_Tab2Legend">① Chọn provider ở danh sách bên trái. ② Sửa ID, tên, URL và adapter ở biểu mẫu bên phải. ③ Lưu, bật/tắt, chọn logo hoặc xóa provider. ④ Dán API key rồi bấm Thêm key. ⑤ Kiểm tra, bật/tắt và sắp xếp key. ⑥ Quét model, kiểm tra model và bật model muốn dùng.</sys:String>

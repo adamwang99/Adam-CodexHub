@@ -53,27 +53,27 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 
 ## Screenshots
 
-*All screenshots below are captured from the real app (v1.2.0, English UI). The in-app guide ships both language sets — the Vietnamese guide shows Vietnamese shots, the English guide shows these English ones.*
+*All screenshots below are captured from the real app (v1.3.0, English UI). The in-app guide ships both language sets — the Vietnamese guide shows Vietnamese shots, the English guide shows these English ones.*
 
 **Choose Provider** — provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below.
 
-![Choose Provider](docs/images/screenshot-home-v1.2.0.png)
+![Choose Provider](docs/images/screenshot-home-v1.3.0.png)
 
 **Providers** — provider profile, encrypted key pool (DPAPI) and the verified model list in one place.
 
-![Providers](docs/images/screenshot-providers-v1.2.0.png)
+![Providers](docs/images/screenshot-providers-v1.3.0.png)
 
 **Sessions** — provider-safe project state and continuation handoffs.
 
-![Sessions](docs/images/screenshot-sessions-v1.2.0.png)
+![Sessions](docs/images/screenshot-sessions-v1.3.0.png)
 
 **Diagnostics** — local gateway state and Codex configuration recovery.
 
-![Diagnostics](docs/images/screenshot-diagnostics-v1.2.0.png)
+![Diagnostics](docs/images/screenshot-diagnostics-v1.3.0.png)
 
 **Settings** — enforced security and session defaults.
 
-![Settings](docs/images/screenshot-settings-v1.2.0.png)
+![Settings](docs/images/screenshot-settings-v1.3.0.png)
 
 ## Why Adam CodexHub?
 

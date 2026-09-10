@@ -41,6 +41,7 @@
     <sys:String x:Key="L10n_Home_RefreshTip">Reload the provider list and refresh health, key and model state.</sys:String>
     <sys:String x:Key="L10n_Home_ExpandProvidersTip">Expand or collapse the provider list</sys:String>
     <sys:String x:Key="L10n_Home_ShowAll">Show all providers</sys:String>
+    <sys:String x:Key="L10n_Home_Handoff">Session hand-off</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOnTip">Show all providers is ON — configured providers and every built-in preset are visible.</sys:String>
     <sys:String x:Key="L10n_Home_ShowAllOffTip">Show all providers is OFF — only Codex Account and providers you have set up are shown.</sys:String>
     <sys:String x:Key="L10n_Home_On">ON</sys:String>
@@ -130,6 +131,8 @@
     <sys:String x:Key="L10n_Set_HandoffSection">CODEX SESSION HAND-OFF</sys:String>
     <sys:String x:Key="L10n_Set_HandoffOpenChat">Open a fresh Codex chat when a provider is activated</sys:String>
     <sys:String x:Key="L10n_Set_HandoffOpenChatHint">Codex binds every chat to the provider it was created with, so an old chat keeps billing the previous account. Off: activating a provider leaves Codex untouched.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChatTipOn">Session hand-off is ON: activating a different provider makes CodexHub open a fresh Codex chat and paste the current session recap, so new work is not billed to the previous account. This switch mirrors Settings → Codex session hand-off.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChatTipOff">Session hand-off is OFF: activating a provider only swaps the provider, so Codex keeps the current chat and it stays billed to the account pinned when it was created. Turn it on to open a fresh chat with the context carried over.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSend">Send the session recap automatically</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSendHint">Off: the recap is pasted into the new chat and waits for you to press Enter.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Hand-off preference saved.</sys:String>
@@ -146,7 +149,7 @@
     <sys:String x:Key="L10n_Guide_FitLabel">Fit</sys:String>
     <sys:String x:Key="L10n_Guide_Tab1Title">TAB IMAGE 1 · CHOOSE PROVIDER</sys:String>
     <BitmapImage x:Key="L10n_Guide_Tab1Image" UriSource="pack://application:,,,/Assets/guide-tab1-choose-provider.en.png" />
-    <sys:String x:Key="L10n_Guide_Tab1Legend">① Shared menu: switch between tabs. ② Provider and gateway status. ③ Refresh all. ④ Refresh providers. ⑤ Show or hide all providers. ⑥ Provider cards (each provider has a W card for Codex Windows and a CLI card): double-click to activate. ⑦ API key → gateway → Codex diagram. ⑧ Open About or Guide.</sys:String>
+    <sys:String x:Key="L10n_Guide_Tab1Legend">① Shared menu: switch between tabs. ② Provider and gateway status. ③ Refresh all. ④ Refresh providers. ⑤ Session hand-off: turn the automatic fresh-chat hand-off on or off when a provider is activated (the same switch as in Settings). ⑥ Show or hide all providers. ⑦ Provider cards (each provider has a W card for Codex Windows and a CLI card): double-click to activate. ⑧ API key → gateway → Codex diagram. ⑨ Open About or Guide.</sys:String>
     <sys:String x:Key="L10n_Guide_Tab2Title">TAB IMAGE 2 · PROVIDERS</sys:String>
     <BitmapImage x:Key="L10n_Guide_Tab2Image" UriSource="pack://application:,,,/Assets/guide-tab2-providers.en.png" />
     <sys:String x:Key="L10n_Guide_Tab2Legend">① Select a provider on the left. ② Edit its ID, name, URL and adapter. ③ Save, enable/disable, choose a logo or delete it. ④ Paste an API key and choose Add key. ⑤ Check, enable/disable and reorder keys. ⑥ Scan, test and enable the models you want.</sys:String>

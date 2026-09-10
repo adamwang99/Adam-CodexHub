@@ -191,6 +191,11 @@ public partial class App : Application
                 services.AddSingleton<IProjectStateService, FileProjectStateService>();
                 services.AddSingleton<ISessionContinuityService, SessionContinuityService>();
                 services.AddSingleton<IProviderActivationService, ProviderActivationService>();
+                services.AddSingleton<CodexThreadModelMigration>(sp => new CodexThreadModelMigration
+                {
+                    // Codex's own database, resolved from the hub's configured CODEX_HOME — never guessed.
+                    CodexHome = sp.GetRequiredService<ICodexConfigService>().CodexHome,
+                });
                 services.AddSingleton<ProviderShutdownService>();
 
                 services.AddSingleton<IGatewayService, LocalGatewayService>();

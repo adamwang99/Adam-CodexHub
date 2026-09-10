@@ -148,17 +148,19 @@ public sealed class CodexConfigService : ICodexConfigService
             var backup = await BackupCurrentCoreAsync(cancellationToken);
             try
             {
-                // Always refresh the saved account profile with the CURRENT native config before
-                // overlaying, so restoring later returns to exactly what the user had (plugins,
-                // marketplaces, manual provider blocks…), not a stale first-ever snapshot.
-                // A stale gateway overlay in that snapshot is stripped so the profile never
-                // re-poisons the native config after a restore.
-                if (!string.IsNullOrWhiteSpace(current))
+                // Refresh the saved account profile with the CURRENT config before overlaying, so
+                // restoring later returns to exactly what the user had (plugins, marketplaces,
+                // manual provider blocks…), not a stale first-ever snapshot.
+                //
+                // A config that still carries the gateway overlay is deliberately NOT captured:
+                // its "model" line is one WE wrote (BuildGatewayCandidate overwrote the account's
+                // own model), so snapshotting it makes every later "restore Codex Account" hand an
+                // upstream model id back to the ChatGPT sign-in — the app then comes up showing
+                // the gateway's model list. The existing profile already holds the last native
+                // config, which is the right thing to restore.
+                if (!string.IsNullOrWhiteSpace(current) && !HasGatewayOverlay(current))
                 {
-                    var profile = TryStripGatewayOverlay(current, out var clean)
-                        ? clean
-                        : current;
-                    await AtomicWriteFileAsync(_accountPath, profile, cancellationToken);
+                    await AtomicWriteFileAsync(_accountPath, current, cancellationToken);
                 }
 
                 await AtomicWriteConfigAsync(candidate, cancellationToken);
@@ -201,13 +203,20 @@ public sealed class CodexConfigService : ICodexConfigService
             }
 
             var text = await File.ReadAllTextAsync(_configPath, cancellationToken);
-            return text.Contains(ManagedProviderId, StringComparison.OrdinalIgnoreCase);
+            return HasGatewayOverlay(text);
         }
         finally
         {
             _gate.Release();
         }
     }
+
+    /// <summary>
+    /// Cheap textual probe for the managed gateway route/provider. Used to tell a native config
+    /// (safe to snapshot as the account profile) from a live overlay (must never be snapshotted).
+    /// </summary>
+    private static bool HasGatewayOverlay(string config) =>
+        config.Contains(ManagedProviderId, StringComparison.OrdinalIgnoreCase);
 
     public async Task<bool> RestoreAccountIfGatewayOverlayAsync(
         CancellationToken cancellationToken = default)
@@ -375,6 +384,11 @@ public sealed class CodexConfigService : ICodexConfigService
         if (isGatewayRoute)
         {
             model.Remove("model_provider");
+            // The overlay also overwrote "model" with one of the gateway's upstream ids. Leaving
+            // that behind is what made a native ChatGPT sign-in come back up showing the gateway's
+            // catalogue (its model names do not exist on the account). Dropping it lets Codex fall
+            // back to the account's own default again.
+            model.Remove("model");
         }
 
         sanitized = TomlSerializer.Serialize(model);

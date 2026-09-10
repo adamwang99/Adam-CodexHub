@@ -1,6 +1,7 @@
 using AdamCodexHub.Codex;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
+using Microsoft.Data.Sqlite;
 using Xunit;
 
 namespace AdamCodexHub.Core.Tests;
@@ -136,18 +137,110 @@ public sealed class ProviderActivationServiceTests
         Assert.Equal(1, gateway.StopCalls);
     }
 
+    [Fact]
+    public async Task ActivateAccountPointsGatewayPinnedThreadsAtAnAccountModel()
+    {
+        var home = NewCodexHome();
+        File.WriteAllText(
+            Path.Combine(home, "models_cache.json"),
+            """
+            { "models": [ { "slug": "gpt-5.6-sol" }, { "slug": "gpt-5.6-terra" }, { "slug": "codex-auto-review" } ] }
+            """);
+        SeedThread(home, "video-mai", "claude-5.5");
+        SeedThread(home, "already-fine", "gpt-5.6-terra");
+
+        var remote = CreateProvider("openrouter", enabled: true);
+        var account = CreateProvider("codex-account", enabled: true);
+        var providers = new FakeProviderManager(account, active: remote);
+        var config = new FakeConfig(hasAccountProfile: true) { CodexHome = home };
+
+        var service = Create(providers, config: config, threads: Migration(home));
+        var result = await service.ActivateAsync("codex-account", null);
+
+        Assert.Equal("gpt-5.6-sol", ThreadModel(home, "video-mai"));
+        Assert.Equal("gpt-5.6-terra", ThreadModel(home, "already-fine"));
+        Assert.Contains("1 Codex thread(s)", result.Message);
+    }
+
+    [Fact]
+    public async Task ActivateRemotePointsThreadsAtTheProvidersOwnModel()
+    {
+        var home = NewCodexHome();
+        SeedThread(home, "stale", "gpt-5.6-sol");
+
+        var remote = CreateProvider("deepseek", enabled: true);
+        var account = CreateProvider("codex-account", enabled: true);
+        var providers = new FakeProviderManager(remote, active: account);
+        var models = new FakeModelStore(CreateModel("deepseek", "deepseek-chat", enabled: true));
+        var config = new FakeConfig(hasAccountProfile: true) { CodexHome = home };
+
+        var service = Create(providers, models: models, config: config, threads: Migration(home));
+        var result = await service.ActivateAsync("deepseek", "deepseek-chat");
+
+        Assert.Equal("deepseek-chat", ThreadModel(home, "stale"));
+        Assert.Contains("1 Codex thread(s)", result.Message);
+    }
+
+    private static string NewCodexHome()
+    {
+        var home = Path.Combine(
+            Path.GetTempPath(),
+            $"adam-codexhub-activation-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(home);
+        return home;
+    }
+
+    private static CodexThreadModelMigration Migration(string home) => new()
+    {
+        CodexHome = home,
+        CodexIsRunning = () => false
+    };
+
+    private static void SeedThread(string home, string id, string model)
+    {
+        using var connection = new SqliteConnection(
+            $"Data Source={Path.Combine(home, "state_5.sqlite")}");
+        connection.Open();
+        using (var create = connection.CreateCommand())
+        {
+            create.CommandText =
+                "CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, model TEXT, model_provider TEXT)";
+            create.ExecuteNonQuery();
+        }
+
+        using var insert = connection.CreateCommand();
+        insert.CommandText =
+            "INSERT INTO threads (id, model, model_provider) VALUES ($id, $model, 'adam_codexhub')";
+        insert.Parameters.AddWithValue("$id", id);
+        insert.Parameters.AddWithValue("$model", model);
+        insert.ExecuteNonQuery();
+    }
+
+    private static string? ThreadModel(string home, string id)
+    {
+        using var connection = new SqliteConnection(
+            $"Data Source={Path.Combine(home, "state_5.sqlite")}");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT model FROM threads WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id);
+        return command.ExecuteScalar() as string;
+    }
+
     private static ProviderActivationService Create(
         IProviderManager providers,
         IModelStore? models = null,
         ICodexConfigService? config = null,
         IGatewayService? gateway = null,
-        ISessionContinuityService? sessions = null) =>
+        ISessionContinuityService? sessions = null,
+        CodexThreadModelMigration? threads = null) =>
         new(
             providers,
             models ?? new FakeModelStore(),
             config ?? new FakeConfig(hasAccountProfile: true),
             gateway ?? new FakeGateway(running: false),
-            sessions ?? new FakeSessions());
+            sessions ?? new FakeSessions(),
+            threads);
 
     private static ProviderProfile CreateProvider(string id, bool enabled) => new()
     {
@@ -313,7 +406,7 @@ public sealed class ProviderActivationServiceTests
             _overlayActive = overlayActive;
         }
 
-        public string CodexHome => "test-codex-home";
+        public string CodexHome { get; init; } = "test-codex-home";
         public int ActivateAccountCalls { get; private set; }
         public int ActivateGatewayCalls { get; private set; }
         public string? LastGatewayModelId { get; private set; }

@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.5.3
+
+### Fixed
+
+- **Switching back to Codex Account no longer leaves the gateway's model behind.** Before overlaying
+  `~/.codex/config.toml`, the hub snapshots the native config into `config-ACCOUNT.toml` so the Codex
+  Account card can put it back. That snapshot was also taken while the config still carried the
+  gateway overlay — and with it the upstream `model` id the overlay had written (on the HHTech run
+  `model = "claude-5.5"`). Restoring the account then handed that id back to the ChatGPT sign-in, so
+  Codex Desktop came up signed in to the account while still listing the gateway's models, and the
+  tray reported `Codex đang dùng: claude-5.5` for a session that was not using it at all.
+  A config that still carries the gateway overlay is no longer snapshotted as the account profile,
+  and when a profile does carry one, its `model` line is now dropped together with the provider
+  block — Codex falls back to the account's own default model.
+- **Threads are no longer left stranded on the previous provider's model.** Codex pins a model per
+  thread (`threads.model` in `~/.codex/state_5.sqlite`), so every thread kept the id it was last
+  used with. After a gateway run, 43 threads were still pinned to HHTech ids (`claude-5.5`, `dsv4`,
+  `deepseek-v4-flash`, …), and Codex refused every turn in them with *"The 'claude-5.5' model is not
+  supported when using Codex with a ChatGPT account"* while the picker fell back to `Custom`.
+  Activating a provider now moves every thread whose model that provider does not offer onto the
+  model being activated — Codex Account resolves the catalogue from Codex's own model cache and
+  prefers `gpt-5.6-sol`. The rewrite only runs while Codex is closed, only ever touches the `model`
+  column (never a transcript), keeps `codex-auto-review` intact, and reports the count it moved in
+  the activation message.
+- Data repair for machines already in that state: the leftover `model` line is a one-line fix in
+  `~/.codex/config.toml` and `~/.codex/config-ACCOUNT.toml` (pre-repair copies under
+  `~/.codex/adam-codexhub-backups/`), and the two errors above can be cleared in place with the
+  thread migration — both were applied on this machine on 2026-09-10 (43 threads → `gpt-5.6-sol`).
+
 ## v1.5.2
 
 ### Fixed

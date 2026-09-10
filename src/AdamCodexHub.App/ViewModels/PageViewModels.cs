@@ -578,6 +578,24 @@ public sealed class HomeViewModel : PageViewModel
         }
     }
 
+    /// <summary>Records a plain decision in the same log the failures go to — no exception needed.</summary>
+    private static void LogNote(string stage, string message)
+    {
+        try
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "AdamCodexHub", "logs");
+            Directory.CreateDirectory(dir);
+            File.AppendAllText(
+                Path.Combine(dir, "ui.log"),
+                $"{DateTimeOffset.Now:O} | {stage} | {message}{Environment.NewLine}");
+        }
+        catch
+        {
+        }
+    }
+
     private async Task RestoreAccountAsync()
     {
         try
@@ -690,6 +708,12 @@ public sealed class HomeViewModel : PageViewModel
             if (startFreshChat && workspace is not null && CodexHandoffPreferences.Load().OpenFreshChat)
             {
                 StartContinuationChat(workspace);
+            }
+            else if (startFreshChat && workspace is not null)
+            {
+                LogNote(
+                    "Session hand-off skipped",
+                    "Disabled in Settings: CodexHandoffPreferences.OpenFreshChat = false.");
             }
 
             return true;

@@ -213,4 +213,65 @@ public partial class MainWindow : Window
 
     private void UpdateMaximizeGlyph() =>
         MaximizeButton.Tag = IsCustomMaximized ? "restore" : "max";
+
+    /// <summary>
+    /// Inner elements (TextBox, DataGrid, nested ScrollViewers) mark the wheel event as
+    /// handled once they have nothing left to scroll, so the gesture never reached the page
+    /// ScrollViewer and the pages felt unscrollable unless the pointer happened to sit on
+    /// blank space. Route every wheel tick to the deepest ancestor ScrollViewer that can
+    /// still move in that direction, and mark it handled so nothing scrolls twice.
+    /// </summary>
+    protected override void OnPreviewMouseWheel(MouseWheelEventArgs e)
+    {
+        if (e.Handled || e.Delta == 0)
+        {
+            base.OnPreviewMouseWheel(e);
+            return;
+        }
+
+        var scrollingDown = e.Delta < 0;
+        var target = FindWheelTarget(e.OriginalSource as DependencyObject, scrollingDown);
+        if (target is null)
+        {
+            base.OnPreviewMouseWheel(e);
+            return;
+        }
+
+        var notches = Math.Abs(e.Delta) / 120.0;
+        var configuredLines = SystemParameters.WheelScrollLines;
+        var step = configuredLines < 0
+            ? target.ViewportHeight
+            : Math.Max(1, configuredLines) * 16.0;
+        var delta = step * notches;
+        var offset = scrollingDown
+            ? target.VerticalOffset + delta
+            : target.VerticalOffset - delta;
+
+        target.ScrollToVerticalOffset(offset);
+        e.Handled = true;
+    }
+
+    private static ScrollViewer? FindWheelTarget(DependencyObject? source, bool scrollingDown)
+    {
+        var node = source;
+        while (node is not null)
+        {
+            if (node is ScrollViewer viewer && viewer.ScrollableHeight > 0.5)
+            {
+                var canMove = scrollingDown
+                    ? viewer.VerticalOffset < viewer.ScrollableHeight - 0.5
+                    : viewer.VerticalOffset > 0.5;
+                if (canMove)
+                {
+                    return viewer;
+                }
+            }
+
+            node = node is Visual
+                ? VisualTreeHelper.GetParent(node)
+                : LogicalTreeHelper.GetParent(node);
+        }
+
+        return null;
+    }
 }

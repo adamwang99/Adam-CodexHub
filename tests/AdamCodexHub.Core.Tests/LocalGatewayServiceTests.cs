@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
 using AdamCodexHub.Gateway;
@@ -67,6 +68,36 @@ public sealed class LocalGatewayServiceTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("enabled-model", body, StringComparison.Ordinal);
         Assert.DoesNotContain("disabled-model", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GatewayIndexesModelsFastestFirstAndTagsThemForCodex()
+    {
+        await using var fixture = new GatewayFixture();
+        await fixture.InitializeAsync();
+        await fixture.AddEnabledModelAsync("slow-model");
+        await fixture.SaveLatencyAsync("enabled-model", firstByteMs: 1500);
+        await fixture.SaveLatencyAsync("slow-model", firstByteMs: 30_000);
+
+        // Codex (app-server) shape: it cannot colour its rows, so the speed tag must ride along
+        // in display_name — and the model that answers fastest must come first.
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get, "/v1/models?client_version=0.153.4");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer", fixture.Gateway.LocalToken);
+        using var response = await fixture.Client.SendAsync(request);
+        var body = await response.Content.ReadAsStringAsync();
+
+        using var doc = JsonDocument.Parse(body);
+        var models = doc.RootElement.GetProperty("models").EnumerateArray().ToArray();
+        Assert.True(models.Length == 2, body);
+
+        Assert.Equal("enabled-model", models[0].GetProperty("slug").GetString());
+        Assert.Equal("enabled-model (F)", models[0].GetProperty("display_name").GetString());
+        Assert.Equal(1, models[0].GetProperty("priority").GetInt32());
+        Assert.Equal("slow-model", models[1].GetProperty("slug").GetString());
+        Assert.Equal("slow-model (S)", models[1].GetProperty("display_name").GetString());
+        Assert.Equal(2, models[1].GetProperty("priority").GetInt32());
     }
 
     [Fact]
@@ -158,6 +189,25 @@ public sealed class LocalGatewayServiceTests
             LastVerifiedAt = DateTimeOffset.UtcNow,
             CompatibilityScore = 100
         };
+
+        public Task AddEnabledModelAsync(string id) =>
+            Models.UpsertAsync(CreateModel(id, enabled: true));
+
+        /// <summary>A stored result where text, responses and streaming all work, so the model is
+        /// classified purely on the latency it reports. Score &gt; 0 keeps the model enabled.</summary>
+        public Task SaveLatencyAsync(string modelId, int firstByteMs) =>
+            Models.SaveCompatibilityAsync(new CompatibilityResult
+            {
+                ProviderId = "upstream",
+                ModelId = modelId,
+                VerifiedAt = DateTimeOffset.UtcNow,
+                Text = true,
+                Responses = true,
+                Streaming = true,
+                Score = 90,
+                FirstByteMs = firstByteMs,
+                TotalMs = firstByteMs
+            });
     }
 
     private sealed class GatewayRegistry : IProviderRegistryService

@@ -14,7 +14,10 @@ public sealed class CodexModelCatalogTests
     [Fact]
     public void Build_ReturnsModelsShapeCodexExpects()
     {
-        var input = new (string Id, string Name, int? ContextWindow)[] { ("claude-opus-4-7[1M]", "Claude Opus 4.7 [1M]", 200000) };
+        var input = new (string Id, string Name, int? ContextWindow, string Tag)[]
+        {
+            ("claude-opus-4-7[1M]", "Claude Opus 4.7 [1M]", 200000, "F")
+        };
 
         var json = CodexModelCatalog.Build(input);
 
@@ -22,7 +25,8 @@ public sealed class CodexModelCatalogTests
         Assert.True(doc.RootElement.TryGetProperty("models", out var models));
         var first = models.EnumerateArray().Single();
         Assert.Equal("claude-opus-4-7[1M]", first.GetProperty("slug").GetString());
-        Assert.Equal("Claude Opus 4.7 [1M]", first.GetProperty("display_name").GetString());
+        // Codex không tô màu được tên model nên nhãn tốc độ phải nằm trong display_name.
+        Assert.Equal("Claude Opus 4.7 [1M] (F)", first.GetProperty("display_name").GetString());
         Assert.Equal("list", first.GetProperty("visibility").GetString());
         Assert.True(first.GetProperty("supported_in_api").GetBoolean());
         Assert.Equal(200000, first.GetProperty("context_window").GetInt32());
@@ -32,10 +36,10 @@ public sealed class CodexModelCatalogTests
     [Fact]
     public void Build_FallsBackToId_AndOmitsInvalidContextWindow()
     {
-        var input = new (string Id, string Name, int? ContextWindow)[]
+        var input = new (string Id, string Name, int? ContextWindow, string Tag)[]
         {
-            ("dsv4", "", null),
-            ("claude-sonnet-5", "Claude Sonnet 5", 0)
+            ("dsv4", "", null, "U"),
+            ("claude-sonnet-5", "Claude Sonnet 5", 0, "S")
         };
 
         var json = CodexModelCatalog.Build(input);
@@ -43,7 +47,9 @@ public sealed class CodexModelCatalogTests
         using var doc = JsonDocument.Parse(json);
         var list = doc.RootElement.GetProperty("models").EnumerateArray().ToArray();
         Assert.Equal(2, list.Length);
-        Assert.Equal("dsv4", list[0].GetProperty("display_name").GetString());
+        Assert.Equal("dsv4 (U)", list[0].GetProperty("display_name").GetString());
+        // dòng mô tả nói rõ nghĩa của nhãn ghép sau tên
+        Assert.Contains("(U)", list[0].GetProperty("description").GetString(), StringComparison.Ordinal);
         // không truyền context window thì giữ giá trị mặc định của template, không ghi 0/null
         Assert.NotEqual(JsonValueKind.Null, list[0].GetProperty("context_window").ValueKind);
         Assert.Equal(1, list[0].GetProperty("priority").GetInt32());

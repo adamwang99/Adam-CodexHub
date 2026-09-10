@@ -34,8 +34,17 @@ public sealed class ModelAutoPingService : IDisposable
     /// <summary>Models re-tested per tick — small, so a slow provider does not saturate.</summary>
     public const int DefaultBatchSize = 3;
 
-    /// <summary>First tick waits a little so it never competes with startup work.</summary>
-    private static readonly TimeSpan InitialDelay = TimeSpan.FromSeconds(90);
+    /// <summary>
+    /// Models re-tested in the opening tick after a launch. The in-memory picture starts empty, so
+    /// every model the stored results cannot answer reads "not checked yet" — at three models per
+    /// 15 minutes a 14-model provider would sit like that for over an hour. The first tick sweeps
+    /// the whole enabled list in one pass instead; later ticks stay incremental.
+    /// </summary>
+    public const int DefaultSweepBatchSize = 24;
+
+    /// <summary>First tick starts almost at once, so the real colours and F/N/S tags are there
+    /// as soon as the app is up rather than minutes later.</summary>
+    public static readonly TimeSpan DefaultStartDelay = TimeSpan.FromSeconds(5);
 
     private readonly IProviderManager _providers;
     private readonly IModelStore _models;
@@ -45,6 +54,10 @@ public sealed class ModelAutoPingService : IDisposable
     private Timer? _timer;
     private volatile bool _paused;
     private bool _disposed;
+
+    /// <summary>True until the first tick of this run has picked up work: that tick sweeps the
+    /// whole enabled list instead of the usual small batch.</summary>
+    private bool _openingSweepPending = true;
 
     public ModelAutoPingService(
         IProviderManager providers,
@@ -62,6 +75,9 @@ public sealed class ModelAutoPingService : IDisposable
 
     /// <summary>How many models one tick may re-test.</summary>
     public int BatchSize { get; init; } = DefaultBatchSize;
+
+    /// <summary>Batch size of the opening sweep (see <see cref="DefaultSweepBatchSize"/>).</summary>
+    public int SweepBatchSize { get; init; } = DefaultSweepBatchSize;
 
     /// <summary>Pause/resume switch: while true no tick starts (in-flight work finishes first).</summary>
     public bool IsPaused
@@ -93,7 +109,7 @@ public sealed class ModelAutoPingService : IDisposable
             return;
         }
 
-        var delay = Interval < InitialDelay ? Interval : InitialDelay;
+        var delay = Interval < DefaultStartDelay ? Interval : DefaultStartDelay;
         _timer ??= new Timer(OnTimer, null, delay, Interval);
     }
 
@@ -199,13 +215,21 @@ public sealed class ModelAutoPingService : IDisposable
                 latest?.VerifiedAt));
         }
 
-        // Stale/unknown first, then the lowest score, then the oldest verification.
+        // Unknown (the models the UI still shows as "not checked yet") and stale first, then the
+        // lowest score, then the oldest verification. The first tick of this run takes the whole
+        // list, so the real picture is there within one pass instead of one small batch per
+        // 15 minutes — everything already answered by the stored results is left alone.
+        var limit = _openingSweepPending ? Math.Max(BatchSize, SweepBatchSize) : Math.Max(1, BatchSize);
         var batch = candidates
             .OrderBy(c => c.Callability == Callability.Unknown ? 0 : 1)
             .ThenBy(c => c.Score ?? int.MinValue)
             .ThenBy(c => c.VerifiedAt ?? DateTimeOffset.MinValue)
-            .Take(Math.Max(1, BatchSize))
+            .Take(Math.Max(1, limit))
             .ToArray();
+        if (batch.Length > 0)
+        {
+            _openingSweepPending = false;
+        }
 
         var results = new List<CompatibilityResult>();
         foreach (var candidate in batch)

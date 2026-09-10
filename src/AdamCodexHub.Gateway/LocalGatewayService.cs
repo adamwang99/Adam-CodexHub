@@ -188,13 +188,50 @@ public sealed class LocalGatewayService : IGatewayService
             .ToHashSet(StringComparer.Ordinal);
         var published = enabled.Where(x => publishable.Contains(x.RemoteId)).ToArray();
 
+        // Index the picker the way the user reads it: the model that answers fastest first, the
+        // slow ones below it, then whatever has no fresh measurement. Codex cannot colour its
+        // rows, so the same classification rides along as a one-letter tag (F/N/S/U) in
+        // display_name — the only text of a model entry the hub controls.
+        var speed = new Dictionary<string, (Callability Callability, int Key, string Tag)>(
+            StringComparer.Ordinal);
+        foreach (var model in published)
+        {
+            CompatibilityResult? latest = null;
+            try
+            {
+                latest = await _models.GetLatestCompatibilityAsync(
+                    provider.Id, model.RemoteId, context.RequestAborted);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // An unreadable stored result must not hide a model from the picker.
+            }
+
+            var callability = ModelCallability.Classify(latest, DateTimeOffset.UtcNow);
+            speed[model.RemoteId] = (
+                callability,
+                ModelCallability.SpeedKey(latest?.FirstByteMs, latest?.TotalMs),
+                ModelCallability.StatusTag(callability, latest?.FirstByteMs, latest?.TotalMs));
+        }
+
+        var ordered = published
+            .OrderBy(x => ModelCallability.SortOrder(speed[x.RemoteId].Callability))
+            .ThenBy(x => speed[x.RemoteId].Key)
+            .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
         // Codex (app-server) gọi /v1/models?client_version=… và cần shape {"models":[{slug,…}]};
         // các client khác vẫn nhận shape OpenAI {"object":"list","data":[…]}.
         if (context.Request.Query.ContainsKey("client_version"))
         {
             context.Response.ContentType = "application/json; charset=utf-8";
             await context.Response.WriteAsync(
-                CodexModelCatalog.Build(published.Select(x => (x.RemoteId, x.DisplayName, x.ContextWindow))),
+                CodexModelCatalog.Build(ordered.Select(x => (
+                    x.RemoteId, x.DisplayName, x.ContextWindow, speed[x.RemoteId].Tag))),
                 context.RequestAborted);
             return;
         }
@@ -203,7 +240,7 @@ public sealed class LocalGatewayService : IGatewayService
             new
             {
                 @object = "list",
-                data = published
+                data = ordered
                     .Select(x => new
                     {
                         id = x.RemoteId,

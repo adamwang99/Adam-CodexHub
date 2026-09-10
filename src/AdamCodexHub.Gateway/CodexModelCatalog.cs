@@ -136,18 +136,22 @@ public static class CodexModelCatalog
 }
 """;
 
-    /// <summary>Danh sách model của provider đang bật, ở đúng shape Codex đọc được.</summary>
-    public static string Build(IEnumerable<(string Id, string Name, int? ContextWindow)> models)
+    /// <summary>
+    /// Danh sách model của provider đang bật, ở đúng shape Codex đọc được. Codex không tô màu
+    /// được tên model, nên <paramref name="tag"/> (F/N/S/U) được ghép vào display_name để người
+    /// dùng vẫn phân biệt được model nhanh / chậm; thứ tự truyền vào là thứ tự Codex hiển thị.
+    /// </summary>
+    public static string Build(IEnumerable<(string Id, string Name, int? ContextWindow, string Tag)> models)
     {
         var template = JsonNode.Parse(TemplateJson)!;
         var list = new JsonArray();
         var priority = 1;
-        foreach (var (id, name, contextWindow) in models)
+        foreach (var (id, name, contextWindow, tag) in models)
         {
             var entry = JsonNode.Parse(template.ToJsonString())!;
             entry["slug"] = id;
-            entry["display_name"] = string.IsNullOrWhiteSpace(name) ? id : name;
-            entry["description"] = "Model của Adam CodexHub (provider đang bật).";
+            entry["display_name"] = string.IsNullOrWhiteSpace(name) ? $"{id} ({tag})" : $"{name} ({tag})";
+            entry["description"] = Description(tag);
             entry["priority"] = priority++;
             entry["visibility"] = "list";
             entry["supported_in_api"] = true;
@@ -163,4 +167,9 @@ public static class CodexModelCatalog
         var root = new JsonObject { ["models"] = list };
         return root.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
     }
+
+    /// <summary>Dòng mô tả của từng entry: nguồn model + nghĩa nhãn tốc độ ghép sau tên.</summary>
+    private static string Description(string tag) =>
+        "Model của Adam CodexHub (provider đang bật). "
+        + $"Nhãn ({tag}): F = nhanh, N = thường, S = chậm, U = chưa kiểm tra.";
 }

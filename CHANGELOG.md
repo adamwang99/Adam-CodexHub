@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.5.2
+
+### Fixed
+
+- **A fresh launch no longer shows a wall of "not checked yet".** The colour picture came from a
+  background refresher that waited 90 s and then re-tested only **3 models per 15 minutes** — on a
+  14-model provider the list stayed half grey for over an hour. The first tick now starts ~5 s
+  after launch and sweeps the **whole** enabled list of the active provider in one pass (up to 24
+  models); only the ticks after it fall back to the small incremental batch. Anything already
+  answered by the stored results is left alone, so the models that were good last run keep their
+  colours and are not re-tested at all.
+- the tray status line, the startup log line and `ModelAutoPingService` now agree: the log reads
+  `opening sweep of up to 24 model(s), then every 15 min, up to 3 model(s) per tick`.
+
+### Changed
+
+- **The status letters moved off the tray and into Codex.** The tray already colours every model, so
+  the one-letter tags added in v1.5.1 were dropped there — and the legend line with them. Codex
+  Desktop's picker cannot be coloured at all, so that is where the letters stayed: the hub appends
+  `(F)` / `(N)` / `(S)` / `(U)` to the `display_name` of every model in the app-server catalogue it
+  serves, plus a one-line legend in the entry description.
+- **Every model list is indexed fastest first.** The colour groups are unchanged, but inside a group
+  the model with the smallest measured first byte now leads (total time as the tiebreak, name last)
+  and models with no measurement sink to the bottom. The tray submenu, the in-app selectors and the
+  catalogue Codex reads share one order, and the catalogue's `priority` numbering follows it.
+
 ## v1.5.1
 
 ### Added

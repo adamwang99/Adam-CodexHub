@@ -157,7 +157,9 @@ public sealed class ModelCallabilityTests
             store,
             compatibility)
         {
-            BatchSize = 2
+            BatchSize = 2,
+            // Pin the opening sweep out of the way: this test is about the batch limit itself.
+            SweepBatchSize = 2
         };
 
         var refreshed = await service.PingOnceAsync();
@@ -246,6 +248,43 @@ public sealed class ModelCallabilityTests
 
         Assert.Equal(1, refreshed);
         Assert.Contains("fine", compatibility.Tested);
+    }
+
+    [Fact]
+    public async Task AutoPingSweepsTheWholeProviderOnTheFirstTickThenFallsBackToTheBatch()
+    {
+        var store = new FakeModelStore(
+            Model(ActiveProviderId, "m1", enabled: true),
+            Model(ActiveProviderId, "m2", enabled: true),
+            Model(ActiveProviderId, "m3", enabled: true),
+            Model(ActiveProviderId, "m4", enabled: true),
+            Model(ActiveProviderId, "m5", enabled: true));
+        var compatibility = new FakeCompatibilityService();
+        using var service = new ModelAutoPingService(
+            new FakeProviderManager(ActiveProviderId),
+            store,
+            compatibility)
+        {
+            BatchSize = 2
+        };
+
+        // Opening sweep: the whole provider in one pass, not two models per 15 minutes.
+        Assert.Equal(5, await service.PingOnceAsync());
+        Assert.Equal(5, compatibility.Tested.Count);
+
+        // From the second tick on the refresher is incremental again.
+        Assert.Equal(2, await service.PingOnceAsync());
+        Assert.Equal(7, compatibility.Tested.Count);
+    }
+
+    [Fact]
+    public void AutoPingChecksRightAfterALaunchAndInOnePass()
+    {
+        // The user's complaint: models sat grey/dark after a restart. The first tick must not
+        // wait minutes, and one pass must cover a normal provider.
+        Assert.InRange(ModelAutoPingService.DefaultStartDelay, TimeSpan.Zero, TimeSpan.FromSeconds(15));
+        Assert.True(ModelAutoPingService.DefaultSweepBatchSize >= 14);
+        Assert.True(ModelAutoPingService.DefaultSweepBatchSize > ModelAutoPingService.DefaultBatchSize);
     }
 
     private static ModelDescriptor Model(string providerId, string remoteId, bool enabled) => new()
@@ -409,9 +448,9 @@ public sealed class ModelCallabilityTests
         }
     }
 
-    /// <summary>The one-letter tag shown in parentheses in the tray menu, so the state is
-    /// readable even where the colour is not (F = fast, N = normal, S = slow, U = unchecked,
-    /// X = skipped). The first byte decides fast vs normal: that is the wait you feel.</summary>
+    /// <summary>The one-letter tag Codex shows after a model name — the app-server picker cannot
+    /// colour its rows (F = fast, N = normal, S = slow, U = unchecked, X = skipped). The first
+    /// byte decides fast vs normal: that is the wait you feel.</summary>
     [Theory]
     [InlineData(Callability.Callable, 1200, 3000, "F")]
     [InlineData(Callability.Callable, 5000, 5200, "F")]
@@ -428,5 +467,20 @@ public sealed class ModelCallabilityTests
         string expected)
     {
         Assert.Equal(expected, ModelCallability.StatusTag(callability, firstByteMs, totalMs));
+    }
+
+    /// <summary>The key the model lists are indexed by: the quickest first byte leads, the total
+    /// latency breaks a tie, and a model that was never measured sinks below every measured one.
+    /// </summary>
+    [Theory]
+    [InlineData(1200, 3000, 1200)]
+    [InlineData(null, 4000, 4000)]
+    [InlineData(null, null, int.MaxValue)]
+    public void SpeedKeyPrefersTheFirstByteAndSinksUnmeasuredModels(
+        int? firstByteMs,
+        int? totalMs,
+        int expected)
+    {
+        Assert.Equal(expected, ModelCallability.SpeedKey(firstByteMs, totalMs));
     }
 }

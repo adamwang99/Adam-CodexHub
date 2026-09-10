@@ -335,8 +335,8 @@ public partial class App : Application
                     () => ModelStatusState.Current.Apply(tick));
                 autoPing.Start();
                 LogStartup(
-                    $"Model auto-ping started (every {autoPing.Interval.TotalMinutes:0} min, " +
-                    $"up to {autoPing.BatchSize} model(s) per tick)");
+                    $"Model auto-ping started (opening sweep of up to {autoPing.SweepBatchSize} model(s), " +
+                    $"then every {autoPing.Interval.TotalMinutes:0} min, up to {autoPing.BatchSize} model(s) per tick)");
             }
             catch (Exception pingEx)
             {
@@ -500,28 +500,6 @@ public partial class App : Application
         _ => Drawing.Color.FromArgb(0xC4, 0xC4, 0xC4)
     };
 
-    /// <summary>Model label for the tray menu: the name plus its one-letter callability tag,
-    /// e.g. "claude-opus-4-6[1M] (F)". Same classifier as the colour beside it, so colour and
-    /// letter can never disagree.</summary>
-    private static string TrayModelLabel(
-        ModelStatusState status,
-        string providerId,
-        string? modelId,
-        string name)
-    {
-        if (string.IsNullOrEmpty(modelId))
-        {
-            return name;
-        }
-
-        var snapshot = status.GetSnapshot(providerId, modelId);
-        var tag = ModelCallability.StatusTag(
-            status.GetCallability(providerId, modelId),
-            snapshot?.FirstByteMs,
-            snapshot?.TotalMs);
-        return $"{name} ({tag})";
-    }
-
     /// <summary>Build the tray "Model" submenu: only the active provider's enabled models,
     /// each coloured by its latency-aware callability. Models classified "Skip" are hidden
     /// unless the "show all models" preference is on; the pause / show-all switches live at
@@ -561,10 +539,10 @@ public partial class App : Application
                 return;
             }
 
-            // Seed the shared callability state from the stored results before reading any colour
-            // or (F/N/S/U) tag. A fresh launch starts with an empty in-memory cache and the
-            // background ping skips results that are still fresh, so without this every entry
-            // would read "not checked yet" for up to the 6h TTL.
+            // Seed the shared callability state from the stored results before reading any colour.
+            // A fresh launch starts with an empty in-memory cache and the background ping skips
+            // results that are still fresh, so without this every entry would read "not checked
+            // yet" for up to the 6h TTL.
             status.PopulateFromStoreAsync(modelStore, active.Id, enabled).GetAwaiter().GetResult();
 
             // Same rule as the Codex catalog the gateway serves: only models that answered a real
@@ -605,8 +583,7 @@ public partial class App : Application
             // whether the model Codex is running is healthy. Enabled stays true because WinForms
             // paints a disabled item grey whatever ForeColor says; there is no Click handler, so
             // the line is still read-only.
-            modelMenu.DropDownItems.Add(new WinForms.ToolStripMenuItem(
-                TrayModelLabel(status, active.Id, sessionModelId, status.CodexSessionText))
+            modelMenu.DropDownItems.Add(new WinForms.ToolStripMenuItem(status.CodexSessionText)
             {
                 ForeColor = TrayCallabilityColor(status.GetCallability(active.Id, sessionModelId)),
                 ToolTipText = sessionModelId is null
@@ -614,8 +591,8 @@ public partial class App : Application
                     : status.DescribeTooltip(active.Id, sessionModelId)
             });
 
-            // Same selection order as the in-app pickers (callable → slow → unknown → skip, then
-            // alphabetical); Skip entries stay hidden unless "show all" is on.
+            // Same selection order as the in-app pickers (callable → slow → unknown → skip, and
+            // inside a group the fastest measured model first); Skip entries stay hidden.
             var visible = CallabilityVisuals
                 .OrderForSelection(enabled)
                 .Where(m => CallabilityFilter.IsVisible(
@@ -633,8 +610,7 @@ public partial class App : Application
                 var providerId = active.Id;
                 var modelId = model.RemoteId;
                 var callability = status.GetCallability(providerId, modelId);
-                var modelItem = new WinForms.ToolStripMenuItem(
-                    TrayModelLabel(status, providerId, modelId, model.DisplayName))
+                var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName)
                 {
                     Checked = string.Equals(model.RemoteId, currentModelId, StringComparison.Ordinal),
                     CheckOnClick = false,
@@ -652,13 +628,6 @@ public partial class App : Application
                 Enabled = false
             };
             modelMenu.DropDownItems.Add(lastChecked);
-
-            // Legend for the one-letter tags above (F/N/S/U/X). Shown here rather than in the
-            // icon tooltip because WinForms caps NotifyIcon.Text at 63 characters.
-            modelMenu.DropDownItems.Add(new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_StatusLegend"))
-            {
-                Enabled = false
-            });
 
             var pauseItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_PauseAutoPing"))
             {

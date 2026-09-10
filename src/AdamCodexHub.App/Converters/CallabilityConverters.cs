@@ -45,17 +45,27 @@ public static class CallabilityVisuals
 
     /// <summary>
     /// The selection order every model picker uses: callable (green) first, then slow (amber),
-    /// unknown (grey) and skip (red), with an ordinal-ignore-case name order inside each group.
-    /// Applied to the Home selector, the per-card selector, the tray submenu and the provider
-    /// page's model list so a model never appears in a different position in two places.
+    /// unknown (grey) and skip (red). Inside a group the fastest measured model leads (first byte,
+    /// then total) so the quick models sit at the top and the slow ones sink, with an
+    /// ordinal-ignore-case name order as the final tiebreak. Applied to the Home selector, the
+    /// per-card selector, the tray submenu and the provider page's model list so a model never
+    /// appears in a different position in two places.
     /// </summary>
     public static List<ModelDescriptor> OrderForSelection(IEnumerable<ModelDescriptor> models) =>
         models
             .OrderBy(m => ModelCallability.SortOrder(
                 ModelStatusState.Current.GetCallability(m.ProviderId, m.RemoteId)))
+            .ThenBy(m => Speed(m.ProviderId, m.RemoteId))
             .ThenBy(m => m.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(m => m.RemoteId, StringComparer.OrdinalIgnoreCase)
             .ToList();
+
+    /// <summary>Measured latency of one model; models without a sample sort last.</summary>
+    private static int Speed(string? providerId, string? modelId)
+    {
+        var snapshot = ModelStatusState.Current.GetSnapshot(providerId, modelId);
+        return ModelCallability.SpeedKey(snapshot?.FirstByteMs, snapshot?.TotalMs);
+    }
 }
 
 /// <summary>

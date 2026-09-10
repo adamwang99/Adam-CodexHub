@@ -82,10 +82,17 @@ public static class ModelCallability
         (result.FirstByteMs ?? 0) > SlowThresholdMs || (result.TotalMs ?? 0) > SlowThresholdMs;
 
     /// <summary>
-    /// One-letter status tag shown in parentheses after a model name in the tray menu:
+    /// Latency used to index a model list by speed. The first byte is the wait the user actually
+    /// feels, so it wins over the total; a model with no measurement sorts last.
+    /// </summary>
+    public static int SpeedKey(int? firstByteMs, int? totalMs) =>
+        firstByteMs ?? totalMs ?? int.MaxValue;
+
+    /// <summary>
+    /// One-letter status tag shown after a model name where colour is not available — the Codex
+    /// app-server picker, which renders the catalog the hub serves and cannot be recoloured:
     /// F = fast, N = normal, S = slow, U = never verified, X = skipped (a capability failed).
-    /// Colour alone is easy to miss (and meaningless to colour-blind eyes), so the letter repeats
-    /// the same classification in text. <paramref name="firstByteMs"/> wins over
+    /// <paramref name="firstByteMs"/> wins over
     /// <paramref name="totalMs"/>: the first byte is the wait the user actually feels.
     /// </summary>
     public static string StatusTag(Callability callability, int? firstByteMs, int? totalMs)

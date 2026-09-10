@@ -170,6 +170,10 @@ public partial class App : Application
                     sp.GetRequiredService<OpenAiCompatibleAdapter>());
                 services.AddSingleton<IProviderAdapter, OpenAiResponsesAdapter>();
                 services.AddSingleton<IModelDiscoveryService, ModelDiscoveryService>();
+                services.AddSingleton<IProviderRecoveryService, ProviderRecoveryService>();
+                services.AddSingleton<ModelCatalogRefreshService>();
+                services.AddSingleton<IModelCatalogRefreshService>(
+                    sp => sp.GetRequiredService<ModelCatalogRefreshService>());
                 services.AddSingleton<ICompatibilityService, CompatibilityService>();
                 services.AddSingleton<IKeyTestService, KeyTestService>();
                 // Background refresher for the active provider's models (latency-aware badges).
@@ -195,6 +199,7 @@ public partial class App : Application
                 {
                     // Codex's own database, resolved from the hub's configured CODEX_HOME — never guessed.
                     CodexHome = sp.GetRequiredService<ICodexConfigService>().CodexHome,
+                    Log = message => LogStartup($"Threads: {message}")
                 });
                 services.AddSingleton<ProviderShutdownService>();
 
@@ -252,22 +257,22 @@ public partial class App : Application
                     !string.Equals(activeRoutingProvider.Id, "codex-account", StringComparison.OrdinalIgnoreCase) &&
                     activeRoutingProvider.Enabled)
                 {
-                    var modelStore = _host.Services.GetRequiredService<IModelStore>();
-                    var enabledModel = (await modelStore.GetAllAsync(
-                            activeRoutingProvider.Id,
-                            CancellationToken.None))
-                        .FirstOrDefault(x =>
-                            x.Enabled && x.State == AdamCodexHub.Core.Domain.ModelLifecycleState.Enabled);
+                    // Aim the overlay at a model the catalogue offers, never at "the first enabled
+                    // one": a model with no current verdict is not in Codex's list, so Codex reads it
+                    // as "Custom" and then swaps the session by itself once the list changes.
+                    var activation = _host.Services.GetRequiredService<IProviderActivationService>();
+                    var enabledModel = await activation.PreferredDesktopModelAsync(
+                        activeRoutingProvider.Id,
+                        CancellationToken.None);
                     if (enabledModel is not null)
                     {
-                        var activation = _host.Services.GetRequiredService<IProviderActivationService>();
                         await activation.ActivateDesktopAsync(
                             activeRoutingProvider.Id,
-                            enabledModel.RemoteId,
+                            enabledModel,
                             projectPath: null,
                             CancellationToken.None);
                         LogStartup(
-                            $"Startup overlay: Codex Desktop routed to {activeRoutingProvider.Name} / {enabledModel.RemoteId}.");
+                            $"Startup overlay: Codex Desktop routed to {activeRoutingProvider.Name} / {enabledModel}.");
                     }
                     else
                     {
@@ -283,6 +288,15 @@ public partial class App : Application
                         await routingProviders.SetActiveAsync("codex-account");
                         LogStartup("Startup heal: restored ~/.codex account config (stale gateway overlay).");
                     }
+
+                    // The account is active, so every thread still pinned to a gateway model is refused
+                    // by Codex itself — "The 'claude-opus-4-8[1M]' model is not supported when using
+                    // Codex with a ChatGPT account." Repair those pins here, not only on a provider
+                    // switch: a restart has to leave the chats that are already open usable
+                    // (Adam, 2026-09-11: no new chat, take effect immediately).
+                    var accountRepair = _host.Services.GetRequiredService<IProviderActivationService>();
+                    var rePinned = await accountRepair.RepairThreadsForActiveProviderAsync();
+                    LogStartup($"Startup threads: {rePinned} chat(s) re-pinned to a model the active provider offers.");
                 }
             }
             catch (Exception healEx)
@@ -331,6 +345,40 @@ public partial class App : Application
             // Latency-aware model classification: start the bounded background refresher that
             // re-tests a few models of the ACTIVE provider every 15 minutes and publishes the
             // result to ModelStatusState (the single source of truth the badges read).
+            // What Codex asks the gateway for. Without this line "the picker shows Codex's own models"
+            // and "Codex never asked us for ours" look exactly the same from the log.
+            try
+            {
+                var requestLog = _host.Services.GetRequiredService<IGatewayService>();
+                requestLog.LogMessage += message => LogStartup($"Gateway: {message}");
+
+                // A turn Codex keeps on a model that stopped answering is continued on another model.
+                // The tray says which one is really doing the work, so the session never looks silent.
+                requestLog.TurnContinued += (requested, served) => Dispatcher.InvokeAsync(() =>
+                {
+                    try
+                    {
+                        ModelStatusState.Current.ServingFallbackText =
+                            L10n.F("L10n_Codex_ServingFallback", requested, served);
+                        var tooltip = $"Adam CodexHub · {ModelStatusState.Current.ServingFallbackText}";
+                        if (_trayIcon is not null)
+                        {
+                            _trayIcon.Text = tooltip.Length > 63
+                                ? string.Concat(tooltip.AsSpan(0, 60), "...")
+                                : tooltip;
+                        }
+                    }
+                    catch (Exception servingEx)
+                    {
+                        LogStartup("Fallback notice could not be published", servingEx);
+                    }
+                });
+            }
+            catch (Exception gatewayLogEx)
+            {
+                LogStartup("Gateway request logging could not be attached", gatewayLogEx);
+            }
+
             try
             {
                 var autoPing = _host.Services.GetRequiredService<ModelAutoPingService>();
@@ -361,12 +409,34 @@ public partial class App : Application
                     () => ModelStatusState.Current.ApplyReadiness(tick));
                 readiness.Start();
                 LogStartup(
-                    $"Codex readiness probe started (every {readiness.Interval.TotalMinutes:0} min, " +
+                    $"Codex readiness probe started (opening sweep of up to {readiness.SweepBatchSize} " +
+                    $"model(s), then every {readiness.Interval.TotalMinutes:0} min, " +
                     $"up to {readiness.BatchSize} model(s) per tick)");
             }
             catch (Exception readinessEx)
             {
                 LogStartup("Codex readiness probe could not start", readinessEx);
+            }
+
+            // Model catalogue: a provider only gains a model — or stops looking empty after a quota
+            // outage — when somebody presses "Scan models". Sweep every enabled provider in the
+            // background instead, active provider first, shortly after launch and then every few
+            // hours: the user never has to walk to Setup for it, and the window is already up by
+            // the time the first sweep starts.
+            try
+            {
+                var catalog = _host.Services.GetRequiredService<ModelCatalogRefreshService>();
+                catalog.LogMessage += (message, catalogException) =>
+                    LogStartup($"Model catalogue: {message}", catalogException);
+                catalog.Start();
+                LogStartup(
+                    $"Model catalogue sweep started (first sweep in " +
+                    $"{ModelCatalogRefreshService.DefaultStartDelay.TotalSeconds:0}s, then every " +
+                    $"{catalog.Interval.TotalMinutes:0} min)");
+            }
+            catch (Exception catalogEx)
+            {
+                LogStartup("Model catalogue sweep could not start", catalogEx);
             }
 
             // Codex → hub sync: switching the model inside Codex Desktop's own picker writes it to
@@ -595,6 +665,18 @@ public partial class App : Application
                     ? L10n.T("L10n_Codex_NoSessionModel")
                     : status.DescribeTooltip(active.Id, sessionModelId)
             });
+
+            // Third line, only while it is true: the turn Codex is running is being served by a different
+            // model than the one Codex asked for (an unfinished turn keeps its old model, so switching in
+            // the picker would otherwise look like it did nothing). Green because it is working.
+            if (status.ServingFallbackText is { Length: > 0 } serving)
+            {
+                modelMenu.DropDownItems.Add(new WinForms.ToolStripMenuItem(serving)
+                {
+                    ForeColor = TrayCallabilityColor(Callability.Callable),
+                    ToolTipText = serving
+                });
+            }
 
             // Same selection order as the in-app pickers (callable → slow → unknown → skip, and
             // inside a group the fastest measured model first); Skip entries stay hidden.

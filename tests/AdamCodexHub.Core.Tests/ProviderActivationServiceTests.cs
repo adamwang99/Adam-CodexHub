@@ -159,7 +159,9 @@ public sealed class ProviderActivationServiceTests
 
         Assert.Equal("gpt-5.6-sol", ThreadModel(home, "video-mai"));
         Assert.Equal("gpt-5.6-terra", ThreadModel(home, "already-fine"));
-        Assert.Contains("1 Codex thread(s)", result.Message);
+        // Both threads are touched now: "already-fine" keeps its account model but still has to be
+        // moved off the gateway route, or Codex would send an account model to a stopped gateway.
+        Assert.Contains("2 Codex thread(s)", result.Message);
     }
 
     [Fact]
@@ -179,6 +181,55 @@ public sealed class ProviderActivationServiceTests
 
         Assert.Equal("deepseek-chat", ThreadModel(home, "stale"));
         Assert.Contains("1 Codex thread(s)", result.Message);
+    }
+
+    [Fact]
+    public async Task RepairForTheActiveAccountMovesAGatewayPinnedThreadAtStartup()
+    {
+        // The account is active and a chat created under a hub provider is opened in it: Codex itself
+        // refuses that thread — "The 'claude-opus-4-8[1M]' model is not supported when using Codex with
+        // a ChatGPT account." — so opening it again must work without a new chat.
+        var home = NewCodexHome();
+        SeedThread(home, "video-mai", "claude-opus-4-8[1M]");
+        File.WriteAllText(
+            Path.Combine(home, "models_cache.json"),
+            "{\"models\":[{\"slug\":\"gpt-5.6-sol\"},{\"slug\":\"gpt-6-astra\"}]}");
+
+        var account = CreateProvider("codex-account", enabled: true);
+        var providers = new FakeProviderManager(account, active: account);
+        var service = Create(
+            providers,
+            config: new FakeConfig(hasAccountProfile: true) { CodexHome = home },
+            // Codex is running — the repair still has to land (Adam, 2026-09-11).
+            threads: new CodexThreadModelMigration { CodexHome = home, CodexIsRunning = () => true });
+
+        var moved = await service.RepairThreadsForActiveProviderAsync();
+
+        Assert.Equal(1, moved);
+        Assert.Equal("gpt-5.6-sol", ThreadModel(home, "video-mai"));
+    }
+
+    [Fact]
+    public async Task RepairForTheActiveKeyedProviderMovesAnAccountPinnedThread()
+    {
+        var home = NewCodexHome();
+        SeedThread(home, "video-mai", "gpt-5.6-sol");
+
+        var remote = CreateProvider("deepseek", enabled: true);
+        var account = CreateProvider("codex-account", enabled: true);
+        var providers = new FakeProviderManager(remote, active: remote);
+        var models = new FakeModelStore(CreateModel("deepseek", "deepseek-chat", enabled: true));
+        var service = Create(
+            providers,
+            models: models,
+            config: new FakeConfig(hasAccountProfile: true) { CodexHome = home },
+            threads: new CodexThreadModelMigration { CodexHome = home, CodexIsRunning = () => true });
+
+        var moved = await service.RepairThreadsForActiveProviderAsync();
+
+        Assert.Equal(1, moved);
+        Assert.Equal("deepseek-chat", ThreadModel(home, "video-mai"));
+        _ = account;
     }
 
     private static string NewCodexHome()
@@ -233,14 +284,95 @@ public sealed class ProviderActivationServiceTests
         ICodexConfigService? config = null,
         IGatewayService? gateway = null,
         ISessionContinuityService? sessions = null,
-        CodexThreadModelMigration? threads = null) =>
+        CodexThreadModelMigration? threads = null,
+        ICodexReadinessStore? readiness = null) =>
         new(
             providers,
             models ?? new FakeModelStore(),
             config ?? new FakeConfig(hasAccountProfile: true),
             gateway ?? new FakeGateway(running: false),
             sessions ?? new FakeSessions(),
-            threads);
+            threads,
+            readiness);
+
+    [Fact]
+    public async Task ActivatingAModelTheCatalogueDoesNotOfferUsesAnOfferedOneInstead()
+    {
+        // Writing an id the picker does not offer is what makes Codex read "Custom" — and then switch
+        // the session by itself ("Model changed from Custom to claude-opus-4-7 (F)") the moment the
+        // offered list changes. The activation picks a model the catalogue does offer instead.
+        var remote = CreateProvider("hhtech", enabled: true);
+        var account = CreateProvider("codex-account", enabled: true);
+        var providers = new FakeProviderManager(remote, active: account);
+        var models = new FakeModelStore(
+            CreateModel("hhtech", "claude-3.6-flash", enabled: true),
+            CreateModel("hhtech", "claude-opus-4-8", enabled: true),
+            CreateModel("hhtech", "claude-opus-4-7", enabled: true));
+        var readiness = new FakeReadinessStore();
+        readiness.Seed(new CodexReadiness(
+            "hhtech", "claude-opus-4-8", true, DateTimeOffset.UtcNow.AddMinutes(-2), 2400, null));
+        readiness.Seed(new CodexReadiness(
+            "hhtech", "claude-opus-4-7", true, DateTimeOffset.UtcNow.AddMinutes(-2), 1200, null));
+
+        var service = Create(providers, models: models, readiness: readiness);
+
+        var result = await service.ActivateAsync("hhtech", "claude-3.6-flash");
+
+        // No verdict for claude-3.6-flash means Codex would not list it at all; the quickest offered
+        // model takes its place, and the caller is told why.
+        Assert.Equal("claude-opus-4-7", result.Model?.RemoteId);
+        Assert.Contains("claude-opus-4-7", result.Message);
+        Assert.Contains("not offered", result.Message);
+    }
+
+    [Fact]
+    public async Task PreferredDesktopModelIsTheQuickestOfferedModel()
+    {
+        var remote = CreateProvider("hhtech", enabled: true);
+        var providers = new FakeProviderManager(remote, active: remote);
+        var models = new FakeModelStore(
+            CreateModel("hhtech", "slow", enabled: true),
+            CreateModel("hhtech", "quick", enabled: true));
+        var readiness = new FakeReadinessStore();
+        readiness.Seed(new CodexReadiness(
+            "hhtech", "slow", true, DateTimeOffset.UtcNow.AddMinutes(-2), 18_000, null));
+        readiness.Seed(new CodexReadiness(
+            "hhtech", "quick", true, DateTimeOffset.UtcNow.AddMinutes(-2), 1400, null));
+
+        var service = Create(providers, models: models, readiness: readiness);
+
+        Assert.Equal("quick", await service.PreferredDesktopModelAsync("hhtech"));
+    }
+
+    /// <summary>Verdicts in memory, the way the readiness store hands them to the activation path.</summary>
+    private sealed class FakeReadinessStore : ICodexReadinessStore
+    {
+        private readonly Dictionary<string, CodexReadiness> _verdicts = new(StringComparer.OrdinalIgnoreCase);
+
+        public void Seed(CodexReadiness verdict) =>
+            _verdicts[$"{verdict.ProviderId}/{verdict.ModelId}"] = verdict;
+
+        public Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<IReadOnlyList<CodexReadiness>> GetAllAsync(
+            string providerId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<CodexReadiness>>(
+                _verdicts.Values.Where(v => v.ProviderId == providerId).ToArray());
+
+        public Task<CodexReadiness?> GetAsync(
+            string providerId,
+            string modelId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(
+                _verdicts.TryGetValue($"{providerId}/{modelId}", out var verdict) ? verdict : null);
+
+        public Task SaveAsync(CodexReadiness readiness, CancellationToken cancellationToken = default)
+        {
+            _verdicts[$"{readiness.ProviderId}/{readiness.ModelId}"] = readiness;
+            return Task.CompletedTask;
+        }
+    }
 
     private static ProviderProfile CreateProvider(string id, bool enabled) => new()
     {
@@ -488,6 +620,18 @@ public sealed class ProviderActivationServiceTests
 
     private sealed class FakeGateway : IGatewayService
     {
+        public event Action<string>? LogMessage
+        {
+            add { }
+            remove { }
+        }
+
+        public event Action<string, string>? TurnContinued
+        {
+            add { }
+            remove { }
+        }
+
         private readonly bool _running;
 
         public FakeGateway(bool running)

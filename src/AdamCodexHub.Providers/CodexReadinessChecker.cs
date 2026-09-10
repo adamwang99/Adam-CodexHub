@@ -19,6 +19,11 @@ namespace AdamCodexHub.Providers;
 /// </summary>
 public sealed class CodexReadinessChecker : ICodexReadinessChecker
 {
+    /// <summary>Marks a request as a background probe. The gateway keeps the provider key's health
+    /// accounting for the user's own traffic, so a throttled measurement cannot park the key the
+    /// session is typing through. Must match <c>LocalGatewayService.ProbeHeaderName</c>.</summary>
+    private const string ProbeHeaderName = "x-adam-codexhub-probe";
+
     /// <summary>Per-attempt budget. Slow "Claude 4.7 class" models need room for a first byte.</summary>
     private static readonly TimeSpan AttemptTimeout = TimeSpan.FromSeconds(150);
 
@@ -101,6 +106,7 @@ public sealed class CodexReadinessChecker : ICodexReadinessChecker
                 Content = new StringContent(BuildBody(modelId), Encoding.UTF8, "application/json")
             };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _gateway.LocalToken);
+            request.Headers.TryAddWithoutValidation(ProbeHeaderName, "readiness");
 
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseContentRead, timeout.Token)
@@ -109,13 +115,26 @@ public sealed class CodexReadinessChecker : ICodexReadinessChecker
 
             if (!response.IsSuccessStatusCode)
             {
-                return (false, null, $"HTTP {(int)response.StatusCode} on attempt {attempt}");
+                // Carry a short piece of the provider's own message: it is what tells "this model is
+                // broken" apart from "the key is rate limited", and the second case needs the whole
+                // provider left alone for a while rather than this one model parked.
+                var reason = Flatten(payload);
+                return (false, null, string.IsNullOrEmpty(reason)
+                    ? $"HTTP {(int)response.StatusCode} on attempt {attempt}"
+                    : $"HTTP {(int)response.StatusCode} on attempt {attempt}: {reason}");
             }
 
             var toolCall = HasToolCall(payload);
             return toolCall
                 ? (true, (int)elapsed.ElapsedMilliseconds, null)
                 : (false, (int)elapsed.ElapsedMilliseconds, "HTTP 200 but the model did not call the tool");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The caller's budget ran out, not this attempt's: that is a timeout for the caller to
+            // remember, not a verdict about the model. Reporting it as "not ready" used to park a
+            // working model for the whole 6 h verdict window.
+            throw;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -125,6 +144,19 @@ public sealed class CodexReadinessChecker : ICodexReadinessChecker
         {
             return (false, null, $"{ex.GetType().Name}: {ex.Message}");
         }
+    }
+
+    /// <summary>One line of the provider's own message, capped — enough to classify the failure, never
+    /// a whole HTML page (or anything secret-adjacent) in the log.</summary>
+    private static string? Flatten(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return null;
+        }
+
+        var flat = string.Join(' ', body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return flat.Length <= 140 ? flat : flat[..140];
     }
 
     /// <summary>The minimal Codex turn: one tool, mandatory, plus a user instruction to use it.</summary>

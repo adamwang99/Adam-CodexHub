@@ -1,5 +1,6 @@
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
+using AdamCodexHub.Core.Services;
 
 namespace AdamCodexHub.Codex;
 
@@ -24,6 +25,7 @@ public sealed class ProviderActivationService : IProviderActivationService
     private readonly IGatewayService _gateway;
     private readonly ISessionContinuityService _sessions;
     private readonly CodexThreadModelMigration? _threads;
+    private readonly ICodexReadinessStore? _readiness;
 
     public ProviderActivationService(
         IProviderManager providers,
@@ -31,7 +33,8 @@ public sealed class ProviderActivationService : IProviderActivationService
         ICodexConfigService config,
         IGatewayService gateway,
         ISessionContinuityService sessions,
-        CodexThreadModelMigration? threadMigration = null)
+        CodexThreadModelMigration? threadMigration = null,
+        ICodexReadinessStore? readiness = null)
     {
         _providers = providers;
         _models = models;
@@ -39,7 +42,48 @@ public sealed class ProviderActivationService : IProviderActivationService
         _gateway = gateway;
         _sessions = sessions;
         _threads = threadMigration;   // no instance handed in → nothing is ever rewritten
+        _readiness = readiness;
     }
+
+    /// <summary>
+    /// The models the Codex picker offers right now: enabled with a current verdict, quickest first,
+    /// then whatever <see cref="CodexCatalogPolicy"/> falls back to before a run's first verdict
+    /// exists. The policy is the same rule the gateway serves, so this cannot disagree with what Codex
+    /// lists.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> PublishedModelsAsync(
+        string providerId,
+        CancellationToken cancellationToken = default)
+    {
+        var enabled = (await _models.GetAllAsync(providerId, cancellationToken).ConfigureAwait(false))
+            .Where(m => m.Enabled && m.State == ModelLifecycleState.Enabled)
+            .Select(m => m.RemoteId)
+            .ToArray();
+        if (enabled.Length == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        var verdicts = _readiness is null
+            ? Array.Empty<CodexReadiness>()
+            : (await _readiness.GetAllAsync(providerId, cancellationToken).ConfigureAwait(false)).ToArray();
+        var now = DateTimeOffset.UtcNow;
+        var published = CodexCatalogPolicy.SelectPublished(enabled, verdicts, now);
+        var ready = verdicts
+            .Where(v => v.Ready && v.IsFresh(now) && published.Contains(v.ModelId, StringComparer.Ordinal))
+            .OrderBy(v => v.LatencyMs ?? int.MaxValue)
+            .Select(v => v.ModelId)
+            .ToArray();
+
+        return ready
+            .Concat(published.Where(id => !ready.Contains(id, StringComparer.Ordinal)))
+            .ToArray();
+    }
+
+    public async Task<string?> PreferredDesktopModelAsync(
+        string providerId,
+        CancellationToken cancellationToken = default) =>
+        (await PublishedModelsAsync(providerId, cancellationToken).ConfigureAwait(false)).FirstOrDefault();
 
     public async Task<ProviderActivationResult> ActivateAsync(
         string providerId,
@@ -110,6 +154,24 @@ public sealed class ProviderActivationService : IProviderActivationService
                 $"Model '{model.DisplayName}' must be verified and enabled before activation.");
         }
 
+        // Aim at a model the catalogue actually offers. An enabled model that no current verdict
+        // covers is not in the Codex list at all: Codex reads it as "Custom", and then switches the
+        // session by itself ("Model changed from Custom to claude-opus-4-7 (F)") as soon as the
+        // offered list changes underneath it.
+        var offered = await PublishedModelsAsync(target.Id, cancellationToken);
+        var substitution = string.Empty;
+        if (offered.Count > 0 && !offered.Contains(model.RemoteId, StringComparer.Ordinal))
+        {
+            var replacement = await _models.GetAsync(target.Id, offered[0], cancellationToken);
+            if (replacement is not null)
+            {
+                substitution =
+                    $" {model.DisplayName} is not offered by the catalogue right now, so " +
+                    $"{replacement.DisplayName} was activated instead.";
+                model = replacement;
+            }
+        }
+
         var gatewayWasRunning = _gateway.IsRunning;
         await _gateway.StartAsync(cancellationToken);
 
@@ -142,14 +204,55 @@ public sealed class ProviderActivationService : IProviderActivationService
         }
 
         var movedToProvider = await MigrateThreadsToProviderAsync(target.Id, model.RemoteId, cancellationToken);
-        var providerMessage = plan is null
+        var providerMessage = (plan is null
             ? $"{target.Name} / {model.DisplayName} activated. Set a project path to generate handoff state."
-            : $"{target.Name} / {model.DisplayName} activated with {plan.RecommendedSyncLevel} project sync.";
+            : $"{target.Name} / {model.DisplayName} activated with {plan.RecommendedSyncLevel} project sync.")
+            + substitution;
         return new ProviderActivationResult(
             target,
             model,
             plan,
             providerMessage + ThreadMigrationNote(movedToProvider));
+    }
+
+    /// <summary>
+    /// Repairs the threads the provider that is active right now cannot serve — run at startup as well
+    /// as on every activation. Codex keeps the pinned model per thread, so a hub restart alone used to
+    /// leave the open chats answering "The 'claude-opus-4-8[1M]' model is not supported when using Codex
+    /// with a ChatGPT account." until the user started a new chat.
+    /// </summary>
+    public async Task<int> RepairThreadsForActiveProviderAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var active = await _providers.GetActiveAsync(cancellationToken);
+            if (active is null || active.Adapter == "codex-account")
+            {
+                return MigrateThreadsToAccount();
+            }
+
+            if (!active.Enabled)
+            {
+                return 0;
+            }
+
+            var offered = (await _models.GetAllAsync(active.Id, cancellationToken))
+                .Where(model => model is { Enabled: true, State: ModelLifecycleState.Enabled })
+                .Select(model => model.RemoteId)
+                .ToArray();
+            var current = await _config.GetCurrentModelAsync(cancellationToken);
+            var target = !string.IsNullOrWhiteSpace(current) && offered.Contains(current!)
+                ? current!
+                : offered.FirstOrDefault();
+            return target is null || _threads is null
+                ? 0
+                : _threads.Migrate(offered, target, CodexThreadModelMigration.GatewayProviderId);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Thread repair is a convenience, never a reason to fail a startup.
+            return 0;
+        }
     }
 
     /// <summary>
@@ -167,7 +270,7 @@ public sealed class ProviderActivationService : IProviderActivationService
                 .Where(model => model is { Enabled: true, State: ModelLifecycleState.Enabled })
                 .Select(model => model.RemoteId)
                 .ToArray();
-            return _threads?.Migrate(offered, targetModel) ?? 0;
+            return _threads?.Migrate(offered, targetModel, CodexThreadModelMigration.GatewayProviderId) ?? 0;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -185,7 +288,7 @@ public sealed class ProviderActivationService : IProviderActivationService
         var offered = CodexAccountCatalog.Read(_config.CodexHome);
         var target = PreferredAccountModels.FirstOrDefault(offered.Contains) ??
                      offered.FirstOrDefault(model => model != CodexThreadModelMigration.InternalModelId);
-        return _threads?.Migrate(offered, target) ?? 0;
+        return _threads?.Migrate(offered, target, CodexThreadModelMigration.AccountProviderId) ?? 0;
     }
 
     private static string ThreadMigrationNote(int migrated) =>

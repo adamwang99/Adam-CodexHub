@@ -315,6 +315,7 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Home_ReadyToActivate">Codex Account đã sẵn sàng để kích hoạt.</sys:String>
     <sys:String x:Key="L10n_Home_NotReady">{0} chưa sẵn sàng. Hãy thêm một API key hợp lệ và bật một mô hình đã xác minh trước.</sys:String>
     <sys:String x:Key="L10n_Home_NoEnabledModel">Không có mô hình đã bật cho {0}. Hãy mở Models, quét và bật một mô hình trước.</sys:String>
+    <sys:String x:Key="L10n_Home_RefreshingModels">Đang tự cập nhật danh mục mô hình cho {0}…</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Đã hoàn tất kích hoạt.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Đã kích hoạt {0}.</sys:String>
     <sys:String x:Key="L10n_Home_ContinuationReady">Đã mở chat Codex mới và tự gửi bối cảnh phiên làm việc trước.</sys:String>
@@ -392,6 +393,7 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Callability_Slow">Chậm</sys:String>
     <sys:String x:Key="L10n_Callability_Skip">Bỏ qua</sys:String>
     <sys:String x:Key="L10n_Codex_SessionModel">Codex đang dùng: {0}</sys:String>
+    <sys:String x:Key="L10n_Codex_ServingFallback">Đang chạy lượt này bằng {1} (thay cho {0})</sys:String>
     <sys:String x:Key="L10n_Codex_NoSessionModel">Codex: chưa có phiên</sys:String>
     <sys:String x:Key="L10n_Codex_StatusBar">Codex: {0}</sys:String>
     <sys:String x:Key="L10n_Callability_Column">Độ trễ</sys:String>

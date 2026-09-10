@@ -162,6 +162,18 @@ public sealed class CodexReadinessTests
 
     private sealed class StubGateway : IGatewayService
     {
+        public event Action<string>? LogMessage
+        {
+            add { }
+            remove { }
+        }
+
+        public event Action<string, string>? TurnContinued
+        {
+            add { }
+            remove { }
+        }
+
         public bool IsRunning { get; init; } = true;
         public int Port { get; init; } = 20129;
         public string LocalToken { get; init; } = "test-token";

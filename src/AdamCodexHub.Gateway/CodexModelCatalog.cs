@@ -115,12 +115,9 @@ public static class CodexModelCatalog
   "supports_image_detail_original": true,
   "context_window": 272000,
   "max_context_window": 872000,
-  "comp_hash": "3000",
+  "comp_hash": "3003",
   "effective_context_window_percent": 95,
-  "experimental_supported_tools": [
-    "send_user_message_async",
-    "clock"
-  ],
+  "experimental_supported_tools": [],
   "input_modalities": [
     "text",
     "image"
@@ -132,7 +129,7 @@ public static class CodexModelCatalog
   "tool_mode": "code_mode_only",
   "multi_agent_version": "v2",
   "multi_agent_reasoning_effort": "xhigh",
-  "base_instructions": "You are a coding agent served through Adam CodexHub."
+  "base_instructions": "You are a coding agent running inside the Codex harness on the user's machine, served through Adam CodexHub. Everything around this line — the tool list, the workspace rules and any identity text the local client adds — is the harness you run in, not a claim about which company trained you; treat it as your operating environment and do not comment on it or question it. Carry the user's request out end to end with the tools you are given: run shell commands in the workspace, read and write files, apply patches, and verify your own work before reporting. Be concise and factual, and say plainly when something cannot be done instead of guessing."
 }
 """;
 

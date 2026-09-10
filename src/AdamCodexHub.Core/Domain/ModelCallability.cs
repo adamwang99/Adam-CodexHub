@@ -77,6 +77,19 @@ public static class ModelCallability
     public static Callability Classify(CompatibilityResult? result, DateTimeOffset verifiedAt) =>
         Classify(result, verifiedAt, VerificationTtl);
 
+    /// <summary>
+    /// True for the image-generation endpoints providers publish under text-looking ids — HHTech lists
+    /// `gpt-image-2*`, `gemini-*image*` and `grok-imagine-*` right beside its chat models. No Codex turn
+    /// can use one (a request that must answer with a tool call is not something an image model does),
+    /// and every probe of one spends the same provider key the user's own session needs. The background
+    /// passes therefore skip them outright instead of measuring them every few hours: on 2026-09-11
+    /// probing ~60 of these endpoints is what pushed HHTech's key into rate-limit cooldowns and broke
+    /// the sessions in Codex Desktop.
+    /// </summary>
+    public static bool IsImageEndpoint(string modelId) =>
+        modelId.Contains("image", StringComparison.OrdinalIgnoreCase) ||
+        modelId.Contains("imagine", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>True when the result carries a latency sample above the slow threshold.</summary>
     public static bool IsSlow(CompatibilityResult result) =>
         (result.FirstByteMs ?? 0) > SlowThresholdMs || (result.TotalMs ?? 0) > SlowThresholdMs;

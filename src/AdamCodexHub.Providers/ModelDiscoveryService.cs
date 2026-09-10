@@ -55,19 +55,34 @@ public sealed class ModelDiscoveryService : IModelDiscoveryService
             }
 
             existing.TryGetValue(remote.RemoteId, out var saved);
+
+            // A failed compatibility run used to clear the enable flag as well (state Failed with
+            // enabled 0), so one provider outage silently un-picked every model the user had chosen
+            // — HHTech out of quota took 72 models with it — and only a manual scan put them back.
+            // "Failed and disabled" is that fingerprint (the user's own "off" writes State.Disabled
+            // instead), so the scan restores the choice; the readiness probe re-tests the model and
+            // its state tells the truth again.
+            var wanted = saved is { Enabled: true } or
+            {
+                Enabled: false,
+                State: ModelLifecycleState.Failed,
+                LastVerifiedAt: not null
+            };
+
             var merged = remote with
             {
                 ProviderId = provider.Id,
                 DisplayName = string.IsNullOrWhiteSpace(remote.DisplayName)
                     ? remote.RemoteId
                     : remote.DisplayName,
-                Enabled = saved?.Enabled ?? false,
-                State = saved switch
-                {
-                    { Enabled: true } => ModelLifecycleState.Enabled,
-                    { LastVerifiedAt: not null, CompatibilityScore: > 0 } => ModelLifecycleState.Verified,
-                    _ => ModelLifecycleState.Discovered
-                },
+                Enabled = wanted,
+                State = wanted
+                    ? ModelLifecycleState.Enabled
+                    : saved switch
+                    {
+                        { LastVerifiedAt: not null, CompatibilityScore: > 0 } => ModelLifecycleState.Verified,
+                        _ => ModelLifecycleState.Discovered
+                    },
                 InputModalities = remote.InputModalities.Count > 0
                     ? remote.InputModalities
                     : saved?.InputModalities ?? new[] { "text" },

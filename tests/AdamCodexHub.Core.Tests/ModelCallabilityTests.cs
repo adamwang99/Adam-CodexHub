@@ -10,6 +10,28 @@ namespace AdamCodexHub.Core.Tests;
 /// </summary>
 public sealed class ModelCallabilityTests
 {
+    /// <summary>
+    /// A probe that never reached the provider says nothing about the model. On 2026-09-11 a momentary
+    /// DNS failure for `hhtechapi.com` was stored as a score-0 verdict for every HHTech model, and the
+    /// gateway then answered "not enabled" to the user's whole session.
+    /// </summary>
+    [Theory]
+    [InlineData("Responses API: No such host is known. (hhtechapi.com:443) Chat Completions: No such host is known.")]
+    [InlineData("Timed out after 45 seconds.")]
+    [InlineData("Provider returned HTTP 503 Service Unavailable.")]
+    [InlineData("No connection could be made because the target machine actively refused it. (127.0.0.1:1234)")]
+    [InlineData("API key is rate limited.")]
+    public void ProviderTroubleIsNotAVerdictAboutTheModel(string notes) =>
+        Assert.True(ProviderTrouble.IsNotAMeasurement(notes));
+
+    /// <summary>An answer that really came from the model stays a verdict, good or bad.</summary>
+    [Theory]
+    [InlineData("HTTP 200 but the model did not call the tool.")]
+    [InlineData("The model answered in plain text only.")]
+    [InlineData(null)]
+    public void ARealAnswerAboutTheModelIsAVerdict(string? notes) =>
+        Assert.False(ProviderTrouble.IsNotAMeasurement(notes));
+
     private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
 
     private static CompatibilityResult Result(
@@ -166,13 +188,14 @@ public sealed class ModelCallabilityTests
 
         Assert.Equal(2, refreshed);
         Assert.Equal(2, compatibility.Tested.Count);
-        // Unknown and lowest-score first.
+        // A model with evidence behind it first (the tag the user is waiting on belongs to the models
+        // they can run), then one that was never measured. "skip" is not re-probed at all: it already
+        // proved it cannot serve a request, and the verdict lapses on its own after the 6 h TTL.
+        Assert.Equal("fast", compatibility.Tested[0]);
         Assert.Contains("unknown", compatibility.Tested);
-        Assert.Contains("skip", compatibility.Tested);
-        Assert.DoesNotContain("fast", compatibility.Tested);
+        Assert.DoesNotContain("skip", compatibility.Tested);
         Assert.DoesNotContain("disabled", compatibility.Tested);
         Assert.DoesNotContain("other-provider", compatibility.Tested);
-        Assert.Equal("unknown", compatibility.Tested[0]);
         Assert.Equal(1, service.TickCount);
         Assert.NotNull(service.LastTickAt);
     }

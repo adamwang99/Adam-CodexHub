@@ -48,8 +48,12 @@ public sealed class CodexThreadModelMigrationTests : IDisposable
     }
 
     [Fact]
-    public void LeavesTheDatabaseAloneWhileCodexIsRunning()
+    public void StillRepairsTheThreadWhileCodexIsRunning()
     {
+        // Adam, 2026-09-11: "có tác dụng ngay khi chuyển và tiếp tục làm việc trên chat cũ được ngay,
+        // không cần tạo chat mới." Codex Desktop is running whenever the hub is in use, so refusing to
+        // write while it runs meant a switch never reached the chats that were already open — the thread
+        // kept answering "not supported when using Codex with a ChatGPT account".
         var database = SeedThreads(("stranded", "dsv4"));
 
         var migrated = new CodexThreadModelMigration
@@ -58,8 +62,8 @@ public sealed class CodexThreadModelMigrationTests : IDisposable
             CodexIsRunning = () => true
         }.Migrate(new[] { "gpt-5.6-sol" }, "gpt-5.6-sol");
 
-        Assert.Equal(0, migrated);
-        Assert.Equal("dsv4", ModelOf(database, "stranded"));
+        Assert.Equal(1, migrated);
+        Assert.Equal("gpt-5.6-sol", ModelOf(database, "stranded"));
     }
 
     [Fact]
@@ -121,13 +125,87 @@ public sealed class CodexThreadModelMigrationTests : IDisposable
         Assert.Empty(CodexAccountCatalog.Read(Path.Combine(_home, "not-installed")));
     }
 
+    [Fact]
+    public void MovesThreadsStillPinnedToTheChatGptAccountOntoTheGateway()
+    {
+        // config.toml said adam_codexhub, but the thread Adam was typing in still carried
+        // model_provider "openai" — Codex answered every gateway model with "not supported when
+        // using Codex with a ChatGPT account".
+        var database = SeedThreadsWithProvider(
+            CodexThreadModelMigration.AccountProviderId,
+            ("account-thread", "gpt-6-astra"));
+
+        var migrated = Migration().Migrate(
+            new[] { "claude-5.2", "claude-k3", "deepseek-v4-pro" },
+            "claude-5.2",
+            CodexThreadModelMigration.GatewayProviderId);
+
+        Assert.Equal(1, migrated);
+        Assert.Equal("claude-5.2", ModelOf(database, "account-thread"));
+        Assert.Equal(CodexThreadModelMigration.GatewayProviderId, ProviderOf(database, "account-thread"));
+    }
+
+    [Fact]
+    public void AThreadWhoseModelIsStillOfferedOnlyFollowsTheRoute()
+    {
+        // The model survives the switch, so the hub must not overwrite the choice — but the thread
+        // still has to stop pointing at the source we just left.
+        var database = SeedThreadsWithProvider(
+            CodexThreadModelMigration.AccountProviderId,
+            ("account-thread", "gpt-5.6-sol"));
+
+        var migrated = Migration().Migrate(
+            new[] { "gpt-5.6-sol", "claude-5.2" },
+            "claude-5.2",
+            CodexThreadModelMigration.GatewayProviderId);
+
+        Assert.Equal(1, migrated);
+        Assert.Equal("gpt-5.6-sol", ModelOf(database, "account-thread"));
+        Assert.Equal(CodexThreadModelMigration.GatewayProviderId, ProviderOf(database, "account-thread"));
+    }
+
+    [Fact]
+    public void SwitchingBackToTheAccountPutsStrandedThreadsBackOnOpenAi()
+    {
+        var database = SeedThreads(("gateway-thread", "claude-5.2"));
+
+        var migrated = Migration().Migrate(
+            new[] { "gpt-5.6-sol", CodexThreadModelMigration.InternalModelId },
+            "gpt-5.6-sol",
+            CodexThreadModelMigration.AccountProviderId);
+
+        Assert.Equal(1, migrated);
+        Assert.Equal("gpt-5.6-sol", ModelOf(database, "gateway-thread"));
+        Assert.Equal(CodexThreadModelMigration.AccountProviderId, ProviderOf(database, "gateway-thread"));
+    }
+
+    [Fact]
+    public void TheProviderIsLeftAloneWhenTheCallerDoesNotNameOne()
+    {
+        var database = SeedThreadsWithProvider(
+            CodexThreadModelMigration.AccountProviderId,
+            ("account-thread", "gpt-6-astra"));
+
+        var migrated = Migration().Migrate(new[] { "gpt-6-astra", "claude-5.2" }, "claude-5.2");
+
+        Assert.Equal(0, migrated);
+        Assert.Equal("gpt-6-astra", ModelOf(database, "account-thread"));
+        Assert.Equal(CodexThreadModelMigration.AccountProviderId, ProviderOf(database, "account-thread"));
+    }
+
     private CodexThreadModelMigration Migration() => new()
     {
         CodexHome = _home,
         CodexIsRunning = () => false
     };
 
-    private string SeedThreads(params (string Id, string Model)[] threads)
+    private string SeedThreads(params (string Id, string Model)[] threads) =>
+        SeedThreads(CodexThreadModelMigration.GatewayProviderId, threads);
+
+    private string SeedThreadsWithProvider(string provider, params (string Id, string Model)[] threads) =>
+        SeedThreads(provider, threads);
+
+    private string SeedThreads(string provider, params (string Id, string Model)[] threads)
     {
         var database = Path.Combine(_home, "state_5.sqlite");
         using var connection = new SqliteConnection($"Data Source={database}");
@@ -136,7 +214,7 @@ public sealed class CodexThreadModelMigrationTests : IDisposable
         using (var create = connection.CreateCommand())
         {
             create.CommandText =
-                "CREATE TABLE threads (id TEXT PRIMARY KEY, model TEXT, model_provider TEXT)";
+                "CREATE TABLE IF NOT EXISTS threads (id TEXT PRIMARY KEY, model TEXT, model_provider TEXT)";
             create.ExecuteNonQuery();
         }
 
@@ -144,13 +222,24 @@ public sealed class CodexThreadModelMigrationTests : IDisposable
         {
             using var insert = connection.CreateCommand();
             insert.CommandText =
-                "INSERT INTO threads (id, model, model_provider) VALUES ($id, $model, 'adam_codexhub')";
+                "INSERT INTO threads (id, model, model_provider) VALUES ($id, $model, $provider)";
             insert.Parameters.AddWithValue("$id", id);
             insert.Parameters.AddWithValue("$model", model);
+            insert.Parameters.AddWithValue("$provider", provider);
             insert.ExecuteNonQuery();
         }
 
         return database;
+    }
+
+    private static string? ProviderOf(string database, string id)
+    {
+        using var connection = new SqliteConnection($"Data Source={database}");
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT model_provider FROM threads WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id);
+        return command.ExecuteScalar() as string;
     }
 
     private static string? ModelOf(string database, string id)

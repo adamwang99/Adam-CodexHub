@@ -11,13 +11,23 @@ namespace AdamCodexHub.Codex;
 /// This moves those threads onto the model of the provider that is about to be used.
 ///
 /// Safety: the file belongs to Codex, so we only write while Codex is closed, we replace nothing but
-/// the model column (transcripts are untouched), and every failure path returns 0 instead of
-/// throwing. A return value of 0 means "nothing was changed".
+/// the model and provider columns (transcripts are untouched), and every failure path returns 0
+/// instead of throwing. A return value of 0 means "nothing was changed".
 /// </summary>
 public sealed class CodexThreadModelMigration
 {
     /// <summary>Codex's internal reviewer model — every provider can run it, so never rewrite it.</summary>
     public const string InternalModelId = "codex-auto-review";
+
+    /// <summary>
+    /// The provider id the gateway overlay writes into <c>model_provider</c>; threads have to carry
+    /// the same one or Codex keeps sending them to the ChatGPT account. Must stay in step with
+    /// <c>CodexConfigService</c>'s managed provider id.
+    /// </summary>
+    public const string GatewayProviderId = "adam_codexhub";
+
+    /// <summary>Provider id Codex stores for threads that run on the ChatGPT account.</summary>
+    public const string AccountProviderId = "openai";
 
     /// <summary>
     /// Codex home to repair — the hub passes its configured `CODEX_HOME`. Left empty this helper
@@ -29,14 +39,23 @@ public sealed class CodexThreadModelMigration
     /// <summary>Test seam; the real process probe is used when this is null.</summary>
     public Func<bool>? CodexIsRunning { get; init; }
 
+    /// <summary>Optional log sink — how the activation note and the app log learn what happened.</summary>
+    public Action<string>? Log { get; init; }
+
     public string StateDatabasePath => Path.Combine(CodexHome ?? string.Empty, "state_5.sqlite");
 
     /// <summary>
     /// Rewrites every thread whose model is not in <paramref name="offeredModels"/> to
-    /// <paramref name="targetModel"/>. Returns the number of threads moved (0 = nothing to do, or
-    /// the write was skipped).
+    /// <paramref name="targetModel"/>. When <paramref name="targetProvider"/> is given, threads
+    /// whose <c>model_provider</c> does not match it are rewritten too — a thread that is still
+    /// pinned to the account refuses every gateway model ("not supported when using Codex with a
+    /// ChatGPT account") even though the config points at the gateway. Returns the number of
+    /// threads moved (0 = nothing to do, or the write was skipped).
     /// </summary>
-    public int Migrate(IReadOnlyCollection<string>? offeredModels, string? targetModel)
+    public int Migrate(
+        IReadOnlyCollection<string>? offeredModels,
+        string? targetModel,
+        string? targetProvider = null)
     {
         if (string.IsNullOrWhiteSpace(CodexHome) || offeredModels is null || string.IsNullOrWhiteSpace(targetModel))
         {
@@ -48,15 +67,25 @@ public sealed class CodexThreadModelMigration
             .Select(model => model.Trim())
             .ToHashSet(StringComparer.Ordinal);
         offered.Add(InternalModelId);
-        if (!offered.Contains(targetModel) || (CodexIsRunning ?? IsCodexRunning)())
+        if (!offered.Contains(targetModel))
         {
             return 0;
         }
+
+        // A switch has to take effect on the chats that are already open — that is the whole point of
+        // the repair (Adam, 2026-09-11: "có tác dụng ngay khi chuyển và tiếp tục làm việc trên chat cũ
+        // được ngay, không cần tạo chat mới"). Codex Desktop runs whenever the hub is in use, so a
+        // refusal to write while it runs would mean this never happens at all; the write is attempted
+        // instead (WAL plus a busy timeout, one backup per session) and simply reports 0 if the file
+        // will not take it.
+        var running = (CodexIsRunning ?? IsCodexRunning)();
 
         if (!File.Exists(StateDatabasePath))
         {
             return 0;
         }
+
+        BackupOnce();
 
         try
         {
@@ -68,18 +97,34 @@ public sealed class CodexThreadModelMigration
                 Pooling = false
             }.ToString());
             connection.Open();
+            using (var pragma = connection.CreateCommand())
+            {
+                // Codex holds the same file open; wait rather than fail at the first lock.
+                pragma.CommandText = "PRAGMA busy_timeout = 4000;";
+                pragma.ExecuteNonQuery();
+            }
 
-            var stranded = new List<string>();
+            var stranded = new List<(string Id, bool Model, bool Route)>();
             using (var select = connection.CreateCommand())
             {
                 select.CommandText =
-                    "SELECT id, model FROM threads WHERE model IS NOT NULL AND TRIM(model) <> ''";
+                    "SELECT id, model, model_provider FROM threads WHERE model IS NOT NULL AND TRIM(model) <> ''";
                 using var reader = select.ExecuteReader();
                 while (reader.Read())
                 {
-                    if (!offered.Contains(reader.GetString(1).Trim()))
+                    var pinned = reader.GetString(1).Trim();
+                    var provider = reader.IsDBNull(2) ? string.Empty : reader.GetString(2).Trim();
+                    // Two ways a thread ends up unusable after a switch: the model it is pinned to is
+                    // not offered by the provider we just moved to, or the thread is still routed at
+                    // the previous source. Codex keeps model_provider per thread, so a thread left on
+                    // the account answers a gateway switch with "not supported when using Codex with a
+                    // ChatGPT account" whatever config.toml says.
+                    var wrongModel = !offered.Contains(pinned);
+                    var wrongRoute = targetProvider is not null &&
+                        !string.Equals(provider, targetProvider, StringComparison.Ordinal);
+                    if (wrongModel || wrongRoute)
                     {
-                        stranded.Add(reader.GetString(0));
+                        stranded.Add((reader.GetString(0), wrongModel, wrongRoute));
                     }
                 }
             }
@@ -89,15 +134,29 @@ public sealed class CodexThreadModelMigration
                 return 0;
             }
 
+            Log?.Invoke(
+                (running ? "Codex is running — " : string.Empty) +
+                $"repairing {stranded.Count} thread(s) pinned to a model this provider does not offer " +
+                $"(→ {targetModel}).");
+
             using var transaction = connection.BeginTransaction();
             using var update = connection.CreateCommand();
             update.Transaction = transaction;
-            update.CommandText = "UPDATE threads SET model = $model WHERE id = $id";
+            update.CommandText =
+                "UPDATE threads SET " +
+                "model = CASE WHEN $fixModel = 1 THEN $model ELSE model END, " +
+                "model_provider = CASE WHEN $fixRoute = 1 THEN $provider ELSE model_provider END " +
+                "WHERE id = $id";
             update.Parameters.Add("$model", SqliteType.Text).Value = targetModel;
+            update.Parameters.Add("$provider", SqliteType.Text).Value = targetProvider ?? string.Empty;
+            var fixModel = update.Parameters.Add("$fixModel", SqliteType.Integer);
+            var fixRoute = update.Parameters.Add("$fixRoute", SqliteType.Integer);
             var id = update.Parameters.Add("$id", SqliteType.Text);
-            foreach (var threadId in stranded)
+            foreach (var (threadId, model, route) in stranded)
             {
                 id.Value = threadId;
+                fixModel.Value = model ? 1 : 0;
+                fixRoute.Value = route ? 1 : 0;
                 update.ExecuteNonQuery();
             }
 
@@ -116,6 +175,32 @@ public sealed class CodexThreadModelMigration
         catch (UnauthorizedAccessException)
         {
             return 0;
+        }
+    }
+
+    /// <summary>
+    /// One backup per six hours before the first write of a session: Codex's state database is the
+    /// user's data, and this repair is a convenience, not a licence to lose anything.
+    /// </summary>
+    private void BackupOnce()
+    {
+        try
+        {
+            var target = StateDatabasePath + ".hub-backup";
+            if (File.Exists(target) &&
+                File.GetLastWriteTimeUtc(target) > DateTime.UtcNow.AddHours(-6))
+            {
+                return;
+            }
+
+            File.Copy(StateDatabasePath, target, overwrite: true);
+        }
+        catch (IOException)
+        {
+            // No backup, no write problem: the restore path is a convenience, not a gate.
+        }
+        catch (UnauthorizedAccessException)
+        {
         }
     }
 

@@ -315,6 +315,7 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Home_ReadyToActivate">Codex Account is ready to activate.</sys:String>
     <sys:String x:Key="L10n_Home_NotReady">{0} is not ready. Add a valid API key and enable a verified model first.</sys:String>
     <sys:String x:Key="L10n_Home_NoEnabledModel">No enabled model for {0}. Open Models, scan and enable one first.</sys:String>
+    <sys:String x:Key="L10n_Home_RefreshingModels">Refreshing the model catalogue for {0}…</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Activation completed.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Activated {0}.</sys:String>
     <sys:String x:Key="L10n_Home_ContinuationReady">Opened a fresh Codex chat and sent the previous session's context.</sys:String>
@@ -392,6 +393,7 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Callability_Slow">Slow</sys:String>
     <sys:String x:Key="L10n_Callability_Skip">Skip</sys:String>
     <sys:String x:Key="L10n_Codex_SessionModel">Codex is using: {0}</sys:String>
+    <sys:String x:Key="L10n_Codex_ServingFallback">Continuing this turn with {1} (instead of {0})</sys:String>
     <sys:String x:Key="L10n_Codex_NoSessionModel">Codex: no session yet</sys:String>
     <sys:String x:Key="L10n_Codex_StatusBar">Codex: {0}</sys:String>
     <sys:String x:Key="L10n_Callability_Column">Latency</sys:String>

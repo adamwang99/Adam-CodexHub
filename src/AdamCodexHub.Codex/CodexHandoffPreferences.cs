@@ -11,11 +11,16 @@ namespace AdamCodexHub.Codex;
 /// </summary>
 public sealed record CodexHandoffPreferences
 {
-    /// <summary>Both switches on: the hub opens a fresh chat and sends the recap.</summary>
+    /// <summary>
+    /// Fresh chat off, recap on: activating a provider must reach the chat that is already open.
+    /// Codex pins a model per thread and the hub re-points those pins at the new provider's model, so
+    /// the user carries on where they were (Adam, 2026-09-11: "tiếp tục làm việc trên chat cũ được
+    /// ngay không cần tạo chat mới").
+    /// </summary>
     public static CodexHandoffPreferences Default { get; } = new();
 
-    /// <summary>Open a brand new Codex chat when a provider card is activated (Ctrl+N).</summary>
-    public bool OpenFreshChat { get; init; } = true;
+    /// <summary>Open a brand new Codex chat when a provider card is activated (Ctrl+N). Off by default.</summary>
+    public bool OpenFreshChat { get; init; }
 
     /// <summary>Submit the recap instead of leaving it in the composer for the user to send.</summary>
     public bool AutoSubmit { get; init; } = true;

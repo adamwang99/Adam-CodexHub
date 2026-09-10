@@ -130,6 +130,8 @@ public sealed class HomeViewModel : PageViewModel
     private readonly IKeyPoolService _keys;
     private readonly IGatewayService _gateway;
     private readonly IProviderActivationService _activation;
+    private readonly IModelCatalogRefreshService? _catalog;
+    private readonly IProviderRecoveryService? _recovery;
     private readonly ICodexConfigService _config;
     private readonly IAppSettingsService _settings;
     private readonly IUserDialogService _dialogs;
@@ -146,7 +148,9 @@ public sealed class HomeViewModel : PageViewModel
         ICodexConfigService config,
         IAppSettingsService settings,
         IUserDialogService dialogs,
-        AppPaths paths)
+        AppPaths paths,
+        IModelCatalogRefreshService? catalog = null,
+        IProviderRecoveryService? recovery = null)
         : base("L10n_Home_Title", "L10n_Home_Subtitle")
     {
         _providers = providers;
@@ -154,6 +158,17 @@ public sealed class HomeViewModel : PageViewModel
         _keys = keys;
         _gateway = gateway;
         _activation = activation;
+        _catalog = catalog;   // no refresher handed in → the activation guard just reports as before
+        _recovery = recovery; // no reviver handed in → a parked key stays parked until a manual test
+
+        if (_catalog is not null)
+        {
+            // The background sweep can turn a card from "Warning / API key needed" into READY (or the
+            // other way) while the Home page is open — a provider that ran out of quota and came back
+            // is exactly that. Rebuild the cards when it does, so the screen stops advertising a
+            // provider the user can already activate.
+            _catalog.ProviderRefreshed += OnProviderRefreshed;
+        }
         _config = config;
         _settings = settings;
         _dialogs = dialogs;
@@ -174,6 +189,31 @@ public sealed class HomeViewModel : PageViewModel
 
             UpdateShowAllTooltip();
         };
+    }
+
+    /// <summary>
+    /// A catalogue sweep finished for a provider, so the cards on screen may be out of date. Raised
+    /// from a background thread; with no UI around (unit tests) there is nothing to rebuild.
+    /// </summary>
+    private void OnProviderRefreshed(object? sender, string providerId)
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        _ = dispatcher.InvokeAsync(async () =>
+        {
+            try
+            {
+                await RefreshCoreAsync();
+            }
+            catch (Exception exception)
+            {
+                StatusMessage = exception.Message;
+            }
+        });
     }
 
     /// <summary>Tooltip of the "Show all providers" switch, depends on the current toggle state.</summary>
@@ -374,6 +414,13 @@ public sealed class HomeViewModel : PageViewModel
         SelectedModelRemoteId = modelRemoteId;
     }
 
+    /// <summary>The models a provider may actually be activated with: enabled, and in a state that
+    /// says the last probe worked.</summary>
+    private async Task<List<ModelDescriptor>> EnabledModelsAsync(string providerId) =>
+        (await _models.GetAllAsync(providerId))
+            .Where(model => model.Enabled && model.State == ModelLifecycleState.Enabled)
+            .ToList();
+
     private async Task ActivateAsync()
     {
         try
@@ -385,17 +432,42 @@ public sealed class HomeViewModel : PageViewModel
 
             if (!SelectedCard.IsValid)
             {
-                StatusMessage = SelectedCard.Id == "codex-account"
-                    ? L10n.T("L10n_Home_ReadyToActivate")
-                    : L10n.F("L10n_Home_NotReady", SelectedCard.Name);
-                return;
+                if (SelectedCard.Id != "codex-account" && _recovery is not null)
+                {
+                    // The card is not activatable because a provider-side problem parked its key
+                    // (quota out, key rejected) — and that state is only ever cleared by a manual
+                    // "Test" in Setup. The user just asked to use this provider, so spend one probe
+                    // here and re-read its card before refusing.
+                    StatusMessage = L10n.F("L10n_Home_RefreshingModels", SelectedCard.Name);
+                    if (await _recovery.TryRecoverAsync(SelectedCard.Id, force: true))
+                    {
+                        await RefreshCoreAsync();
+                    }
+                }
+
+                if (!SelectedCard.IsValid)
+                {
+                    StatusMessage = SelectedCard.Id == "codex-account"
+                        ? L10n.T("L10n_Home_ReadyToActivate")
+                        : L10n.F("L10n_Home_NotReady", SelectedCard.Name);
+                    return;
+                }
             }
 
             if (SelectedCard.Id != "codex-account")
             {
-                var enabledModels = (await _models.GetAllAsync(SelectedCard.Id))
-                    .Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)
-                    .ToList();
+                var enabledModels = await EnabledModelsAsync(SelectedCard.Id);
+                if (enabledModels.Count == 0 && _catalog is not null)
+                {
+                    // The stored catalogue is only as fresh as the last scan, so a provider that came
+                    // back from a quota outage still looks like it has nothing to offer. Re-read that
+                    // one provider here rather than telling the user to go to Setup → "Scan models":
+                    // the whole point of the sweep is that they never have to walk there for this.
+                    StatusMessage = L10n.F("L10n_Home_RefreshingModels", SelectedCard.Name);
+                    await _catalog.RefreshProviderAsync(SelectedCard.Id);
+                    enabledModels = await EnabledModelsAsync(SelectedCard.Id);
+                }
+
                 if (enabledModels.Count == 0)
                 {
                     StatusMessage = L10n.F("L10n_Home_NoEnabledModel", SelectedCard.Name);

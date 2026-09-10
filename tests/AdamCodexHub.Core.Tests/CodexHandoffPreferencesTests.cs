@@ -17,13 +17,14 @@ public sealed class CodexHandoffPreferencesTests : IDisposable
         Guid.NewGuid().ToString("N"));
 
     [Fact]
-    public void DefaultsOpenAFreshChatAndSubmitTheRecap()
+    public void DefaultsToTheChatThatIsAlreadyOpen()
     {
+        // A switch has to reach the open chat, so no fresh chat is opened by default (Adam, 2026-09-11).
         var preferences = CodexHandoffPreferences.Load(_root);
 
-        Assert.True(preferences.OpenFreshChat);
+        Assert.False(preferences.OpenFreshChat);
         Assert.True(preferences.AutoSubmit);
-        Assert.True(preferences.ShouldSubmitRecap);
+        Assert.False(preferences.ShouldSubmitRecap);
     }
 
     [Fact]
@@ -55,7 +56,7 @@ public sealed class CodexHandoffPreferencesTests : IDisposable
 
         var preferences = CodexHandoffPreferences.Load(_root);
 
-        Assert.True(preferences.OpenFreshChat);
+        Assert.False(preferences.OpenFreshChat);
         Assert.True(preferences.AutoSubmit);
     }
 

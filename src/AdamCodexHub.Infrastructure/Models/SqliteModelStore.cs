@@ -194,10 +194,13 @@ VALUES
 
         var update = connection.CreateCommand();
         update.Transaction = transaction;
+        // The enable flag is the USER's choice and outlives a failing test run: a provider that is
+        // merely out of quota must not silently un-pick every model that was enabled. A model that
+        // does not work is kept out of the pickers by its state (Failed), not by erasing the flag —
+        // so when the provider recovers, one scan (or the background catalogue sweep) puts it back.
         update.CommandText = @"
 UPDATE models
 SET state = $state,
-    enabled = CASE WHEN $score <= 0 THEN 0 ELSE enabled END,
     last_verified_at = $verifiedAt,
     compatibility_score = $score
 WHERE provider_id = $providerId AND remote_id = $modelId;

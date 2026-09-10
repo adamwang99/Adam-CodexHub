@@ -1,6 +1,7 @@
 using AdamCodexHub.Codex;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
+using AdamCodexHub.Core.Services;
 using AdamCodexHub.Gateway;
 using AdamCodexHub.Infrastructure.Database;
 using AdamCodexHub.Infrastructure.Keys;
@@ -35,6 +36,10 @@ using var host = Host.CreateDefaultBuilder(args)
             sp.GetRequiredService<OpenAiCompatibleAdapter>());
         services.AddSingleton<IProviderAdapter, OpenAiResponsesAdapter>();
         services.AddSingleton<IModelDiscoveryService, ModelDiscoveryService>();
+        services.AddSingleton<IProviderRecoveryService, ProviderRecoveryService>();
+        services.AddSingleton<ModelCatalogRefreshService>();
+        services.AddSingleton<IModelCatalogRefreshService>(
+            sp => sp.GetRequiredService<ModelCatalogRefreshService>());
         services.AddSingleton<ICompatibilityService, CompatibilityService>();
         services.AddSingleton<IKeyTestService, KeyTestService>();
 
@@ -47,6 +52,7 @@ using var host = Host.CreateDefaultBuilder(args)
             // Codex's own database, resolved from the hub's configured CODEX_HOME — never guessed.
             CodexHome = sp.GetRequiredService<ICodexConfigService>().CodexHome,
         });
+        services.AddSingleton<ICodexSessionModelReader>(_ => new CodexSessionModelReader());
         services.AddSingleton<IGatewayService, LocalGatewayService>();
     })
     .Build();

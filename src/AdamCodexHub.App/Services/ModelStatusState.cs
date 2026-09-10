@@ -40,6 +40,8 @@ public sealed class ModelStatusState : INotifyPropertyChanged
     private string? _lastRefreshedProviderName;
     private CodexSessionModel? _codexSession;
 
+    private string? _servingFallbackText;
+
     private ModelStatusState()
     {
         _showAllModels = UiSettingsStore.LoadShowAllModels(AppDataRoot());
@@ -116,6 +118,30 @@ public sealed class ModelStatusState : INotifyPropertyChanged
 
     /// <summary>Publishes the model Codex is on (called by the session-model watcher).</summary>
     public void ApplyCodexSession(CodexSessionModel? session) => CodexSession = session;
+
+    /// <summary>
+    /// Which model is actually serving the turn Codex is running, when that is not the model Codex asked
+    /// for. Codex keeps an unfinished turn on the model it started with, so the hub continues that turn on
+    /// the model the user picked; this is the line that says so, in the tray and the tooltip.
+    /// </summary>
+    public string? ServingFallbackText
+    {
+        get => _servingFallbackText;
+        set
+        {
+            if (string.Equals(_servingFallbackText, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _servingFallbackText = value;
+            Raise(nameof(ServingFallbackText));
+            Raise(nameof(HasServingFallback));
+        }
+    }
+
+    /// <summary>True when a turn is being served by a different model than Codex asked for.</summary>
+    public bool HasServingFallback => !string.IsNullOrEmpty(_servingFallbackText);
 
     /// <summary>
     /// "Show all" for the model pickers: when false (default) the tray submenu hides models

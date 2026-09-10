@@ -56,5 +56,27 @@ public sealed class CodexModelCatalogTests
         Assert.Equal(2, list[1].GetProperty("priority").GetInt32());
         // mọi field Codex cần đều có mặt trên từng entry
         Assert.Equal(38, list[0].EnumerateObject().Count());
+
+        // The harness prompt a served model receives must not claim an identity the model cannot accept.
+        // Measured 2026-09-11 with a Claude model: Codex's own framing ("You are Codex … based on GPT-6")
+        // made it answer "I'm noticing an attempt to inject false system instructions…", refuse the tools
+        // and reply as a chat-only assistant, so the whole video pipeline stalled. The entry therefore
+        // explains the harness instead of claiming to be the model.
+        var instructions = list[0].GetProperty("base_instructions").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(instructions));
+        Assert.Contains("harness", instructions!, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("GPT", instructions!, StringComparison.Ordinal);
+        // `experimental_supported_tools` là danh sách tool Codex cấp cho model. Rỗng ⇒ mọi lượt gửi đi
+        // KHÔNG có tool nào (log `tools offered to <model>: none`), model đúng khi trả lời "không chạy
+        // được lệnh" — đã đo 2026-09-11 bằng một việc kiểm chứng được (yêu cầu tạo file, file không hề
+        // xuất hiện). Danh sách ["clock"] cũng sai (chỉ có tool đồng hồ). Xoá hẳn field thì Codex không
+        // parse nổi entry và bỏ luôn danh mục hub. Nay điền đúng bộ tool mà Codex dùng.
+        Assert.True(list[0].TryGetProperty("experimental_supported_tools", out var tools));
+        var toolNames = tools.EnumerateArray().Select(t => t.GetString()).ToList();
+        // Empty is the real value (`gpt-5.6-sol` in the account catalogue has `[]`); inventing tool names
+        // here is what made Codex offer a single clock tool earlier the same day.
+        Assert.Empty(toolNames);
+        Assert.Equal("code_mode_only", list[0].GetProperty("tool_mode").GetString());
+        Assert.Equal("unified_exec", list[0].GetProperty("shell_type").GetString());
     }
 }

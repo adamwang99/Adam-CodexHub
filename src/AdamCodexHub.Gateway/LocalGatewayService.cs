@@ -1,8 +1,10 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
 using AdamCodexHub.Core.Services;
@@ -16,6 +18,44 @@ namespace AdamCodexHub.Gateway;
 public sealed class LocalGatewayService : IGatewayService
 {
     private const long MaxRequestBodySize = 10 * 1024 * 1024;
+
+    /// <summary>Header the background probes send, so the gateway can tell them apart from the user's
+    /// own Codex traffic and keep the key's health accounting to the latter.</summary>
+    public const string ProbeHeaderName = "x-adam-codexhub-probe";
+
+    /// <summary>
+    /// How often the same model may be refused inside <see cref="StuckTurnWindow"/> before the hub says
+    /// so. Codex retries a failed turn with the model that turn started on, so picking a new model in
+    /// the UI does not change the requests: on 2026-09-11 thirteen requests in sixteen seconds all
+    /// asked for `gpt-5.6-luna` while the picker, the thread and the config all said
+    /// `claude-opus-4-7[1M]`, and the user reasonably concluded the model he picked was not connected.
+    /// </summary>
+    private const int StuckTurnRefusals = 3;
+
+    private static readonly TimeSpan StuckTurnWindow = TimeSpan.FromSeconds(60);
+
+    private readonly ConcurrentDictionary<string, (DateTimeOffset First, DateTimeOffset Last, int Count)> _refusals = new(StringComparer.Ordinal);
+
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _fallbackLogged = new(StringComparer.Ordinal);
+
+    /// <summary>Reads the model the user picked in Codex — the picker only records it in Codex's own state.</summary>
+    private readonly ICodexSessionModelReader _sessionModels;
+
+    private static bool IsProbeRequest(HttpContext context) =>
+        context.Request.Headers.ContainsKey(ProbeHeaderName);
+
+    /// <summary>User-Agent, flattened and capped: it is what tells a Codex app-server request apart
+    /// from a plain curl when reading the log.</summary>
+    private static string Trim(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "(none)";
+        }
+
+        var flat = string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return flat.Length <= 80 ? flat : flat[..80];
+    }
     private const int MaxKeyAttempts = 3;
     private const int DefaultGatewayPort = 20129;
     private readonly IProviderManager _providers;
@@ -32,16 +72,37 @@ public sealed class LocalGatewayService : IGatewayService
         IKeyPoolService keys,
         IModelStore models,
         ICodexReadinessStore readiness,
+        ICodexSessionModelReader sessionModels,
         IHttpClientFactory httpClientFactory)
     {
         _providers = providers;
         _keys = keys;
         _models = models;
         _readiness = readiness;
+        _sessionModels = sessionModels;
         _httpClientFactory = httpClientFactory;
     }
 
     public bool IsRunning => _app is not null;
+
+    public event Action<string>? LogMessage;
+
+    /// <inheritdoc cref="IGatewayService.TurnContinued"/>
+    public event Action<string, string>? TurnContinued;
+
+    /// <summary>One line per interesting request; logging must never break the gateway.</summary>
+    private void Log(string message)
+    {
+        try
+        {
+            LogMessage?.Invoke(message);
+        }
+        catch
+        {
+            // ignored on purpose
+        }
+    }
+
     public int Port { get; private set; }
     public string LocalToken => _localToken;
 
@@ -186,7 +247,12 @@ public sealed class LocalGatewayService : IGatewayService
         var publishable = CodexCatalogPolicy
             .SelectPublished(enabled.Select(x => x.RemoteId), verdicts, DateTimeOffset.UtcNow)
             .ToHashSet(StringComparer.Ordinal);
-        var published = enabled.Where(x => publishable.Contains(x.RemoteId)).ToArray();
+        // Image endpoints are never usable by a Codex turn (the probe skips them for the same reason),
+        // so they are not offered: they would sit in the picker forever marked "(U)" — never measured,
+        // never usable.
+        var published = enabled
+            .Where(x => publishable.Contains(x.RemoteId) && !ModelCallability.IsImageEndpoint(x.RemoteId))
+            .ToArray();
 
         // Index the picker the way the user reads it: the model that answers fastest first, the
         // slow ones below it, then whatever has no fresh measurement. Codex cannot colour its
@@ -228,10 +294,22 @@ public sealed class LocalGatewayService : IGatewayService
         // các client khác vẫn nhận shape OpenAI {"object":"list","data":[…]}.
         if (context.Request.Query.ContainsKey("client_version"))
         {
+            // The one line that answers "is Codex reading our catalogue or its own?": this request is
+            // Codex asking us for the model list, and this is what we hand back.
+            Log(
+                $"models: Codex asked (client_version={context.Request.Query["client_version"]}, " +
+                $"ua=\"{Trim(context.Request.Headers.UserAgent)}\") -> {ordered.Length} model(s)");
             context.Response.ContentType = "application/json; charset=utf-8";
             await context.Response.WriteAsync(
                 CodexModelCatalog.Build(ordered.Select(x => (
-                    x.RemoteId, x.DisplayName, x.ContextWindow, speed[x.RemoteId].Tag))),
+                    x.RemoteId,
+                    // The model name as stored. A provider prefix was tried while the catalogue was
+                    // being dropped for a missing field (2026-09-11) and Codex fell back to its own
+                    // account list; with the entry parseable again the picker shows this catalogue
+                    // alone, so the name stays clean and the (F/N/S/U/X) tag does the distinguishing.
+                    x.DisplayName,
+                    x.ContextWindow,
+                    speed[x.RemoteId].Tag))),
                 context.RequestAborted);
             return;
         }
@@ -363,20 +441,143 @@ public sealed class LocalGatewayService : IGatewayService
                 break;
             }
 
+            var isProbe = IsProbeRequest(context);
             attempts++;
             if (selection is not null)
             {
                 excluded.Add(selection.Key.Id);
             }
 
+            // Codex re-runs an unfinished turn with the model that turn started on, and it keeps retrying
+            // whatever answer comes back — a non-retryable 400 does not stop it either (measured: fifteen
+            // requests in twenty seconds after a restart). The only way out of that loop is for the
+            // request to succeed, so a model the provider keeps refusing is served for that turn by the
+            // fastest model of the same provider that is known to answer. Never silent: a log line and
+            // `x-adam-codexhub-fallback` carry what actually served it.
+            var outgoing = body;
+            if (!isProbe)
+            {
+                // The model the user picked in Codex is honoured as soon as the model Codex is asking for
+                // has been refused once: switching models is how they carry on with the work, and Codex
+                // keeps the old model on an unfinished turn. The generic "some model that answers"
+                // fallback below waits for a run of refusals, because serving a single hiccup with a
+                // different model is not what the user asked for.
+                string? fallback = null;
+                if (RefusedRecently(provider.Id, modelId))
+                {
+                    fallback = await PickedModelAsync(provider.Id, modelId, context.RequestAborted);
+                }
+
+                if (fallback is null && RefusingRepeatedly(provider.Id, modelId))
+                {
+                    fallback = await PickFallbackAsync(provider.Id, modelId, context.RequestAborted);
+                }
+
+                if (fallback is not null)
+                {
+                    outgoing = SwapModel(body, fallback);
+                    context.Response.Headers["x-adam-codexhub-fallback"] = fallback;
+                    TurnContinued?.Invoke(modelId, fallback);
+                    if (!_fallbackLogged.TryGetValue($"{provider.Id}/{modelId}", out var seen) ||
+                        DateTimeOffset.UtcNow - seen > TimeSpan.FromMinutes(1))
+                    {
+                        _fallbackLogged[$"{provider.Id}/{modelId}"] = DateTimeOffset.UtcNow;
+                        Log(
+                            $"{modelId} is not answering — continuing this turn with {fallback}. The turn is " +
+                            "pinned to the model it started on; the next turn runs on the model picked in " +
+                            "Codex.");
+                    }
+                }
+            }
+
+            // The client's identity prompt ("You are Codex, an agent based on GPT-6 …") is replaced with an
+            // honest harness framing: a model from another family reads the claim as a false system prompt
+            // and refuses the tools it is offered (measured 2026-09-11 with a served Claude model). This runs
+            // after the fallback swap so a continued turn is neutralised too.
+            outgoing = HarnessPrompt.Neutralise(outgoing, out var replacedClaim);
+            if (replacedClaim is not null &&
+                (!_fallbackLogged.TryGetValue($"harness/{provider.Id}", out var claimedAt) ||
+                 DateTimeOffset.UtcNow - claimedAt > TimeSpan.FromMinutes(5)))
+            {
+                _fallbackLogged[$"harness/{provider.Id}"] = DateTimeOffset.UtcNow;
+                Log(
+                    $"replaced the client's identity prompt before forwarding (was \"{replacedClaim}\"). Models " +
+                    "from another family read that claim as a false system prompt and stop using the tools.");
+            }
+
+            // What the model is actually offered decides whether it can work: a session whose request carries
+            // no tool list answers "I have no exec here" no matter which model serves it. Logged once per
+            // model every five minutes so a checkout of the tool surface is one grep away.
+            if (!_fallbackLogged.TryGetValue($"tools/{modelId}", out var toolsAt) ||
+                DateTimeOffset.UtcNow - toolsAt > TimeSpan.FromMinutes(5))
+            {
+                _fallbackLogged[$"tools/{modelId}"] = DateTimeOffset.UtcNow;
+                Log($"tools offered to {modelId}: {DescribeTools(outgoing)}");
+            }
+
             using var upstreamRequest = CreateUpstreamRequest(
                 context.Request,
                 provider,
                 endpoint,
-                body,
+                outgoing,
                 selection?.Secret);
 
             HttpResponseMessage upstreamResponse;
+            // A background probe is a request we make to measure models, not the user's own traffic.
+            // When a probe hits a 429/5xx the provider is throttling *us*, and parking the key for it
+            // takes the key away from the session the user is actually typing in — that is how a
+            // working Codex session turned into "Reconnecting … No usable API key remains".
+            if (!isProbe)
+            {
+                // The background passes must know the user is here: they spend the same key.
+                UserTrafficClock.Record(provider.Id);
+            }
+
+            // Every turn is logged with the model Codex actually asked for. "I picked claude but it
+            // answered about luna" cannot be settled from the outside: the log tells apart Codex
+            // sending luna from the provider answering about a different model than we sent.
+            async Task RelayLoggedAsync(HttpResponseMessage response)
+            {
+                var status = (int)response.StatusCode;
+                if (status >= 400)
+                {
+                    // Safe to buffer: an error body is a small JSON document, and its text is the clue
+                    // ("Model \"gpt-5.6-luna\" đang hết người khả dụng …").
+                    var text = await response.Content.ReadAsStringAsync(context.RequestAborted);
+                    Log($"responses: model={modelId} provider={provider.Id} -> {status} {Snippet(text)}");
+
+                    // A model the provider keeps refusing, asked again and again, is Codex retrying an
+                    // unfinished turn. A 503/429 invites another retry, so the loop never ends and the
+                    // model the user picked never gets a turn. When there is a model to continue with,
+                    // the next attempt is served by it (see the fallback above) and the client is not
+                    // poisoned with a non-retryable answer; when there is nothing to continue with, say
+                    // so plainly instead of looping.
+                    if (!isProbe && status is 429 or 503 && NoteRefusal(provider.Id, modelId))
+                    {
+                        var alternative = await PickFallbackAsync(provider.Id, modelId, context.RequestAborted);
+                        if (alternative is null)
+                        {
+                            await WriteErrorAsync(
+                                context,
+                                StatusCodes.Status400BadRequest,
+                                $"Model '{modelId}' cannot serve this request right now — {Snippet(text)} " +
+                                "Codex has already retried this turn several times; pick another model, or start " +
+                                "a new chat, to continue.",
+                                "adam_codexhub_model_unavailable");
+                            return;
+                        }
+                    }
+
+                    response.Content = new StringContent(text, Encoding.UTF8, "application/json");
+                }
+                else
+                {
+                    Log($"responses: model={modelId} provider={provider.Id} -> {status}");
+                }
+
+                await RelayResponseAsync(context, response);
+            }
+
             try
             {
                 var client = _httpClientFactory.CreateClient(nameof(LocalGatewayService));
@@ -394,12 +595,17 @@ public sealed class LocalGatewayService : IGatewayService
                 lastFailure = ex.Message;
                 if (selection is not null)
                 {
-                    await _keys.MarkFailureAsync(
-                        selection.Key.Id,
-                        KeyHealth.Offline,
-                        "Provider connection failed.",
-                        TimeSpan.FromSeconds(10),
-                        context.RequestAborted);
+                    if (!isProbe)
+                    {
+                        // Same reasoning as a 5xx: the connection failed, the key did not.
+                        await WriteErrorAsync(
+                            context,
+                            StatusCodes.Status502BadGateway,
+                            $"Provider '{provider.Name}' could not be reached: {ex.Message}",
+                            "adam_codexhub_provider_unreachable");
+                        return;
+                    }
+
                     continue;
                 }
 
@@ -408,16 +614,54 @@ public sealed class LocalGatewayService : IGatewayService
 
             using (upstreamResponse)
             {
+                // A 5xx (or a dropped connection) is the provider or the network being busy, not the
+                // key being wrong. Marking the key for it took the provider out of service for the
+                // rest of the session: one 503 from upstream became "No usable API key remains" and
+                // Codex showed "Reconnecting …" while it switched models (2026-09-11). Hand the
+                // upstream answer straight to the client instead — Codex retries a 503 by itself —
+                // and leave the key's health to the answers that really are about the key (401/402/429).
+                if ((int)upstreamResponse.StatusCode >= 500)
+                {
+                    await RelayLoggedAsync(upstreamResponse);
+                    return;
+                }
+
                 if (selection is not null && IsRetryable(upstreamResponse.StatusCode))
                 {
                     var failure = MapFailure(upstreamResponse);
                     lastFailure = failure.Message;
-                    await _keys.MarkFailureAsync(
-                        selection.Key.Id,
-                        failure.Health,
-                        failure.Message,
-                        failure.Cooldown,
-                        context.RequestAborted);
+
+                    // A 429 is the provider asking for less traffic, not a broken key. Fail over to
+                    // another key when there is one; when this is the last key, hand the 429 back —
+                    // Codex backs off and retries — and park only the probes, which are the requests
+                    // nobody is waiting for. Marking the last key is what left the session reading
+                    // "No usable API key remains" (2026-09-11).
+                    if (upstreamResponse.StatusCode == HttpStatusCode.TooManyRequests)
+                    {
+                        ProviderBackoff.Park(provider.Id, failure.Cooldown ?? TimeSpan.FromSeconds(60));
+
+                        var tried = new HashSet<string>(StringComparer.Ordinal) { selection.Key.Id };
+                        var alternative = await _keys.GetActiveAsync(
+                            provider.Id,
+                            tried,
+                            context.RequestAborted);
+                        if (alternative is null || isProbe)
+                        {
+                            await RelayLoggedAsync(upstreamResponse);
+                            return;
+                        }
+                    }
+
+                    if (!isProbe)
+                    {
+                        await _keys.MarkFailureAsync(
+                            selection.Key.Id,
+                            failure.Health,
+                            failure.Message,
+                            failure.Cooldown,
+                            context.RequestAborted);
+                    }
+
                     continue;
                 }
 
@@ -426,7 +670,7 @@ public sealed class LocalGatewayService : IGatewayService
                     await _keys.MarkSuccessAsync(selection.Key.Id, context.RequestAborted);
                 }
 
-                await RelayResponseAsync(context, upstreamResponse);
+                await RelayLoggedAsync(upstreamResponse);
                 return;
             }
         }
@@ -658,6 +902,221 @@ public sealed class LocalGatewayService : IGatewayService
         return duration.HasValue
             ? TimeSpan.FromSeconds(Math.Clamp(duration.Value.TotalSeconds, 1, 600))
             : null;
+    }
+
+    /// <summary>First line of a provider error body, short enough for one log line.</summary>
+    private static string Snippet(string text)
+    {
+        var single = text.Replace('\r', ' ').Replace('\n', ' ').Trim();
+        return single.Length <= 240 ? single : single[..240] + "…";
+    }
+
+    /// <summary>
+    /// Says out loud when one model is refused again and again: that is Codex retrying an unfinished
+    /// turn with the model that turn started on, and changing models in the UI does not touch it.
+    /// Returns true the moment the count crosses the line, for the log line and the last-resort answer.
+    /// </summary>
+    private bool NoteRefusal(string providerId, string modelId)
+    {
+        var key = $"{providerId}/{modelId}";
+        var now = DateTimeOffset.UtcNow;
+        var state = _refusals.AddOrUpdate(
+            key,
+            _ => (now, now, 1),
+            (_, previous) => now - previous.Last > StuckTurnWindow
+                ? (now, now, 1)
+                : (previous.First, now, previous.Count + 1));
+
+        if (state.Count != StuckTurnRefusals)
+        {
+            return false;
+        }
+
+        Log(
+            $"{modelId} has been refused {state.Count}× in {StuckTurnWindow.TotalSeconds:0}s: Codex is " +
+            "retrying a turn that started on this model, so picking another model in the UI will not " +
+            "change these requests.");
+        return true;
+    }
+
+    /// <summary>True while a model is being refused over and over, i.e. Codex is stuck on one turn.</summary>
+    private bool RefusingRepeatedly(string providerId, string modelId) =>
+        RefusedRecently(providerId, modelId, StuckTurnRefusals);
+
+    /// <summary>True when the model was refused at least <paramref name="atLeast"/> times inside the window.</summary>
+    private bool RefusedRecently(string providerId, string modelId, int atLeast = 1) =>
+        _refusals.TryGetValue($"{providerId}/{modelId}", out var state) &&
+        state.Count >= atLeast &&
+        DateTimeOffset.UtcNow - state.Last <= StuckTurnWindow;
+
+    /// <summary>
+    /// The model to serve a stuck turn with: first the model the user just picked in Codex — switching
+    /// models means carrying on with the work, and Codex keeps the old model for an unfinished turn — then
+    /// the same provider's fastest model that is known to answer. Null when there is nothing to use.
+    /// </summary>
+    private async Task<string?> PickFallbackAsync(
+        string providerId,
+        string refusedModelId,
+        CancellationToken cancellationToken)
+    {
+        var picked = await PickedModelAsync(providerId, refusedModelId, cancellationToken);
+        if (picked is not null)
+        {
+            return picked;
+        }
+
+        var models = await _models.GetAllAsync(providerId, cancellationToken);
+        string? best = null;
+        var bestTotal = int.MaxValue;
+
+        foreach (var model in models)
+        {
+            if (!model.Enabled || model.State != ModelLifecycleState.Enabled)
+            {
+                continue;
+            }
+
+            if (string.Equals(model.RemoteId, refusedModelId, StringComparison.OrdinalIgnoreCase) ||
+                ModelCallability.IsImageEndpoint(model.RemoteId))
+            {
+                continue;
+            }
+
+            CompatibilityResult? latest;
+            try
+            {
+                latest = await _models.GetLatestCompatibilityAsync(providerId, model.RemoteId, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (latest is null || latest.Score <= 0)
+            {
+                continue;
+            }
+
+            var total = latest.TotalMs ?? int.MaxValue;
+            if (total < bestTotal)
+            {
+                bestTotal = total;
+                best = model.RemoteId;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>Same request body with a different model — only ever used for a stuck turn.</summary>
+    private static byte[] SwapModel(byte[] body, string model)
+    {
+        if (JsonNode.Parse(body) is not JsonObject json)
+        {
+            return body;
+        }
+
+        json["model"] = model;
+        return Encoding.UTF8.GetBytes(json.ToJsonString());
+    }
+
+    /// <summary>The tool names a request offers the model — "none" means the session cannot work.</summary>
+    private static string DescribeTools(byte[] body)
+    {
+        try
+        {
+            using var json = JsonDocument.Parse(body);
+            if (!json.RootElement.TryGetProperty("tools", out var tools) ||
+                tools.ValueKind != JsonValueKind.Array)
+            {
+                return "none";
+            }
+
+            var names = new List<string>();
+            foreach (var tool in tools.EnumerateArray())
+            {
+                if (tool.ValueKind != JsonValueKind.Object)
+                {
+                    continue;
+                }
+
+                var name = tool.TryGetProperty("name", out var named) && named.ValueKind == JsonValueKind.String
+                    ? named.GetString()
+                    : tool.TryGetProperty("type", out var typed) && typed.ValueKind == JsonValueKind.String
+                        ? typed.GetString()
+                        : null;
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    names.Add(name);
+                }
+            }
+
+            return names.Count == 0 ? "none" : $"{names.Count} ({string.Join(", ", names.Take(12))})";
+        }
+        catch (JsonException)
+        {
+            return "unreadable";
+        }
+    }
+
+    /// <summary>
+    /// The model the user picked inside Codex, when it is a real alternative: enabled, not an image
+    /// endpoint, not the model being refused, and known to answer. Codex's picker never writes
+    /// <c>config.toml</c>, so this value comes from Codex's own session state — and it is what makes
+    /// "I switched the model, carry on with my work" actually happen for a turn Codex pinned to the old
+    /// model.
+    /// </summary>
+    private async Task<string?> PickedModelAsync(
+        string providerId,
+        string refusedModelId,
+        CancellationToken cancellationToken)
+    {
+        string? picked;
+        try
+        {
+            picked = _sessionModels.Read()?.ModelId;
+        }
+        catch
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(picked) ||
+            string.Equals(picked, refusedModelId, StringComparison.OrdinalIgnoreCase) ||
+            ModelCallability.IsImageEndpoint(picked))
+        {
+            return null;
+        }
+
+        try
+        {
+            var model = await _models.GetAsync(providerId, picked, cancellationToken);
+            if (model is not { Enabled: true } || model.State != ModelLifecycleState.Enabled)
+            {
+                return null;
+            }
+
+            var latest = await _models.GetLatestCompatibilityAsync(providerId, picked, cancellationToken);
+            if (latest is null || latest.Score <= 0)
+            {
+                return null;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return null;
+        }
+
+        Log($"using the model picked in Codex ({picked}) for this turn instead of {refusedModelId}");
+        return picked;
     }
 
     private static async Task RelayResponseAsync(

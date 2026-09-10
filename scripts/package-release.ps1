@@ -232,6 +232,23 @@ $installerCandidates = @(
     "${env:ProgramFiles}\Inno Setup 6\ISCC.exe",
     "${env:LOCALAPPDATA}\Programs\Inno Setup 6\ISCC.exe"
 )
+
+# Inno Setup remembers where it landed, and that is not always the default folder (a toolchain or
+# portable install keeps it wherever the user put it — measured 2026-09-11: winget reported 6.7.3 as
+# installed while all three default paths were empty, so the installer was silently skipped and the
+# release came out ZIP-only). Whatever the uninstall entry names is a real ISCC.
+foreach ($key in @(
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1',
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1')) {
+    if (Test-Path $key) {
+        $installed = (Get-ItemProperty -LiteralPath $key -ErrorAction SilentlyContinue).InstallLocation
+        if (-not [string]::IsNullOrWhiteSpace($installed)) {
+            $installerCandidates += (Join-Path $installed 'ISCC.exe')
+        }
+    }
+}
+
 $iscc = $installerCandidates |
     Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path -LiteralPath $_) } |
     Select-Object -First 1

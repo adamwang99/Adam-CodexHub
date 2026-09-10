@@ -174,6 +174,13 @@ public partial class App : Application
                 // Background refresher for the active provider's models (latency-aware badges).
                 services.AddSingleton<ModelAutoPingService>();
 
+                // Codex-readiness probe: keeps the model list Codex Desktop and the tray are
+                // offered limited to models that really answer a Codex request (tools +
+                // tool_choice = required), re-checked every 5 minutes.
+                services.AddSingleton<ICodexReadinessStore, SqliteCodexReadinessStore>();
+                services.AddSingleton<ICodexReadinessChecker, CodexReadinessChecker>();
+                services.AddSingleton<CodexReadinessPingService>();
+
                 services.AddSingleton<ICodexConfigService, CodexConfigService>();
                 services.AddSingleton<IProjectStateService, FileProjectStateService>();
                 services.AddSingleton<ISessionContinuityService, SessionContinuityService>();
@@ -330,6 +337,27 @@ public partial class App : Application
                 LogStartup("Model auto-ping could not start", pingEx);
             }
 
+            // Codex readiness: every 5 minutes re-run the Codex-shaped probe (instructions + tools)
+            // for the active provider's models that are not ready yet, so Codex Desktop's picker
+            // and the tray menu only ever offer models that work — and pick up a model the moment
+            // it starts working.
+            try
+            {
+                var readiness = _host.Services.GetRequiredService<CodexReadinessPingService>();
+                readiness.LogMessage += (message, readinessException) =>
+                    LogStartup($"Codex readiness: {message}", readinessException);
+                readiness.TickCompleted += tick => Dispatcher.InvokeAsync(
+                    () => ModelStatusState.Current.ApplyReadiness(tick));
+                readiness.Start();
+                LogStartup(
+                    $"Codex readiness probe started (every {readiness.Interval.TotalMinutes:0} min, " +
+                    $"up to {readiness.BatchSize} model(s) per tick)");
+            }
+            catch (Exception readinessEx)
+            {
+                LogStartup("Codex readiness probe could not start", readinessEx);
+            }
+
             // Keys left degraded (Offline / rate-limited / stale Unknown) by transient gateway
             // failures in the previous session get one quiet probe each, so an installed and
             // previously-tested provider is usable right away — no manual re-test required.
@@ -475,6 +503,23 @@ public partial class App : Application
                 return;
             }
 
+            // Same rule as the Codex catalog the gateway serves: only models that answered a real
+            // Codex-shaped request are offered here, so picking one from the tray cannot land on a
+            // model Codex will fail on. The 5-minute readiness tick adds a model back the moment it
+            // starts working.
+            var readinessStore = _host.Services.GetRequiredService<ICodexReadinessStore>();
+            var verdicts = readinessStore.GetAllAsync(active.Id).GetAwaiter().GetResult();
+            var publishable = CodexCatalogPolicy
+                .SelectPublished(enabled.Select(m => m.RemoteId), verdicts, DateTimeOffset.UtcNow)
+                .ToHashSet(StringComparer.Ordinal);
+            enabled = enabled.Where(m => publishable.Contains(m.RemoteId)).ToList();
+            status.ApplyReadiness(new CodexReadinessTick(
+                active.Id,
+                active.Name,
+                DateTimeOffset.UtcNow,
+                verdicts,
+                Array.Empty<string>()));
+
             // Mark the model Codex is currently using (the live gateway overlay model in
             // ~/.codex/config.toml) so the user can tell which one is active and switch away.
             var currentModelId = configService.GetCurrentModelAsync().GetAwaiter().GetResult();
@@ -529,7 +574,22 @@ public partial class App : Application
                 CheckOnClick = true,
                 ToolTipText = L10n.T("L10n_Tray_PauseAutoPingTip")
             };
-            pauseItem.CheckedChanged += (_, _) => autoPing.IsPaused = pauseItem.Checked;
+            pauseItem.CheckedChanged += (_, _) =>
+            {
+                autoPing.IsPaused = pauseItem.Checked;
+                // The Codex-readiness probe talks to the provider too, so one switch pauses both.
+                if (_host is not null)
+                {
+                    try
+                    {
+                        _host.Services.GetRequiredService<CodexReadinessPingService>().IsPaused = pauseItem.Checked;
+                    }
+                    catch (Exception ex)
+                    {
+                        LogStartup("Codex readiness pause toggle failed", ex);
+                    }
+                }
+            };
             modelMenu.DropDownItems.Add(pauseItem);
 
             var showAllItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_ShowAllModels"))

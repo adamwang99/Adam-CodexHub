@@ -396,6 +396,7 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Callability_Tooltip">{0} · kiểm tra lúc {1} · byte đầu {2}s · tổng {3}s</sys:String>
     <sys:String x:Key="L10n_Callability_TooltipNoLatency">{0} · kiểm tra lúc {1}</sys:String>
     <sys:String x:Key="L10n_Callability_TooltipNoResult">{0} · chưa kiểm tra</sys:String>
+    <sys:String x:Key="L10n_Callability_CodexNotReady">lỗi trong Codex</sys:String>
     <sys:String x:Key="L10n_Callability_LastChecked">Tự kiểm tra lúc {0} · {1}</sys:String>
     <sys:String x:Key="L10n_Callability_NeverChecked">Chưa tự kiểm tra lần nào</sys:String>
     <sys:String x:Key="L10n_Tray_ShowAllModels">Hiện cả model bỏ qua</sys:String>

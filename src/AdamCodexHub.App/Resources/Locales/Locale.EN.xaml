@@ -396,6 +396,7 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Callability_Tooltip">{0} · checked at {1} · first byte {2}s · total {3}s</sys:String>
     <sys:String x:Key="L10n_Callability_TooltipNoLatency">{0} · checked at {1}</sys:String>
     <sys:String x:Key="L10n_Callability_TooltipNoResult">{0} · not checked yet</sys:String>
+    <sys:String x:Key="L10n_Callability_CodexNotReady">fails in Codex</sys:String>
     <sys:String x:Key="L10n_Callability_LastChecked">Last auto-check {0} · {1}</sys:String>
     <sys:String x:Key="L10n_Callability_NeverChecked">No background check yet</sys:String>
     <sys:String x:Key="L10n_Tray_ShowAllModels">Show skipped models</sys:String>

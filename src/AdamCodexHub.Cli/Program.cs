@@ -25,6 +25,7 @@ using var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IKeyPoolService, SqliteKeyPoolService>();
         services.AddSingleton<IProviderStore, SqliteProviderStore>();
         services.AddSingleton<IModelStore, SqliteModelStore>();
+        services.AddSingleton<ICodexReadinessStore, SqliteCodexReadinessStore>();
 
         services.AddSingleton<IProviderRegistryService, EmbeddedProviderRegistryService>();
         services.AddSingleton<IProviderManager, ProviderManager>();

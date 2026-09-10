@@ -107,6 +107,7 @@ public sealed class LocalGatewayServiceTests
                 providerManager,
                 KeyPool,
                 models,
+                new SqliteCodexReadinessStore(_database),
                 new FakeHttpClientFactory(Handler));
             ProviderManager = providerManager;
             Models = models;

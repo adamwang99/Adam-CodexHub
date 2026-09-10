@@ -125,6 +125,16 @@ CREATE TABLE IF NOT EXISTS provider_keys (
 
 CREATE INDEX IF NOT EXISTS idx_provider_keys_provider_priority
 ON provider_keys(provider_id, priority);
+
+CREATE TABLE IF NOT EXISTS codex_readiness (
+    provider_id TEXT NOT NULL,
+    model_id TEXT NOT NULL,
+    ready INTEGER NOT NULL,
+    checked_at TEXT NOT NULL,
+    latency_ms INTEGER NULL,
+    detail TEXT NULL,
+    PRIMARY KEY (provider_id, model_id)
+);
 ";
 
             await command.ExecuteNonQueryAsync(cancellationToken);

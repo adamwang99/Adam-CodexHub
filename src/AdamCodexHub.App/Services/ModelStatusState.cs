@@ -31,7 +31,9 @@ public sealed class ModelStatusState : INotifyPropertyChanged
     public static ModelStatusState Current { get; } = new();
 
     private readonly Dictionary<string, ModelStatusSnapshot> _status = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, CodexReadiness> _readiness = new(StringComparer.Ordinal);
     private readonly object _sync = new();
+    private readonly object _readinessGate = new();
     private int _revision;
     private bool _showAllModels;
     private DateTimeOffset? _lastRefreshedAt;
@@ -192,8 +194,68 @@ public sealed class ModelStatusState : INotifyPropertyChanged
     }
 
     /// <summary>Localized one-liner for a badge tooltip:
-    /// "Kiểm tra lúc 14:52 · byte đầu 37,7s".</summary>
+    /// "Kiểm tra lúc 14:52 · byte đầu 37,7s", plus the Codex-readiness note when the model has a
+    /// verdict from the Codex-shaped probe.</summary>
     public string DescribeTooltip(string? providerId, string? modelId)
+    {
+        var text = DescribeCallabilityTooltip(providerId, modelId);
+        var note = DescribeCodexReadiness(providerId, modelId);
+        return string.IsNullOrEmpty(note) ? text : $"{text} · {note}";
+    }
+
+    /// <summary>Stores the latest Codex-readiness tick so tooltips and the tray can show why a
+    /// model is not offered to Codex.</summary>
+    public void ApplyReadiness(CodexReadinessTick tick)
+    {
+        ArgumentNullException.ThrowIfNull(tick);
+        lock (_readinessGate)
+        {
+            foreach (var verdict in tick.Verdicts)
+            {
+                _readiness[ReadinessKey(verdict.ProviderId, verdict.ModelId)] = verdict;
+            }
+        }
+    }
+
+    /// <summary>Latest Codex-readiness verdict for a model, or null when it was never probed.</summary>
+    public CodexReadiness? GetCodexReadiness(string? providerId, string? modelId)
+    {
+        if (string.IsNullOrWhiteSpace(providerId) || string.IsNullOrWhiteSpace(modelId))
+        {
+            return null;
+        }
+
+        lock (_readinessGate)
+        {
+            return _readiness.TryGetValue(ReadinessKey(providerId, modelId), out var verdict)
+                ? verdict
+                : null;
+        }
+    }
+
+    /// <summary>True when the model answered the last Codex-shaped probe (fresh verdict, tool call).</summary>
+    public bool IsCodexReady(string? providerId, string? modelId)
+    {
+        var verdict = GetCodexReadiness(providerId, modelId);
+        return verdict is null || (verdict.Ready && verdict.IsFresh(DateTimeOffset.UtcNow));
+    }
+
+    /// <summary>Why Codex will not offer this model — empty when it works.</summary>
+    private string DescribeCodexReadiness(string? providerId, string? modelId)
+    {
+        var verdict = GetCodexReadiness(providerId, modelId);
+        if (verdict is null || (verdict.Ready && verdict.IsFresh(DateTimeOffset.UtcNow)))
+        {
+            return string.Empty;
+        }
+
+        var detail = string.IsNullOrWhiteSpace(verdict.Detail) ? string.Empty : $" ({verdict.Detail})";
+        return L10n.T("L10n_Callability_CodexNotReady") + detail;
+    }
+
+    private static string ReadinessKey(string providerId, string modelId) => $"{providerId}\u001f{modelId}";
+
+    private string DescribeCallabilityTooltip(string? providerId, string? modelId)
     {
         var callability = GetCallability(providerId, modelId);
         var label = L10n.T(LabelKey(callability));

@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
+using AdamCodexHub.Core.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -20,6 +21,7 @@ public sealed class LocalGatewayService : IGatewayService
     private readonly IProviderManager _providers;
     private readonly IKeyPoolService _keys;
     private readonly IModelStore _models;
+    private readonly ICodexReadinessStore _readiness;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
     private string _localToken = string.Empty;
@@ -29,11 +31,13 @@ public sealed class LocalGatewayService : IGatewayService
         IProviderManager providers,
         IKeyPoolService keys,
         IModelStore models,
+        ICodexReadinessStore readiness,
         IHttpClientFactory httpClientFactory)
     {
         _providers = providers;
         _keys = keys;
         _models = models;
+        _readiness = readiness;
         _httpClientFactory = httpClientFactory;
     }
 
@@ -172,13 +176,25 @@ public sealed class LocalGatewayService : IGatewayService
             .Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)
             .ToArray();
 
+        // Codex may only be offered models that proved they can serve a real Codex request
+        // (tools + tool_choice = required) — providers like HHTech list OpenAI/Codex entries
+        // renamed with a "claude-" prefix that fail that request. A model that stops answering
+        // drops out within one 5-minute readiness tick and returns as soon as it works again;
+        // until the first verdicts exist the full enabled set is published so a fresh install
+        // never sees an empty picker (CodexCatalogPolicy.SelectPublished).
+        var verdicts = await _readiness.GetAllAsync(provider.Id, context.RequestAborted);
+        var publishable = CodexCatalogPolicy
+            .SelectPublished(enabled.Select(x => x.RemoteId), verdicts, DateTimeOffset.UtcNow)
+            .ToHashSet(StringComparer.Ordinal);
+        var published = enabled.Where(x => publishable.Contains(x.RemoteId)).ToArray();
+
         // Codex (app-server) gọi /v1/models?client_version=… và cần shape {"models":[{slug,…}]};
         // các client khác vẫn nhận shape OpenAI {"object":"list","data":[…]}.
         if (context.Request.Query.ContainsKey("client_version"))
         {
             context.Response.ContentType = "application/json; charset=utf-8";
             await context.Response.WriteAsync(
-                CodexModelCatalog.Build(enabled.Select(x => (x.RemoteId, x.DisplayName, x.ContextWindow))),
+                CodexModelCatalog.Build(published.Select(x => (x.RemoteId, x.DisplayName, x.ContextWindow))),
                 context.RequestAborted);
             return;
         }
@@ -187,7 +203,7 @@ public sealed class LocalGatewayService : IGatewayService
             new
             {
                 @object = "list",
-                data = enabled
+                data = published
                     .Select(x => new
                     {
                         id = x.RemoteId,

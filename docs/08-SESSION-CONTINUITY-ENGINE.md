@@ -207,6 +207,7 @@ chat picks up the hub overlay in `~/.codex/config.toml`.
 Flow, triggered when a provider card is activated in the hub:
 
 ```text
+read switches        codex-handoff.json -> fresh chat? auto-submit? (defaults: both on)
 resolve project      ~/.codex/.codex-global-state.json -> selected-project -> local-projects[rootPaths[0]]
                      fallback: newest session cwd, then most recently used project folder
 read previous chat   newest rollout-*.jsonl whose session_meta.cwd == project (last 6 turns)
@@ -220,12 +221,24 @@ confirm              a rollout-*.jsonl that did not exist before appears for thi
 ```
 
 Code: `CodexDesktopState` (`SnapshotRollouts` / `FindNewRolloutSince`), `CodexHandoffBuilder`
-(`Build`, `RolloutContainsUserMessage`), `CodexDesktopBridge` (`BuildMarker`, submit loop) in
-`AdamCodexHub.Codex`, driven from `PageViewModels.LaunchCodexAsync(..., startFreshChat: true)`.
+(`Build`, `RolloutContainsUserMessage`), `CodexDesktopBridge` (`BuildMarker`, submit loop) and
+`CodexHandoffPreferences` (the two switches) in `AdamCodexHub.Codex`, driven from
+`PageViewModels.LaunchCodexAsync(..., startFreshChat: true)` and surfaced by `SettingsViewModel`.
 
 The recap is sent automatically — a hand-off that waits for the user to press Enter is not a
 hand-off. The status line only claims the send when the session log proves it; otherwise it says the
 recap is waiting in the composer. A failed hand-off still never breaks activation (logged).
+
+Both steps are switchable under **Settings → NỐI PHIÊN LÀM VIỆC (CODEX)** (`CodexHandoffPreferences`,
+persisted at `%LOCALAPPDATA%\AdamCodexHub\data\codex-handoff.json`; a missing file means both on):
+
+| Switch | Switched off |
+| --- | --- |
+| Open a fresh Codex chat when a provider is activated | activation only swaps the overlay; Codex is left alone |
+| Send the session recap automatically | the recap is pasted into the new chat and waits for Enter |
+
+Auto-submit follows the fresh-chat switch: with the hand-off off there is no new chat to submit into,
+so the second switch is greyed out on screen and ignored in code (`ShouldSubmitRecap`).
 
 Details worth keeping (each one cost a debugging round):
 

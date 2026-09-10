@@ -127,6 +127,12 @@
     <sys:String x:Key="L10n_Set_Failover">Automatic key failover</sys:String>
     <sys:String x:Key="L10n_Set_AutoRefresh">Auto-refresh stale sessions</sys:String>
     <sys:String x:Key="L10n_Set_Logging">Prompt and response logging</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffSection">CODEX SESSION HAND-OFF</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChat">Open a fresh Codex chat when a provider is activated</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChatHint">Codex binds every chat to the provider it was created with, so an old chat keeps billing the previous account. Off: activating a provider leaves Codex untouched.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffAutoSend">Send the session recap automatically</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffAutoSendHint">Off: the recap is pasted into the new chat and waits for you to press Enter.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffSaved">Hand-off preference saved.</sys:String>
     <sys:String x:Key="L10n_MT_Title">Model Compatibility Test</sys:String>
     <sys:String x:Key="L10n_MT_Probes">PROBES</sys:String>
     <sys:String x:Key="L10n_MT_Result">RESULT</sys:String>

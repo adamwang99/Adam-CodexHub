@@ -1372,6 +1372,30 @@
                         <CheckBox Content="{DynamicResource L10n_Set_Logging}" Foreground="{DynamicResource BrushMuted}" IsChecked="False" IsEnabled="False" />
                     </StackPanel>
                 </Border>
+
+                <!-- Working switches (persisted): the session hand-off that runs on provider activation. -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,20,0,0">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource L10n_Set_HandoffSection}" Style="{StaticResource SectionLabel}" />
+                        <CheckBox Content="{DynamicResource L10n_Set_HandoffOpenChat}"
+                                  IsChecked="{Binding OpenFreshChat, Mode=TwoWay}"
+                                  Margin="0,16,0,4" />
+                        <TextBlock Text="{DynamicResource L10n_Set_HandoffOpenChatHint}"
+                                   Foreground="{DynamicResource BrushMuted}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="21,0,0,10" />
+                        <CheckBox Content="{DynamicResource L10n_Set_HandoffAutoSend}"
+                                  IsChecked="{Binding AutoSubmitRecap, Mode=TwoWay}"
+                                  IsEnabled="{Binding CanAutoSubmitRecap, Mode=OneWay}"
+                                  Margin="0,0,0,4" />
+                        <TextBlock Text="{DynamicResource L10n_Set_HandoffAutoSendHint}"
+                                   Foreground="{DynamicResource BrushMuted}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="21,0,0,0" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </DataTemplate>
     </Window.Resources>

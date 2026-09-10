@@ -605,6 +605,8 @@ public sealed class HomeViewModel : PageViewModel
     private void StartContinuationChat(CodexWorkspace workspace)
     {
         var vietnamese = L10n.IsVietnamese;
+        // Read the switches per hand-off: Settings can flip them between two activations.
+        var preferences = CodexHandoffPreferences.Load();
         _ = Task.Run(async () =>
         {
             try
@@ -621,26 +623,29 @@ public sealed class HomeViewModel : PageViewModel
                 var knownRollouts = CodexDesktopState.SnapshotRollouts();
                 var marker = CodexDesktopBridge.BuildMarker(handoff);
 
+                bool VerifyDelivered()
+                {
+                    var fresh = CodexDesktopState.FindNewRolloutSince(knownRollouts, workspace.RootPath);
+                    if (fresh is null)
+                    {
+                        return false;
+                    }
+
+                    // A new chat exists, so the recap was submitted; the marker proves the new
+                    // chat is the one carrying it.
+                    return marker.Length == 0 ||
+                           CodexHandoffBuilder.RolloutContainsUserMessage(fresh, marker);
+                }
+
+                var submitRecap = preferences.ShouldSubmitRecap;
                 var delivered = await CodexDesktopBridge.StartFreshChatAsync(
                     handoff,
                     TimeSpan.FromSeconds(45),
                     cancellationToken: default,
-                    autoSubmit: true,
-                    verifySent: () =>
-                    {
-                        var fresh = CodexDesktopState.FindNewRolloutSince(knownRollouts, workspace.RootPath);
-                        if (fresh is null)
-                        {
-                            return false;
-                        }
+                    autoSubmit: submitRecap,
+                    verifySent: submitRecap ? VerifyDelivered : null);
 
-                        // A new chat exists, so the recap was submitted; the marker proves the new
-                        // chat is the one carrying it.
-                        return marker.Length == 0 ||
-                               CodexHandoffBuilder.RolloutContainsUserMessage(fresh, marker);
-                    });
-
-                if (!delivered)
+                if (submitRecap && !delivered)
                 {
                     LogError(
                         "Continuation chat: recap left in the composer, Enter could not be confirmed",
@@ -649,8 +654,9 @@ public sealed class HomeViewModel : PageViewModel
 
                 if (Application.Current is { } app)
                 {
-                    // Only claim the send landed when the session log confirmed it.
-                    var statusKey = delivered
+                    // "Sent" is only claimed for a confirmed submit; a recap parked in the composer
+                    // (auto-send off, or the send never landed) leaves the reader to press Enter.
+                    var statusKey = submitRecap && delivered
                         ? "L10n_Home_ContinuationReady"
                         : "L10n_Home_ContinuationManual";
                     await app.Dispatcher.InvokeAsync(
@@ -680,7 +686,8 @@ public sealed class HomeViewModel : PageViewModel
             var workspace = CodexDesktopState.ResolveWorkspace();
             CodexDesktopBridge.OpenWorkspace(workspace?.RootPath);
 
-            if (startFreshChat && workspace is not null)
+            // Settings can switch the hand-off off: activation then only swaps the provider overlay.
+            if (startFreshChat && workspace is not null && CodexHandoffPreferences.Load().OpenFreshChat)
             {
                 StartContinuationChat(workspace);
             }
@@ -1748,15 +1755,66 @@ public sealed class DiagnosticsViewModel : PageViewModel
 
 public sealed class SettingsViewModel : PageViewModel
 {
+    private const string DefaultsStatusKey = "L10n_Set_DefaultsMsg";
+
+    private bool _openFreshChat;
+    private bool _autoSubmitRecap;
+    private string _statusKey = DefaultsStatusKey;
+
     public SettingsViewModel()
         : base("L10n_Set_Title", "L10n_Set_Subtitle")
     {
-        StatusMessage = L10n.T("L10n_Set_DefaultsMsg");
+        var preferences = CodexHandoffPreferences.Load();
+        _openFreshChat = preferences.OpenFreshChat;
+        _autoSubmitRecap = preferences.AutoSubmit;
+        StatusMessage = L10n.T(_statusKey);
     }
+
+    /// <summary>Open a fresh Codex chat and carry the session over when a provider is activated.</summary>
+    public bool OpenFreshChat
+    {
+        get => _openFreshChat;
+        set
+        {
+            if (SetProperty(ref _openFreshChat, value))
+            {
+                Persist();
+            }
+        }
+    }
+
+    /// <summary>Submit the recap instead of leaving it in the composer for Enter.</summary>
+    public bool AutoSubmitRecap
+    {
+        get => _autoSubmitRecap;
+        set
+        {
+            if (SetProperty(ref _autoSubmitRecap, value))
+            {
+                Persist();
+            }
+        }
+    }
+
+    /// <summary>Without a fresh chat there is nothing to submit, so the second switch greys out.</summary>
+    public bool CanAutoSubmitRecap => OpenFreshChat;
 
     protected override void NotifyLanguageChanged()
     {
         base.NotifyLanguageChanged();
-        StatusMessage = L10n.T("L10n_Set_DefaultsMsg");
+        StatusMessage = L10n.T(_statusKey);
+    }
+
+    private void Persist()
+    {
+        new CodexHandoffPreferences
+        {
+            OpenFreshChat = _openFreshChat,
+            AutoSubmit = _autoSubmitRecap
+        }.Save();
+
+        OnPropertyChanged(nameof(CanAutoSubmitRecap));
+        _statusKey = "L10n_Set_HandoffSaved";
+        StatusMessage = L10n.T(_statusKey);
     }
 }

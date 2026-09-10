@@ -127,6 +127,12 @@
     <sys:String x:Key="L10n_Set_Failover">Tự động chuyển key dự phòng</sys:String>
     <sys:String x:Key="L10n_Set_AutoRefresh">Tự làm mới phiên cũ</sys:String>
     <sys:String x:Key="L10n_Set_Logging">Ghi nhật ký lời nhắc &amp; phản hồi</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffSection">NỐI PHIÊN LÀM VIỆC (CODEX)</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChat">Mở chat Codex mới khi kích hoạt nhà cung cấp</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffOpenChatHint">Codex ghim mỗi chat vào nhà cung cấp lúc tạo, nên chat cũ vẫn tính vào tài khoản trước đó. Tắt: kích hoạt nhà cung cấp mà không đụng tới Codex.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffAutoSend">Tự gửi bối cảnh phiên làm việc</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffAutoSendHint">Tắt: bối cảnh được dán vào chat mới và chờ anh nhấn Enter.</sys:String>
+    <sys:String x:Key="L10n_Set_HandoffSaved">Đã lưu tuỳ chọn nối phiên.</sys:String>
     <sys:String x:Key="L10n_MT_Title">Kiểm Tra Tương Thích Mô Hình</sys:String>
     <sys:String x:Key="L10n_MT_Probes">PHÉP THỬ</sys:String>
     <sys:String x:Key="L10n_MT_Result">KẾT QUẢ</sys:String>

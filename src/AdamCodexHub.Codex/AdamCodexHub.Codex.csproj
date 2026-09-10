@@ -4,6 +4,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AdamCodexHub.Core\AdamCodexHub.Core.csproj" />
+    <!-- Reading Codex's own state_5.sqlite (which model the newest session runs with). -->
+    <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Tomlyn" />
   </ItemGroup>
 </Project>

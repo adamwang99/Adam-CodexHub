@@ -408,4 +408,25 @@ public sealed class ModelCallabilityTests
             });
         }
     }
+
+    /// <summary>The one-letter tag shown in parentheses in the tray menu, so the state is
+    /// readable even where the colour is not (F = fast, N = normal, S = slow, U = unchecked,
+    /// X = skipped). The first byte decides fast vs normal: that is the wait you feel.</summary>
+    [Theory]
+    [InlineData(Callability.Callable, 1200, 3000, "F")]
+    [InlineData(Callability.Callable, 5000, 5200, "F")]
+    [InlineData(Callability.Callable, 6000, 6500, "N")]
+    [InlineData(Callability.Callable, null, 4000, "F")]
+    [InlineData(Callability.Callable, null, null, "N")]
+    [InlineData(Callability.Slow, 16_000, 40_000, "S")]
+    [InlineData(Callability.Skip, 900, 900, "X")]
+    [InlineData(Callability.Unknown, null, null, "U")]
+    public void StatusTagNamesTheSameStateAsTheColour(
+        Callability callability,
+        int? firstByteMs,
+        int? totalMs,
+        string expected)
+    {
+        Assert.Equal(expected, ModelCallability.StatusTag(callability, firstByteMs, totalMs));
+    }
 }

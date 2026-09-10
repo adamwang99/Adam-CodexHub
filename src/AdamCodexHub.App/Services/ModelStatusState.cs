@@ -38,6 +38,7 @@ public sealed class ModelStatusState : INotifyPropertyChanged
     private bool _showAllModels;
     private DateTimeOffset? _lastRefreshedAt;
     private string? _lastRefreshedProviderName;
+    private CodexSessionModel? _codexSession;
 
     private ModelStatusState()
     {
@@ -78,6 +79,43 @@ public sealed class ModelStatusState : INotifyPropertyChanged
             "L10n_Callability_LastChecked",
             _lastRefreshedAt.Value.ToLocalTime().ToString("HH:mm", CultureInfo.CurrentCulture),
             _lastRefreshedProviderName ?? string.Empty);
+
+    /// <summary>
+    /// The model Codex itself is set to right now (read back from Codex's session state — the
+    /// in-app "Select model" picker never rewrites ~/.codex/config.toml, so this is the only way
+    /// the hub can follow a switch made inside Codex). Null until the first read.
+    /// </summary>
+    public CodexSessionModel? CodexSession
+    {
+        get => _codexSession;
+        private set
+        {
+            var same = _codexSession is null || value is null
+                ? _codexSession is null && value is null
+                : string.Equals(_codexSession.ModelId, value.ModelId, StringComparison.Ordinal) &&
+                  string.Equals(_codexSession.Source, value.Source, StringComparison.Ordinal);
+            if (same)
+            {
+                return;
+            }
+
+            _codexSession = value;
+            Raise(nameof(CodexSession));
+            Raise(nameof(CodexSessionText));
+            Raise(nameof(HasCodexSession));
+        }
+    }
+
+    /// <summary>True when Codex's current model is known.</summary>
+    public bool HasCodexSession => _codexSession is not null;
+
+    /// <summary>Localized "Codex is using: &lt;model&gt;" line for the tray submenu header.</summary>
+    public string CodexSessionText => _codexSession is null
+        ? L10n.T("L10n_Codex_NoSessionModel")
+        : L10n.F("L10n_Codex_SessionModel", _codexSession.ModelId);
+
+    /// <summary>Publishes the model Codex is on (called by the session-model watcher).</summary>
+    public void ApplyCodexSession(CodexSessionModel? session) => CodexSession = session;
 
     /// <summary>
     /// "Show all" for the model pickers: when false (default) the tray submenu hides models

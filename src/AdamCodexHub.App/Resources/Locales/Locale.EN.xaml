@@ -391,6 +391,9 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Callability_Callable">Callable</sys:String>
     <sys:String x:Key="L10n_Callability_Slow">Slow</sys:String>
     <sys:String x:Key="L10n_Callability_Skip">Skip</sys:String>
+    <sys:String x:Key="L10n_Codex_SessionModel">Codex is using: {0}</sys:String>
+    <sys:String x:Key="L10n_Codex_NoSessionModel">Codex: no session yet</sys:String>
+    <sys:String x:Key="L10n_Codex_StatusBar">Codex: {0}</sys:String>
     <sys:String x:Key="L10n_Callability_Column">Latency</sys:String>
     <sys:String x:Key="L10n_Callability_ColumnTip">Latency-aware status of this model: green = callable, amber = slow but working, red = skipped, grey = not checked yet.</sys:String>
     <sys:String x:Key="L10n_Callability_Tooltip">{0} · checked at {1} · first byte {2}s · total {3}s</sys:String>
@@ -399,6 +402,7 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Callability_CodexNotReady">fails in Codex</sys:String>
     <sys:String x:Key="L10n_Callability_LastChecked">Last auto-check {0} · {1}</sys:String>
     <sys:String x:Key="L10n_Callability_NeverChecked">No background check yet</sys:String>
+    <sys:String x:Key="L10n_Tray_StatusLegend">F = fast · N = normal · S = slow · U = not checked · X = skipped</sys:String>
     <sys:String x:Key="L10n_Tray_ShowAllModels">Show skipped models</sys:String>
     <sys:String x:Key="L10n_Tray_ShowAllModelsTip">A model that fails text, responses or streaming is marked "Skip" and hidden. Turn this on to see and pick every model anyway.</sys:String>
     <sys:String x:Key="L10n_Tray_PauseAutoPing">Pause background checks</sys:String>

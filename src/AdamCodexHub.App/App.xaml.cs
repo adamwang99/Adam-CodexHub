@@ -40,6 +40,7 @@ public partial class App : Application
     private EventWaitHandle? _showSignal;
     private IHost? _host;
     private WinForms.NotifyIcon? _trayIcon;
+    private CodexSessionModelWatchService? _sessionWatch;
     private Drawing.Icon? _trayIconImage;
 
     /// <summary>
@@ -182,6 +183,11 @@ public partial class App : Application
                 services.AddSingleton<CodexReadinessPingService>();
 
                 services.AddSingleton<ICodexConfigService, CodexConfigService>();
+                // Codex → hub sync: the model picked inside Codex Desktop lives per thread in
+                // ~/.codex/state_5.sqlite (its picker never rewrites config.toml), so poll it and
+                // publish what Codex really runs to the Home card and the tray menu.
+                services.AddSingleton<ICodexSessionModelReader>(_ => new CodexSessionModelReader());
+                services.AddSingleton<CodexSessionModelWatchService>();
                 services.AddSingleton<IProjectStateService, FileProjectStateService>();
                 services.AddSingleton<ISessionContinuityService, SessionContinuityService>();
                 services.AddSingleton<IProviderActivationService, ProviderActivationService>();
@@ -358,6 +364,26 @@ public partial class App : Application
                 LogStartup("Codex readiness probe could not start", readinessEx);
             }
 
+            // Codex → hub sync: switching the model inside Codex Desktop's own picker writes it to
+            // the thread (state_5.sqlite) and never to ~/.codex/config.toml, so the hub polls
+            // Codex's state every few seconds and mirrors the value into the Home card dropdown,
+            // the tray tick and the tray's "Codex is using…" header.
+            try
+            {
+                _sessionWatch = _host.Services.GetRequiredService<CodexSessionModelWatchService>();
+                LogStartup(
+                    $"Codex session watch started (every {_sessionWatch.Interval.TotalSeconds:0}s)");
+                // Publish the value we already have first (one log line, no subscriber yet), then
+                // start following changes: the timer's own first tick sees no change.
+                ApplyCodexSession(_sessionWatch.Poll());
+                _sessionWatch.Changed += OnCodexSessionModelChanged;
+                _sessionWatch.Start();
+            }
+            catch (Exception sessionEx)
+            {
+                LogStartup("Codex session watch could not start", sessionEx);
+            }
+
             // Keys left degraded (Offline / rate-limited / stale Unknown) by transient gateway
             // failures in the previous session get one quiet probe each, so an installed and
             // previously-tested provider is usable right away — no manual re-test required.
@@ -398,6 +424,16 @@ public partial class App : Application
     {
         var host = _host;
         _host = null;
+
+        try
+        {
+            _sessionWatch?.Stop();
+            _sessionWatch = null;
+        }
+        catch
+        {
+            // Exiting: the watcher's timer is best-effort cleanup only.
+        }
 
         DisposeTrayIcon();
 
@@ -464,6 +500,28 @@ public partial class App : Application
         _ => Drawing.Color.FromArgb(0xC4, 0xC4, 0xC4)
     };
 
+    /// <summary>Model label for the tray menu: the name plus its one-letter callability tag,
+    /// e.g. "claude-opus-4-6[1M] (F)". Same classifier as the colour beside it, so colour and
+    /// letter can never disagree.</summary>
+    private static string TrayModelLabel(
+        ModelStatusState status,
+        string providerId,
+        string? modelId,
+        string name)
+    {
+        if (string.IsNullOrEmpty(modelId))
+        {
+            return name;
+        }
+
+        var snapshot = status.GetSnapshot(providerId, modelId);
+        var tag = ModelCallability.StatusTag(
+            status.GetCallability(providerId, modelId),
+            snapshot?.FirstByteMs,
+            snapshot?.TotalMs);
+        return $"{name} ({tag})";
+    }
+
     /// <summary>Build the tray "Model" submenu: only the active provider's enabled models,
     /// each coloured by its latency-aware callability. Models classified "Skip" are hidden
     /// unless the "show all models" preference is on; the pause / show-all switches live at
@@ -503,6 +561,12 @@ public partial class App : Application
                 return;
             }
 
+            // Seed the shared callability state from the stored results before reading any colour
+            // or (F/N/S/U) tag. A fresh launch starts with an empty in-memory cache and the
+            // background ping skips results that are still fresh, so without this every entry
+            // would read "not checked yet" for up to the 6h TTL.
+            status.PopulateFromStoreAsync(modelStore, active.Id, enabled).GetAwaiter().GetResult();
+
             // Same rule as the Codex catalog the gateway serves: only models that answered a real
             // Codex-shaped request are offered here, so picking one from the tray cannot land on a
             // model Codex will fail on. The 5-minute readiness tick adds a model back the moment it
@@ -520,15 +584,35 @@ public partial class App : Application
                 verdicts,
                 Array.Empty<string>()));
 
-            // Mark the model Codex is currently using (the live gateway overlay model in
-            // ~/.codex/config.toml) so the user can tell which one is active and switch away.
-            var currentModelId = configService.GetCurrentModelAsync().GetAwaiter().GetResult();
+            // Mark the model Codex is currently using. Codex's own session state wins: switching
+            // the model inside Codex's picker never writes ~/.codex/config.toml, so the config
+            // value (what the last hub activation wrote) is only the fallback.
+            var sessionModelId = status.CodexSession?.ModelId;
+            var currentModelId = sessionModelId
+                ?? configService.GetCurrentModelAsync().GetAwaiter().GetResult();
 
             var header = new WinForms.ToolStripMenuItem(L10n.F("L10n_Tray_ProviderHeader", active.Name))
             {
                 Enabled = false
             };
             modelMenu.DropDownItems.Add(header);
+
+            // Second header line: the model Codex really runs right now, so the tray answers
+            // "which model am I on?" even when that model is not in the list below (a model that
+            // fails the Codex-shaped probe is filtered out of the list but is still in use).
+            // It carries the same callability colour as the entries below (green = the provider
+            // answers, amber = slow, grey = not probed yet, red = skipped), so one glance says
+            // whether the model Codex is running is healthy. Enabled stays true because WinForms
+            // paints a disabled item grey whatever ForeColor says; there is no Click handler, so
+            // the line is still read-only.
+            modelMenu.DropDownItems.Add(new WinForms.ToolStripMenuItem(
+                TrayModelLabel(status, active.Id, sessionModelId, status.CodexSessionText))
+            {
+                ForeColor = TrayCallabilityColor(status.GetCallability(active.Id, sessionModelId)),
+                ToolTipText = sessionModelId is null
+                    ? L10n.T("L10n_Codex_NoSessionModel")
+                    : status.DescribeTooltip(active.Id, sessionModelId)
+            });
 
             // Same selection order as the in-app pickers (callable → slow → unknown → skip, then
             // alphabetical); Skip entries stay hidden unless "show all" is on.
@@ -549,7 +633,8 @@ public partial class App : Application
                 var providerId = active.Id;
                 var modelId = model.RemoteId;
                 var callability = status.GetCallability(providerId, modelId);
-                var modelItem = new WinForms.ToolStripMenuItem(model.DisplayName)
+                var modelItem = new WinForms.ToolStripMenuItem(
+                    TrayModelLabel(status, providerId, modelId, model.DisplayName))
                 {
                     Checked = string.Equals(model.RemoteId, currentModelId, StringComparison.Ordinal),
                     CheckOnClick = false,
@@ -567,6 +652,13 @@ public partial class App : Application
                 Enabled = false
             };
             modelMenu.DropDownItems.Add(lastChecked);
+
+            // Legend for the one-letter tags above (F/N/S/U/X). Shown here rather than in the
+            // icon tooltip because WinForms caps NotifyIcon.Text at 63 characters.
+            modelMenu.DropDownItems.Add(new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_StatusLegend"))
+            {
+                Enabled = false
+            });
 
             var pauseItem = new WinForms.ToolStripMenuItem(L10n.T("L10n_Tray_PauseAutoPing"))
             {
@@ -615,6 +707,9 @@ public partial class App : Application
         try
         {
             await activation.ActivateDesktopAsync(providerId, modelId);
+            // The hub just decided the model: show that until Codex itself reports it back, so the
+            // watcher cannot flip the UI to the (still stale) session row in the next few seconds.
+            _sessionWatch?.NoteHubActivation(modelId);
             await QueueModelSwitchToOpenSessionAsync(modelId);
 
             MainViewModel? main = null;
@@ -662,6 +757,53 @@ public partial class App : Application
         catch (Exception ex)
         {
             LogStartup("Tray model queue failed", ex);
+        }
+    }
+
+    /// <summary>
+    /// The model Codex is really running changed (read from Codex's own state, or a pending
+    /// hub-side switch) — mirror it into the hub UI. Raised on the watcher's timer thread.
+    /// </summary>
+    private void OnCodexSessionModelChanged(object? sender, CodexSessionModel? session) =>
+        Dispatcher.InvokeAsync(() => ApplyCodexSession(session));
+
+    /// <summary>
+    /// Publishes the live model to <see cref="ModelStatusState"/> (tray header + tick), the tray
+    /// tooltip and the Home card dropdown (via <see cref="MainViewModel.ApplyCodexSession"/>).
+    /// </summary>
+    private void ApplyCodexSession(CodexSessionModel? session)
+    {
+        try
+        {
+            ModelStatusState.Current.ApplyCodexSession(session);
+            LogStartup(
+                $"Codex session model: {session?.ModelId ?? "-"} " +
+                $"(thread {session?.ThreadId ?? "-"}, source {session?.Source ?? "-"})");
+
+            if (_trayIcon is not null)
+            {
+                // WinForms NotifyIcon.Text is capped at 63 characters.
+                var tooltip = $"Adam CodexHub · {ModelStatusState.Current.CodexSessionText}";
+                _trayIcon.Text = tooltip.Length > 63 ? string.Concat(tooltip.AsSpan(0, 60), "...") : tooltip;
+            }
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Codex session model publish failed", ex);
+        }
+
+        if (_host is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _host.Services.GetRequiredService<MainViewModel>().ApplyCodexSession(session);
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Codex session model UI sync failed", ex);
         }
     }
 

@@ -185,6 +185,12 @@ public sealed class MainViewModel : ObservableObject
     public ICommand ActivateCommand { get; }
     public ICommand RefreshCommand { get; }
 
+    /// <summary>
+    /// Mirrors the model Codex is really running into the Home UI (the active provider card's
+    /// dropdown) as soon as it changes inside Codex.
+    /// </summary>
+    public void ApplyCodexSession(CodexSessionModel? session) => _home.ApplyCodexSession(session);
+
     public async Task InitializeAsync()
     {
         await RunAsync(async () =>

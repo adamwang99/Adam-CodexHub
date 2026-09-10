@@ -235,16 +235,42 @@ public sealed class HomeViewModel : PageViewModel
 
     public override Task InitializeAsync() => RunAsync(RefreshCoreAsync);
 
+    /// <summary>
+    /// Mirrors the model Codex is really running onto the Home UI without a full reload: the
+    /// active provider card's dropdown moves to it as soon as the user switches model inside
+    /// Codex's own picker (that switch never reaches ~/.codex/config.toml).
+    /// </summary>
+    public void ApplyCodexSession(CodexSessionModel? session)
+    {
+        var modelId = session?.ModelId;
+        if (string.IsNullOrWhiteSpace(modelId))
+        {
+            return;
+        }
+
+        var card = Providers.FirstOrDefault(x => x.IsActive);
+        if (card is null ||
+            !card.EnabledModels.Any(m => string.Equals(m.RemoteId, modelId, StringComparison.Ordinal)))
+        {
+            return;
+        }
+
+        if (!string.Equals(card.SelectedModelRemoteId, modelId, StringComparison.Ordinal))
+        {
+            card.SelectedModelRemoteId = modelId;
+        }
+    }
+
     private async Task RefreshCoreAsync()
     {
         var active = await _providers.GetActiveAsync();
         var all = await _providers.GetAllAsync();
 
-        // The model Codex is actually using right now (written in ~/.codex/config.toml by the
-        // last activation, incl. one triggered from the tray). Used to sync the active card's
-        // dropdown so the UI reflects a tray-side model switch.
-        string? currentModelId = null;
-        try { currentModelId = await _config.GetCurrentModelAsync(); }
+        // The model Codex is actually using right now. Codex's own session state wins: switching
+        // the model inside Codex's picker writes it per thread and never touches config.toml, so
+        // reading config.toml alone would leave the card showing a model Codex no longer runs.
+        string? currentModelId = ModelStatusState.Current.CodexSession?.ModelId;
+        try { currentModelId ??= await _config.GetCurrentModelAsync(); }
         catch { /* config unreadable — fall back to per-card default */ }
 
         var selectedId = SelectedCard?.Id;

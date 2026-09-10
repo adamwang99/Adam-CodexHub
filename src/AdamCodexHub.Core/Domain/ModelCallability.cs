@@ -39,6 +39,10 @@ public static class ModelCallability
     /// turn amber instead of being dropped.</summary>
     public const int SlowThresholdMs = 15_000;
 
+    /// <summary>Latency at or under this counts as "fast" ("F") in the one-letter status tag;
+    /// anything above it but still under <see cref="SlowThresholdMs"/> is "normal" ("N").</summary>
+    public const int FastThresholdMs = 5_000;
+
     /// <summary>
     /// Classify a stored result.
     /// <list type="bullet">
@@ -76,6 +80,25 @@ public static class ModelCallability
     /// <summary>True when the result carries a latency sample above the slow threshold.</summary>
     public static bool IsSlow(CompatibilityResult result) =>
         (result.FirstByteMs ?? 0) > SlowThresholdMs || (result.TotalMs ?? 0) > SlowThresholdMs;
+
+    /// <summary>
+    /// One-letter status tag shown in parentheses after a model name in the tray menu:
+    /// F = fast, N = normal, S = slow, U = never verified, X = skipped (a capability failed).
+    /// Colour alone is easy to miss (and meaningless to colour-blind eyes), so the letter repeats
+    /// the same classification in text. <paramref name="firstByteMs"/> wins over
+    /// <paramref name="totalMs"/>: the first byte is the wait the user actually feels.
+    /// </summary>
+    public static string StatusTag(Callability callability, int? firstByteMs, int? totalMs)
+    {
+        var latency = firstByteMs ?? totalMs;
+        return callability switch
+        {
+            Callability.Callable => latency is not null && latency <= FastThresholdMs ? "F" : "N",
+            Callability.Slow => "S",
+            Callability.Skip => "X",
+            _ => "U"
+        };
+    }
 
     /// <summary>Sort key used to keep the model lists grouped "callable, slow, unknown, skip".</summary>
     public static int SortOrder(Callability callability) => callability switch

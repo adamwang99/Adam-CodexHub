@@ -168,12 +168,26 @@ public sealed class LocalGatewayService : IGatewayService
         }
 
         var models = await _models.GetAllAsync(provider.Id, context.RequestAborted);
+        var enabled = models
+            .Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)
+            .ToArray();
+
+        // Codex (app-server) gọi /v1/models?client_version=… và cần shape {"models":[{slug,…}]};
+        // các client khác vẫn nhận shape OpenAI {"object":"list","data":[…]}.
+        if (context.Request.Query.ContainsKey("client_version"))
+        {
+            context.Response.ContentType = "application/json; charset=utf-8";
+            await context.Response.WriteAsync(
+                CodexModelCatalog.Build(enabled.Select(x => (x.RemoteId, x.DisplayName, x.ContextWindow))),
+                context.RequestAborted);
+            return;
+        }
+
         await context.Response.WriteAsJsonAsync(
             new
             {
                 @object = "list",
-                data = models
-                    .Where(x => x.Enabled && x.State == ModelLifecycleState.Enabled)
+                data = enabled
                     .Select(x => new
                     {
                         id = x.RemoteId,

@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.0
+
+### Added
+
+- **Codex now sees the real model list of the active provider.** Codex 0.153.4 asks the gateway for its model catalogue (`GET /v1/models?client_version=…`) and expects the app-server shape `{"models":[{ "slug": …, "display_name": …, "visibility": "list", … }]}`; the gateway used to answer with the OpenAI shape (`{"object":"list","data":[…]}`), so Codex failed to decode it (`missing field 'models'`) and silently fell back to its built-in account list. The gateway now serves both shapes — Codex gets its catalogue, every OpenAI-compatible client keeps the old one.
+- the consequence: the models of the **active provider** appear in Codex's own model picker, so a model can be switched **inside a running session** (the choice is stored per thread and applies to the next turn) instead of only through the hub's launch path.
+- `CodexModelCatalog` (Gateway) renders that catalogue from the same enabled-model store the hub UI uses, so the hub and Codex can never disagree about which models exist. Regression tests: `CodexModelCatalogTests`.
+
 ## v1.4.0
 
 ### Added

@@ -92,6 +92,14 @@ A model that answers in 4 seconds and a model that needs 90 seconds are both "wo
 - Tray menu → **Model** → **Pause background checks** stops the automatic re-checks; **Show skipped models** reveals the red entries again (both are remembered across restarts).
 - Re-ordering never changes the model you selected, and the latency values are stored next to each compatibility result, so a manual *Test compatibility* run updates the same colours.
 
+## Switching models inside a running Codex session
+
+The models of the **active provider** are not only listed in this app — Codex itself lists them. Codex asks the local gateway for its model catalogue and the gateway answers in the shape Codex expects, so the normal Codex model picker shows the hub's models (`claude-…`, `deepseek-…`) next to each other, and picking one changes the model **for the next turn of the same session** — no restart, no new chat.
+
+- The list always mirrors the **active provider**: switch provider in the hub and Codex picks up the new list on its next catalogue refresh.
+- A model you never enabled for that provider is deliberately absent, and a request for it is rejected — the same rule the hub UI applies.
+- Background status checks (below) are a hub feature; Codex's own picker lists every enabled model, not only the green ones.
+
 ## Why Adam CodexHub?
 
 | Common problem | Adam CodexHub approach |

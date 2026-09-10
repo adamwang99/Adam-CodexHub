@@ -616,18 +616,45 @@ public sealed class HomeViewModel : PageViewModel
                 var providerName = (await _providers.GetActiveAsync())?.Name;
                 var handoff = CodexHandoffBuilder.Build(workspace, turns, providerName, vietnamese);
 
-                if (!await CodexDesktopBridge.StartFreshChatAsync(handoff, TimeSpan.FromSeconds(45)))
+                // Codex writes a chat's rollout file when its first message is submitted, so a new
+                // file for this project is what separates "sent" from "still in the composer".
+                var knownRollouts = CodexDesktopState.SnapshotRollouts();
+                var marker = CodexDesktopBridge.BuildMarker(handoff);
+
+                var delivered = await CodexDesktopBridge.StartFreshChatAsync(
+                    handoff,
+                    TimeSpan.FromSeconds(45),
+                    cancellationToken: default,
+                    autoSubmit: true,
+                    verifySent: () =>
+                    {
+                        var fresh = CodexDesktopState.FindNewRolloutSince(knownRollouts, workspace.RootPath);
+                        if (fresh is null)
+                        {
+                            return false;
+                        }
+
+                        // A new chat exists, so the recap was submitted; the marker proves the new
+                        // chat is the one carrying it.
+                        return marker.Length == 0 ||
+                               CodexHandoffBuilder.RolloutContainsUserMessage(fresh, marker);
+                    });
+
+                if (!delivered)
                 {
                     LogError(
-                        "Continuation chat: could not focus the Codex Desktop window",
+                        "Continuation chat: recap left in the composer, Enter could not be confirmed",
                         new InvalidOperationException("StartFreshChatAsync returned false."));
-                    return;
                 }
 
                 if (Application.Current is { } app)
                 {
+                    // Only claim the send landed when the session log confirmed it.
+                    var statusKey = delivered
+                        ? "L10n_Home_ContinuationReady"
+                        : "L10n_Home_ContinuationManual";
                     await app.Dispatcher.InvokeAsync(
-                        () => StatusMessage = L10n.T("L10n_Home_ContinuationReady"));
+                        () => StatusMessage = L10n.T(statusKey));
                 }
             }
             catch (Exception ex)

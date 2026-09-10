@@ -72,6 +72,55 @@ public static class CodexHandoffBuilder
         return turns.Count <= maxTurns ? turns : turns.Skip(turns.Count - maxTurns).ToList();
     }
 
+    /// <summary>
+    /// True when the rollout holds a user message containing <paramref name="marker"/>. The line is
+    /// decoded before comparing, so quotes and backslashes in the recap cannot hide it, and a plain
+    /// read would fail while Codex is still appending to a live session.
+    /// </summary>
+    public static bool RolloutContainsUserMessage(string rolloutPath, string marker)
+    {
+        if (string.IsNullOrEmpty(marker))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var stream = CodexDesktopState.OpenShared(rolloutPath);
+            using var reader = new StreamReader(stream);
+
+            string? line;
+            while ((line = reader.ReadLine()) is not null)
+            {
+                if (line.Length == 0 || line[0] != '{' || !line.Contains("\"message\"", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    using var doc = JsonDocument.Parse(line);
+                    if (IsMessageItem(doc.RootElement, out var role, out var text) &&
+                        role == "user" &&
+                        text.Contains(marker, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Half-written line while Codex appends: ignore it.
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Unreadable/partial rollout: treat as "not there yet".
+        }
+
+        return false;
+    }
+
     /// <summary>The prompt handed to the new chat.</summary>
     public static string Build(
         CodexWorkspace workspace,

@@ -213,11 +213,28 @@ read previous chat   newest rollout-*.jsonl whose session_meta.cwd == project (l
 build handoff        provider name + project path + turn recap + state-priority reminder
 open Desktop         codex app "<project>"            (fallback: shell:AppsFolder activation)
 open fresh chat      focus window (ALT-tap rescue + SetForegroundWindow) -> Ctrl+N
-deliver context      clipboard + Ctrl+V into the new composer (never auto-sent)
+deliver context      clipboard + Ctrl+V into the new composer
+submit               Enter (up to 6 attempts, 1.5s apart, then 6 grace polls)
+confirm              a rollout-*.jsonl that did not exist before appears for this project
+                     and its decoded user message carries the recap marker
 ```
 
-Code: `CodexDesktopState`, `CodexHandoffBuilder`, `CodexDesktopBridge` in `AdamCodexHub.Codex`,
-driven from `PageViewModels.LaunchCodexAsync(..., startFreshChat: true)`.
+Code: `CodexDesktopState` (`SnapshotRollouts` / `FindNewRolloutSince`), `CodexHandoffBuilder`
+(`Build`, `RolloutContainsUserMessage`), `CodexDesktopBridge` (`BuildMarker`, submit loop) in
+`AdamCodexHub.Codex`, driven from `PageViewModels.LaunchCodexAsync(..., startFreshChat: true)`.
 
-The paste is deliberate: the user reviews the recap and presses Enter. Nothing is sent on
-their behalf, and a failed hand-off never breaks activation (fire-and-forget, logged).
+The recap is sent automatically — a hand-off that waits for the user to press Enter is not a
+hand-off. The status line only claims the send when the session log proves it; otherwise it says the
+recap is waiting in the composer. A failed hand-off still never breaks activation (logged).
+
+Details worth keeping (each one cost a debugging round):
+
+- Codex writes a chat's rollout when its first message is *submitted*, so a rollout file that did not
+  exist before the hand-off is the signal that the message left the composer.
+- The app holds a live rollout open: `File.ReadAllText` throws there. Read through
+  `FileShare.ReadWrite | FileShare.Delete` and retry.
+- Match the marker against the **decoded** message text, never the raw JSON line (its quotes and
+  backslashes are escaped).
+- The composer swallows Enter for a few seconds after a long paste; the send typically lands 5-15s
+  after the click. Repeated Enter on an empty composer sends nothing, so retrying is safe.
+- Focus bounces away while the paste renders: retry the focus instead of failing the hand-off.

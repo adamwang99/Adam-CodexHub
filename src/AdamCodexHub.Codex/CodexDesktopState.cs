@@ -147,10 +147,23 @@ public static class CodexDesktopState
     /// </summary>
     public static string? FindNewestRollout(string? cwd = null, string? codexHome = null)
     {
-        foreach (var rollout in EnumerateRollouts(ResolveHome(codexHome)))
+        var rollouts = EnumerateRollouts(ResolveHome(codexHome)).ToList();
+        for (var index = 0; index < rollouts.Count; index++)
         {
+            var rollout = rollouts[index];
+            var recorded = ReadSessionCwd(rollout);
+
+            // Codex creates the file the moment a chat opens and writes the metadata a beat later,
+            // so the newest one can read as empty. Wait for it instead of silently handing back an
+            // older chat of the same project.
+            if (recorded is null && index == 0)
+            {
+                Thread.Sleep(250);
+                recorded = ReadSessionCwd(rollout);
+            }
+
             if (cwd is null ||
-                string.Equals(ReadSessionCwd(rollout), cwd, StringComparison.OrdinalIgnoreCase))
+                string.Equals(recorded, cwd, StringComparison.OrdinalIgnoreCase))
             {
                 return rollout;
             }
@@ -190,6 +203,43 @@ public static class CodexDesktopState
         catch (Exception)
         {
             // Unreadable/partial rollout: treat as "no metadata".
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The rollout files that exist right now. A hand-off takes this snapshot first, so the chat
+    /// Codex creates for it can be told apart from the chats that were already open.
+    /// </summary>
+    public static IReadOnlyCollection<string> SnapshotRollouts(string? codexHome = null) =>
+        EnumerateRollouts(ResolveHome(codexHome)).ToArray();
+
+    /// <summary>
+    /// The fresh chat a hand-off created, or null while no new session exists — the honest answer
+    /// to "is the recap still sitting in the composer?". Codex writes the rollout file when the
+    /// first message of a chat is submitted, so a new file means the send landed.
+    /// </summary>
+    public static string? FindNewRolloutSince(
+        IReadOnlyCollection<string> knownRollouts,
+        string? workspacePath = null,
+        string? codexHome = null)
+    {
+        foreach (var rollout in EnumerateRollouts(ResolveHome(codexHome)))
+        {
+            if (knownRollouts.Contains(rollout, StringComparer.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // An unreadable metadata line means the file is seconds old: still this hand-off.
+            var recorded = ReadSessionCwd(rollout);
+            if (workspacePath is null ||
+                recorded is null ||
+                string.Equals(recorded, workspacePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return rollout;
+            }
         }
 
         return null;

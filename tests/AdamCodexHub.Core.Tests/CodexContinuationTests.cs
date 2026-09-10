@@ -183,6 +183,71 @@ public sealed class CodexContinuationTests : IDisposable
         return path;
     }
 
+    [Fact]
+    public void MarkerFlattensTheRecapToASingleLineWithoutLosingCharacters()
+    {
+        // The marker is matched against the decoded message, so quotes and backslashes have to
+        // survive; only line breaks would break a substring check.
+        var marker = CodexDesktopBridge.BuildMarker("Resume\nthe \"session\"\r\\now");
+
+        Assert.Equal("Resumethe \"session\"\\now", marker);
+    }
+
+    [Fact]
+    public void MarkerIsTrimmedAndCappedSoItStaysMatchable()
+    {
+        Assert.Equal("hello", CodexDesktopBridge.BuildMarker("  hello  "));
+        Assert.Equal("abcdefghij", CodexDesktopBridge.BuildMarker("abcdefghijklmnop", length: 10));
+        Assert.Equal(string.Empty, CodexDesktopBridge.BuildMarker(string.Empty));
+    }
+
+    [Fact]
+    public void NewChatIsRecognisedOnlyWhenItsRolloutAppearedAfterTheHandoffStarted()
+    {
+        var cwd = CreateProjectDir("Test Video Factory");
+        WriteRollout(cwd, new[] { ("user", "previous chat content") });
+        var knownRollouts = CodexDesktopState.SnapshotRollouts(_codexHome);
+
+        // Nothing new yet: the recap is still in the composer.
+        Assert.Null(CodexDesktopState.FindNewRolloutSince(knownRollouts, cwd, _codexHome));
+
+        var fresh = WriteRollout(cwd, new[] { ("user", "recap: continue the previous session") });
+
+        Assert.Equal(fresh, CodexDesktopState.FindNewRolloutSince(knownRollouts, cwd, _codexHome));
+        Assert.True(CodexHandoffBuilder.RolloutContainsUserMessage(
+            fresh,
+            "recap: continue the previous session"));
+        Assert.False(CodexHandoffBuilder.RolloutContainsUserMessage(fresh, "a message that was never sent"));
+
+        // Once both chats are known, the hand-off has no new session to report.
+        Assert.Null(CodexDesktopState.FindNewRolloutSince(
+            CodexDesktopState.SnapshotRollouts(_codexHome),
+            cwd,
+            _codexHome));
+    }
+
+    [Fact]
+    public void HandoffCheckReadsTheRecapWhileCodexStillHoldsTheRolloutOpen()
+    {
+        var cwd = CreateProjectDir("Live Project");
+        var rollout = WriteRollout(cwd, new[] { ("user", "recap with \"quotes\" and a \\ backslash") });
+
+        // A live session is exactly the case that matters, and Codex keeps its rollout handle
+        // open while appending. A plain read fails there, so the check has to share the handle,
+        // and the text is compared after decoding the JSON line.
+        using var liveSession = new FileStream(
+            rollout,
+            FileMode.Open,
+            FileAccess.Write,
+            FileShare.Read);
+
+        Assert.Throws<IOException>(() => File.ReadAllText(rollout));
+
+        Assert.True(CodexHandoffBuilder.RolloutContainsUserMessage(rollout, "recap with \"quotes\""));
+        Assert.True(CodexHandoffBuilder.RolloutContainsUserMessage(rollout, "\\ backslash"));
+        Assert.False(CodexHandoffBuilder.RolloutContainsUserMessage(rollout, "not in this chat"));
+    }
+
     public void Dispose()
     {
         try

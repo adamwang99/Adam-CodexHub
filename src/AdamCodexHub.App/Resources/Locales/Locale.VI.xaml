@@ -303,7 +303,8 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Home_NoEnabledModel">Không có mô hình đã bật cho {0}. Hãy mở Models, quét và bật một mô hình trước.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Đã hoàn tất kích hoạt.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Đã kích hoạt {0}.</sys:String>
-    <sys:String x:Key="L10n_Home_ContinuationReady">Đã mở chat Codex mới kèm bối cảnh phiên làm việc trước — kiểm tra rồi nhấn Enter.</sys:String>
+    <sys:String x:Key="L10n_Home_ContinuationReady">Đã mở chat Codex mới và tự gửi bối cảnh phiên làm việc trước.</sys:String>
+    <sys:String x:Key="L10n_Home_ContinuationManual">Đã dán bối cảnh vào chat Codex mới — anh kiểm tra rồi nhấn Enter.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Kích hoạt thất bại: {0}</sys:String>
     <sys:String x:Key="L10n_Home_RoutingVerificationFailed">Không xác minh được tuyến Codex tới {0}. Codex chưa được mở để tránh nhầm nhà cung cấp.</sys:String>
     <sys:String x:Key="L10n_Msg_SwitchProviderTitle">Đổi nhà cung cấp Codex</sys:String>

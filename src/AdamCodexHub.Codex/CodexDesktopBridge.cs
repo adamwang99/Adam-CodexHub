@@ -26,7 +26,13 @@ public static class CodexDesktopBridge
     private const byte VkMenu = 0x12;
     private const byte VkN = 0x4E;
     private const byte VkV = 0x56;
+    private const byte VkReturn = 0x0D;
     private const uint KeyEventKeyUp = 0x0002;
+    private const int MaxSubmitAttempts = 6;
+    private const int SubmitGraceChecks = 6;
+    private const int RefocusDelayMilliseconds = 600;
+    private const int PasteSettleMilliseconds = 2500;
+    private const int SubmitSettleMilliseconds = 1500;
     private const int SwRestore = 9;
     private const uint CfUnicodeText = 13;
     private const uint GmemMoveable = 0x0002;
@@ -101,13 +107,18 @@ public static class CodexDesktopBridge
     }
 
     /// <summary>
-    /// Waits for the Desktop window, opens a fresh chat and pastes <paramref name="handoffText"/>
-    /// into the composer (never auto-sends). Returns true when the new chat was focused.
+    /// Waits for the Desktop window, opens a fresh chat, pastes <paramref name="handoffText"/>
+    /// into the composer and submits it with Enter, so the continuation starts on its own.
+    /// <paramref name="verifySent"/> reports whether the message reached Codex's session log;
+    /// while it reports false, Enter is retried.
+    /// Returns false when the recap could not be handed over (it then sits in the composer).
     /// </summary>
     public static async Task<bool> StartFreshChatAsync(
         string? handoffText,
         TimeSpan timeout,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool autoSubmit = true,
+        Func<bool>? verifySent = null)
     {
         var window = await WaitForDesktopWindowAsync(timeout, cancellationToken).ConfigureAwait(false);
         if (window == IntPtr.Zero || !TryFocus(window))
@@ -138,7 +149,96 @@ public static class CodexDesktopBridge
 
         await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken).ConfigureAwait(false);
         SendCtrlKey(VkV);
-        return true;
+
+        if (!autoSubmit)
+        {
+            return true;
+        }
+
+        // A long paste needs a moment to reach the composer's state; Enter before that
+        // submits nothing at all.
+        await Task.Delay(TimeSpan.FromMilliseconds(PasteSettleMilliseconds), cancellationToken)
+            .ConfigureAwait(false);
+
+        for (var attempt = 0; attempt < MaxSubmitAttempts; attempt++)
+        {
+            // Enter is a keystroke: it only lands in the composer while this window owns focus.
+            if (!IsForeground(window) && !TryFocus(window))
+            {
+                // Focus can bounce away while the paste renders; come back instead of stranding
+                // the recap half-sent.
+                await Task.Delay(TimeSpan.FromMilliseconds(RefocusDelayMilliseconds), cancellationToken)
+                    .ConfigureAwait(false);
+                continue;
+            }
+
+            SendKey(VkReturn);
+            await Task.Delay(TimeSpan.FromMilliseconds(SubmitSettleMilliseconds), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (verifySent is null || SafeVerify(verifySent))
+            {
+                return true;
+            }
+        }
+
+        if (verifySent is null)
+        {
+            return true;
+        }
+
+        // A live session writes its rollout a beat after the send, so take one last look before
+        // telling the caller the recap never left the composer.
+        for (var grace = 0; grace < SubmitGraceChecks; grace++)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(SubmitSettleMilliseconds), cancellationToken)
+                .ConfigureAwait(false);
+
+            if (SafeVerify(verifySent))
+            {
+                return true;
+            }
+        }
+
+        // The recap is sitting in the composer, so the user only has to press Enter.
+        return false;
+    }
+
+    /// <summary>
+    /// A single-line slice of the recap, used as the marker for the delivery check. Line breaks
+    /// would never match a substring, but quotes and backslashes are kept: the check compares the
+    /// decoded message text, where they are part of the content.
+    /// </summary>
+    public static string BuildMarker(string text, int length = 32)
+    {
+        var builder = new System.Text.StringBuilder();
+        foreach (var character in text)
+        {
+            if (character is '\r' or '\n')
+            {
+                continue;
+            }
+
+            builder.Append(character);
+            if (builder.Length >= length)
+            {
+                break;
+            }
+        }
+
+        return builder.ToString().Trim();
+    }
+
+    private static bool SafeVerify(Func<bool> verify)
+    {
+        try
+        {
+            return verify();
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public static async Task<IntPtr> WaitForDesktopWindowAsync(
@@ -242,6 +342,14 @@ public static class CodexDesktopBridge
         keybd_event(virtualKey, 0, KeyEventKeyUp, IntPtr.Zero);
         Thread.Sleep(40);
         keybd_event(VkControl, 0, KeyEventKeyUp, IntPtr.Zero);
+    }
+
+    /// <summary>Sends a single key press to the focused window.</summary>
+    public static void SendKey(byte virtualKey)
+    {
+        keybd_event(virtualKey, 0, 0, IntPtr.Zero);
+        Thread.Sleep(40);
+        keybd_event(virtualKey, 0, KeyEventKeyUp, IntPtr.Zero);
     }
 
     public static bool SetClipboardText(string text)

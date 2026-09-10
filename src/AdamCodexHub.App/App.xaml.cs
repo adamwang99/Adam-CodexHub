@@ -555,6 +555,7 @@ public partial class App : Application
         try
         {
             await activation.ActivateDesktopAsync(providerId, modelId);
+            await QueueModelSwitchToOpenSessionAsync(modelId);
 
             MainViewModel? main = null;
             if (_host is not null)
@@ -575,6 +576,32 @@ public partial class App : Application
         catch (Exception ex)
         {
             LogStartup("Tray model activation failed", ex);
+        }
+    }
+
+    /// <summary>
+    /// Pushes the model just chosen in the tray into the newest Codex session, so that session's
+    /// next turn runs the new model instead of waiting for a fresh chat.
+    /// </summary>
+    private async Task QueueModelSwitchToOpenSessionAsync(string modelId)
+    {
+        try
+        {
+            var queue = new AdamCodexHub.Codex.CodexSessionQueue();
+            var notice = string.Format(L10n.T("L10n_Tray_QueueNotice"), modelId);
+            var outcome = await queue.QueueMessageAsync(modelId, notice);
+            LogStartup($"Tray model queue queued={outcome.Queued} thread={outcome.ThreadId ?? "-"} detail={outcome.Detail}");
+
+            if (outcome.Queued && _trayIcon is not null)
+            {
+                _trayIcon.BalloonTipTitle = L10n.T("L10n_Tray_NotificationTitle");
+                _trayIcon.BalloonTipText = string.Format(L10n.T("L10n_Tray_QueueSent"), modelId);
+                _trayIcon.ShowBalloonTip(15000);
+            }
+        }
+        catch (Exception ex)
+        {
+            LogStartup("Tray model queue failed", ex);
         }
     }
 

@@ -402,6 +402,8 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Tray_ShowAllModelsTip">A model that fails text, responses or streaming is marked "Skip" and hidden. Turn this on to see and pick every model anyway.</sys:String>
     <sys:String x:Key="L10n_Tray_PauseAutoPing">Pause background checks</sys:String>
     <sys:String x:Key="L10n_Tray_PauseAutoPingTip">Stop the automatic re-check of the active provider's models. Manual tests still work.</sys:String>
+    <sys:String x:Key="L10n_Tray_QueueNotice">[Adam CodexHub] Model for this session: {0} (applies from the next turn).</sys:String>
+    <sys:String x:Key="L10n_Tray_QueueSent">Queued model {0} into the open Codex session.</sys:String>
 
     <sys:String x:Key="L10n_FR_OpenLinkError">Could not open legal notice</sys:String>
 

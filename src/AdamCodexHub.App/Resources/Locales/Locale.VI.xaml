@@ -402,6 +402,8 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Tray_ShowAllModelsTip">Model không đạt text, responses hoặc streaming bị đánh dấu "Bỏ qua" và ẩn đi. Bật mục này để vẫn thấy và chọn được mọi model.</sys:String>
     <sys:String x:Key="L10n_Tray_PauseAutoPing">Tạm dừng tự kiểm tra</sys:String>
     <sys:String x:Key="L10n_Tray_PauseAutoPingTip">Dừng việc tự kiểm tra lại model của nhà cung cấp đang mở. Kiểm tra thủ công vẫn chạy bình thường.</sys:String>
+    <sys:String x:Key="L10n_Tray_QueueNotice">[Adam CodexHub] Model cho phiên này: {0} (áp dụng từ lượt tiếp theo).</sys:String>
+    <sys:String x:Key="L10n_Tray_QueueSent">Đã đưa model {0} vào phiên Codex đang mở.</sys:String>
 
     <sys:String x:Key="L10n_FR_OpenLinkError">Không thể mở thông báo pháp lý</sys:String>
 

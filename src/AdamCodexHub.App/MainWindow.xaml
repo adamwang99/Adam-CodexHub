@@ -526,8 +526,26 @@
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <!-- No card: floating logo + text; cell wide enough that text never touches neighbors -->
-                            <StackPanel Width="136" Margin="0,8" HorizontalAlignment="Center">
+                            <!-- No card: floating logo + text; cell wide enough that text never touches neighbors.
+                                 The chosen card wears the same amber pill as the active sidebar item
+                                 (fill #33D89B2B + amber rim + bright label) so the provider in use is
+                                 obvious the moment the app opens, before any click. -->
+                            <Border Width="136" Margin="0,2" Padding="4,6"
+                                    CornerRadius="{StaticResource PillRadius}"
+                                    BorderThickness="1">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderBrush" Value="Transparent" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                <Setter Property="Background" Value="#33D89B2B" />
+                                                <Setter Property="BorderBrush" Value="#59D89B2B" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            <StackPanel HorizontalAlignment="Center">
                                 <StackPanel.Style>
                                     <Style TargetType="StackPanel">
                                         <Setter Property="Opacity" Value="0.55" />
@@ -705,12 +723,23 @@
                                     </Border>
                                 </Grid>
                                 <TextBlock Text="{Binding Name}"
-                                           FontWeight="SemiBold"
                                            FontSize="13"
                                            HorizontalAlignment="Center"
                                            Margin="0,16,0,3"
                                            TextWrapping="Wrap"
-                                           TextAlignment="Center" />
+                                           TextAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource BrushWhite}" />
+                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                                 <TextBlock Text="{Binding ApiProviderLabel}"
                                            Foreground="{DynamicResource BrushAqua}"
                                            FontSize="10"
@@ -791,6 +820,7 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                             </StackPanel>
+                            </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                     </ListBox>

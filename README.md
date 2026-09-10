@@ -53,9 +53,27 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 
 ## Screenshots
 
-![Adam CodexHub home — choose a provider, pick a model, activate for Codex](docs/images/screenshot-home-v1.1.1.png)
+*All screenshots below are captured from the real app (v1.1.4, English UI).*
 
-*Home (v1.1.1): provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below.*
+**Choose Provider** — provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below.
+
+![Choose Provider](docs/images/screenshot-home-v1.1.4.png)
+
+**Providers** — provider profile, encrypted key pool (DPAPI) and the verified model list in one place.
+
+![Providers](docs/images/screenshot-providers-v1.1.4.png)
+
+**Sessions** — provider-safe project state and continuation handoffs.
+
+![Sessions](docs/images/screenshot-sessions-v1.1.4.png)
+
+**Diagnostics** — local gateway state and Codex configuration recovery.
+
+![Diagnostics](docs/images/screenshot-diagnostics-v1.1.4.png)
+
+**Settings** — enforced security and session defaults.
+
+![Settings](docs/images/screenshot-settings-v1.1.4.png)
 
 ## Why Adam CodexHub?
 

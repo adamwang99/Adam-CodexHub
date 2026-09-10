@@ -53,7 +53,7 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 
 ## Screenshots
 
-*All screenshots below are captured from the real app (v1.1.4, English UI).*
+*All screenshots below are captured from the real app (v1.2.0, English UI). The in-app guide ships both language sets — the Vietnamese guide shows Vietnamese shots, the English guide shows these English ones.*
 
 **Choose Provider** — provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below.
 

@@ -303,6 +303,7 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Home_NoEnabledModel">No enabled model for {0}. Open Models, scan and enable one first.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Activation completed.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Activated {0}.</sys:String>
+    <sys:String x:Key="L10n_Home_ContinuationReady">Opened a fresh Codex chat with the previous session's context — review it, then press Enter.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Activation failed: {0}</sys:String>
     <sys:String x:Key="L10n_Home_RoutingVerificationFailed">Could not verify the Codex route to {0}. Codex was not opened to prevent the wrong provider.</sys:String>
     <sys:String x:Key="L10n_Msg_SwitchProviderTitle">Switch Codex provider</sys:String>

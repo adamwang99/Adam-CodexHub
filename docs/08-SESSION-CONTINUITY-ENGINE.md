@@ -180,9 +180,44 @@ Resume behavior:
 
 Do not depend on undocumented mutation of Codex internal chat databases.
 
-If exact automatic thread opening is unavailable, Adam CodexHub still:
+Adam CodexHub reads Codex state, it never writes it. The Desktop hand-off uses only
+externally observable surfaces:
+
+- `~/.codex/.codex-global-state.json` — read-only, to learn the active project
+- `~/.codex/sessions/**/rollout-*.jsonl` — read-only, to summarise the previous chat
+- `codex app <path>` — documented CLI entry point that opens the Desktop app on a workspace
+- `Ctrl+N` — the app's own `codex.command.newThread` accelerator
+
+If exact automatic thread opening is unavailable (app not installed, window never appears),
+Adam CodexHub still:
 
 - prepares handoff
 - activates provider
 - opens Codex
 - presents/copies continuation instruction
+
+## 14. Automatic desktop hand-off (implemented 2026-09-10)
+
+Why it is needed: the rule in section 1. A chat created while the Codex Account was active
+stays bound to `model_provider = openai` for its whole life, so reopening it after switching
+to a third-party provider still bills the ChatGPT account and fails with
+`You've hit your usage limit` — even when the new provider has plenty of quota. Only a *new*
+chat picks up the hub overlay in `~/.codex/config.toml`.
+
+Flow, triggered when a provider card is activated in the hub:
+
+```text
+resolve project      ~/.codex/.codex-global-state.json -> selected-project -> local-projects[rootPaths[0]]
+                     fallback: newest session cwd, then most recently used project folder
+read previous chat   newest rollout-*.jsonl whose session_meta.cwd == project (last 6 turns)
+build handoff        provider name + project path + turn recap + state-priority reminder
+open Desktop         codex app "<project>"            (fallback: shell:AppsFolder activation)
+open fresh chat      focus window (ALT-tap rescue + SetForegroundWindow) -> Ctrl+N
+deliver context      clipboard + Ctrl+V into the new composer (never auto-sent)
+```
+
+Code: `CodexDesktopState`, `CodexHandoffBuilder`, `CodexDesktopBridge` in `AdamCodexHub.Codex`,
+driven from `PageViewModels.LaunchCodexAsync(..., startFreshChat: true)`.
+
+The paste is deliberate: the user reviews the recap and presses Enter. Nothing is sent on
+their behalf, and a failed hand-off never breaks activation (fire-and-forget, logged).

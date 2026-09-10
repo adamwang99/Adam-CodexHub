@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using AdamCodexHub.App.Mvvm;
 using AdamCodexHub.App.Services;
+using AdamCodexHub.Codex;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
 using AdamCodexHub.Infrastructure.Paths;
@@ -501,7 +502,7 @@ public sealed class HomeViewModel : PageViewModel
             var codexHome = card.Id == ProviderManager.CodexAccountProviderId
                 ? null
                 : _config.GetGatewayHomePath(card.Id);
-            if (await LaunchCodexAsync(launchDesktop, codexHome))
+            if (await LaunchCodexAsync(launchDesktop, codexHome, startFreshChat: launchDesktop))
             {
                 CodexLaunched?.Invoke(this, EventArgs.Empty);
             }
@@ -597,27 +598,64 @@ public sealed class HomeViewModel : PageViewModel
     }
 
     /// <summary>
+    /// Hands the working session over to a brand new Codex chat: waits for the Desktop window,
+    /// asks the app for a new chat (Ctrl+N) and pastes a recap of the previous conversation.
+    /// Fire-and-forget — a failed hand-off must never break activation.
+    /// </summary>
+    private void StartContinuationChat(CodexWorkspace workspace)
+    {
+        var vietnamese = L10n.IsVietnamese;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var rollout = CodexDesktopState.FindNewestRollout(workspace.RootPath);
+                var turns = rollout is null
+                    ? Array.Empty<CodexSessionTurn>()
+                    : CodexHandoffBuilder.ReadLastTurns(rollout);
+                var providerName = (await _providers.GetActiveAsync())?.Name;
+                var handoff = CodexHandoffBuilder.Build(workspace, turns, providerName, vietnamese);
+
+                if (!await CodexDesktopBridge.StartFreshChatAsync(handoff, TimeSpan.FromSeconds(45)))
+                {
+                    LogError(
+                        "Continuation chat: could not focus the Codex Desktop window",
+                        new InvalidOperationException("StartFreshChatAsync returned false."));
+                    return;
+                }
+
+                if (Application.Current is { } app)
+                {
+                    await app.Dispatcher.InvokeAsync(
+                        () => StatusMessage = L10n.T("L10n_Home_ContinuationReady"));
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError("Continuation chat failed", ex);
+            }
+        });
+    }
+
+    /// <summary>
     /// Launches Codex after a successful activation. Managed third-party providers run against a
     /// private sandboxed home passed through CODEX_HOME; the native Codex Account is launched with
     /// no override so it keeps using the real ~/.codex untouched.
     /// </summary>
-    private async Task<bool> LaunchCodexAsync(bool desktop, string? codexHome)
+    private async Task<bool> LaunchCodexAsync(bool desktop, string? codexHome, bool startFreshChat = false)
     {
         if (desktop)
         {
-            // Open the Codex Desktop app registered in the Start Menu (falls back to ChatGPT).
-            const string appId = "OpenAI.Codex_2p2nqsd0c76g0!App";
-            try
+            // Open Codex Desktop on the project the user is working in (falls back to a plain app
+            // activation). Codex binds every thread to the provider it was created with, so after a
+            // provider switch the OLD chat keeps billing the ChatGPT account ("usage limit") while
+            // the hub overlay only applies to new chats — hence the fresh chat below.
+            var workspace = CodexDesktopState.ResolveWorkspace();
+            CodexDesktopBridge.OpenWorkspace(workspace?.RootPath);
+
+            if (startFreshChat && workspace is not null)
             {
-                Process.Start(new ProcessStartInfo("explorer.exe")
-                {
-                    UseShellExecute = true,
-                    Arguments = $"\"shell:AppsFolder\\{appId}\""
-                });
-            }
-            catch
-            {
-                // best-effort
+                StartContinuationChat(workspace);
             }
 
             return true;

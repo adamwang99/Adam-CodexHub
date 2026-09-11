@@ -165,6 +165,53 @@ public static class ReleaseCheck
         }
     }
 
+    /// <summary>What a finished transfer turned out to be.</summary>
+    public enum DownloadOutcome
+    {
+        /// <summary>Every byte arrived and the SHA-256 matched the published one.</summary>
+        Verified,
+
+        /// <summary>Every byte arrived, but the release published no checksum to compare against.</summary>
+        CompleteButUnverified,
+
+        /// <summary>Fewer bytes arrived than the release says the file has.</summary>
+        Incomplete,
+
+        /// <summary>Every byte arrived, and they are not the published file.</summary>
+        ChecksumMismatch
+    }
+
+    /// <summary>
+    /// Decides what to do with a finished transfer. Kept separate from the download itself because the
+    /// distinction matters to whoever reads the message: a truncated transfer is a network problem
+    /// worth simply retrying, while a checksum mismatch on a complete file is a much more serious
+    /// claim about the file itself, and the two must never be reported as the same thing.
+    ///
+    /// Measured 2026-09-11: a test download of the real v1.5.4 installer stopped at 20.0 MB of 91.0 MB
+    /// when the connection dropped, and the code as first written would have called that "does NOT
+    /// match its SHA-256" — blaming the file for what the network did.
+    /// </summary>
+    public static DownloadOutcome JudgeDownload(
+        long expectedBytes,
+        long receivedBytes,
+        string? publishedChecksum,
+        string? computedHash)
+    {
+        if (expectedBytes > 0 && receivedBytes != expectedBytes)
+        {
+            return DownloadOutcome.Incomplete;
+        }
+
+        if (string.IsNullOrWhiteSpace(publishedChecksum))
+        {
+            return DownloadOutcome.CompleteButUnverified;
+        }
+
+        return ChecksumMatches(publishedChecksum, computedHash)
+            ? DownloadOutcome.Verified
+            : DownloadOutcome.ChecksumMismatch;
+    }
+
     /// <summary>
     /// Compares a published checksum line (<c>&lt;hex&gt;  &lt;filename&gt;</c>, the format
     /// <c>Get-FileHash</c> and the packaging script both write) against a computed digest. Only the

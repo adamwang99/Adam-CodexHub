@@ -2161,25 +2161,43 @@ public sealed class SettingsViewModel : PageViewModel
                 published = await client.GetStringAsync(setup.ChecksumUrl);
             }
 
-            if (published is null)
+            // A short transfer and a wrong file are different problems and must read as such. Measured
+            // 2026-09-11: a real download of this installer stopped at 20 MB of 91 MB when the line
+            // dropped, which a plain hash comparison would have reported as "does NOT match its
+            // SHA-256" — blaming the file for what the network did.
+            switch (ReleaseCheck.JudgeDownload(total, written, published, digest))
             {
-                // No checksum to compare against: keep the file, but never imply it was verified.
-                File.Move(partial, target, overwrite: true);
-                UpdateState.Current.StatusText = L10n.F("L10n_Set_UpdateDownloadedUnverified", setup.FileName);
-            }
-            else if (!ReleaseCheck.ChecksumMatches(published, digest))
-            {
-                File.Delete(partial);
-                UpdateState.Current.StatusText = L10n.T("L10n_Set_UpdateChecksumMismatch");
-                LogSettings(
-                    "Update download",
-                    $"SHA-256 mismatch for {setup.FileName}: expected {published.Trim()}, got {digest}");
-                return;
-            }
-            else
-            {
-                File.Move(partial, target, overwrite: true);
-                UpdateState.Current.StatusText = L10n.F("L10n_Set_UpdateDownloaded", setup.FileName);
+                case ReleaseCheck.DownloadOutcome.Incomplete:
+                    File.Delete(partial);
+                    UpdateState.Current.StatusText = L10n.F(
+                        "L10n_Set_UpdateDownloadIncomplete",
+                        written / 1024 / 1024,
+                        total / 1024 / 1024);
+                    LogSettings(
+                        "Update download",
+                        $"incomplete: {written} of {total} bytes for {setup.FileName}");
+                    return;
+
+                case ReleaseCheck.DownloadOutcome.ChecksumMismatch:
+                    File.Delete(partial);
+                    UpdateState.Current.StatusText = L10n.T("L10n_Set_UpdateChecksumMismatch");
+                    LogSettings(
+                        "Update download",
+                        $"SHA-256 mismatch for {setup.FileName}: expected {published!.Trim()}, got {digest}");
+                    return;
+
+                case ReleaseCheck.DownloadOutcome.CompleteButUnverified:
+                    // No checksum to compare against: keep the file, but never imply it was verified.
+                    File.Move(partial, target, overwrite: true);
+                    UpdateState.Current.StatusText =
+                        L10n.F("L10n_Set_UpdateDownloadedUnverified", setup.FileName);
+                    break;
+
+                default:
+                    File.Move(partial, target, overwrite: true);
+                    UpdateState.Current.StatusText =
+                        L10n.F("L10n_Set_UpdateDownloaded", setup.FileName);
+                    break;
             }
 
             Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{target}\"")

@@ -245,4 +245,70 @@ public sealed class ReleaseCheckTests
         // Whatever the machine is, the default has to be a real rid the packaging script can emit.
         Assert.Contains(ReleaseCheck.CurrentRuntimeIdentifier, new[] { "win-x64", "win-arm64" });
     }
+
+    [Fact]
+    public void ATruncatedTransferIsReportedAsIncompleteNotAsAWrongFile()
+    {
+        // The real measured case, 2026-09-11: the v1.5.4 installer is 91 MB and a test download stopped
+        // at 20 MB when the connection dropped. The SHA-256 of those 20 MB obviously does not match the
+        // published one — but calling that a checksum mismatch blames the file for what the network did,
+        // and sends whoever reads it looking for tampering that never happened.
+        const long expected = 95_461_376;
+        const long received = 20_971_520;
+
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.Incomplete,
+            ReleaseCheck.JudgeDownload(expected, received, "f94777b887a454797b33abeb62f7fae90733e3558f52ad527d852bd6d5865aeb", "612dac7e9601c3a23204337c872167a2cb00616dd719dea95346f4550415341a"));
+    }
+
+    [Fact]
+    public void ACompleteTransferIsVerifiedAgainstThePublishedChecksum()
+    {
+        const long size = 95_461_376;
+        const string published = "f94777b887a454797b33abeb62f7fae90733e3558f52ad527d852bd6d5865aeb";
+
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.Verified,
+            ReleaseCheck.JudgeDownload(size, size, published, published));
+
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.Verified,
+            ReleaseCheck.JudgeDownload(size, size, published + " *file.exe", published.ToUpperInvariant()));
+    }
+
+    [Fact]
+    public void ACompleteButDifferentFileIsAChecksumMismatch()
+    {
+        // Same size, different bytes: this one IS about the file, and it must not be softened.
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.ChecksumMismatch,
+            ReleaseCheck.JudgeDownload(100, 100, "aaaa", "bbbb"));
+    }
+
+    [Fact]
+    public void AReleaseWithoutAChecksumIsCompleteButSaysSo()
+    {
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.CompleteButUnverified,
+            ReleaseCheck.JudgeDownload(100, 100, null, "whatever"));
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.CompleteButUnverified,
+            ReleaseCheck.JudgeDownload(100, 100, "", "whatever"));
+    }
+
+    [Fact]
+    public void AnUnknownExpectedSizeFallsBackToTheChecksumRatherThanClaimingIncomplete()
+    {
+        // Some payloads carry no size; "unknown" must not read as "short", or every such download would
+        // be refused as incomplete.
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.Verified,
+            ReleaseCheck.JudgeDownload(0, 100, "aaaa", "aaaa"));
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.ChecksumMismatch,
+            ReleaseCheck.JudgeDownload(0, 100, "aaaa", "bbbb"));
+        Assert.Equal(
+            ReleaseCheck.DownloadOutcome.CompleteButUnverified,
+            ReleaseCheck.JudgeDownload(0, 100, null, "bbbb"));
+    }
 }

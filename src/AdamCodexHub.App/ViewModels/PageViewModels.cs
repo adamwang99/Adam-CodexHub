@@ -2100,7 +2100,7 @@ public sealed class SettingsViewModel : PageViewModel
             using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMinutes(15) };
             http.DefaultRequestHeaders.UserAgent.ParseAdd("AdamCodexHub");
 
-            var staged = await UpdateStaging.FetchAsync(
+            var staged = await UpdateFetch.FetchAsync(
                 http,
                 package.DownloadUrl,
                 package.ChecksumUrl,

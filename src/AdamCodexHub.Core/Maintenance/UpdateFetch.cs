@@ -5,24 +5,24 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using AdamCodexHub.Core.Maintenance;
 
-namespace AdamCodexHub.App;
+namespace AdamCodexHub.Core.Maintenance;
 
 /// <summary>
-/// Fetches the small update package and turns it into a directory the applier can trust.
+/// Fetches the small update package and turns it into a directory the apply script can trust.
 ///
 /// Two verifications, in order, because they answer different questions. The package's own SHA-256
 /// (published beside it) says the transfer arrived intact. The manifest's per-file SHA-256 then says
-/// every individual file that came out of the archive is the one the release intended — which is the
+/// every individual file that came out of the archive is the one the release intended - which is the
 /// question that matters, since those bytes are about to replace a working application.
 ///
-/// Extraction goes through the same path rule the applier uses, so an archive entry cannot write
-/// outside the staging folder on the way in either.
+/// Extraction goes through the same path rule the applier uses, so an archive entry cannot write outside
+/// the staging folder on the way in either. And a failed attempt deletes itself: a half-staged directory
+/// that happens to carry the right name is worse than no directory, because it looks finished.
 /// </summary>
-internal static class UpdateStaging
+public static class UpdateFetch
 {
-    /// <summary>Where a staged package waits between "downloaded" and "applied".</summary>
+    /// <summary>Where a fetched package waits between "downloaded" and "applied".</summary>
     public static string Root => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "AdamCodexHub",
@@ -32,8 +32,8 @@ internal static class UpdateStaging
 
     /// <summary>
     /// Downloads <paramref name="packageUrl"/>, checks it against <paramref name="checksumUrl"/>, and
-    /// unpacks it into <c>%LOCALAPPDATA%\AdamCodexHub\update\&lt;version&gt;</c>. Always leaves either a
-    /// complete, verified staging directory or nothing at all.
+    /// unpacks it into <c>update\&lt;version&gt;</c>. Always leaves either a complete, verified staging
+    /// directory or nothing at all.
     /// </summary>
     public static async Task<Result> FetchAsync(
         HttpClient http,
@@ -41,14 +41,14 @@ internal static class UpdateStaging
         string? checksumUrl,
         long expectedBytes,
         string version,
+        string? root = null,
         CancellationToken cancellationToken = default)
     {
-        var folder = Path.Combine(Root, version);
+        var folder = Path.Combine(root ?? Root, version);
 
         try
         {
-            // A previous attempt's leftovers are cleared first: a half-staged directory that happens to
-            // carry the right name is worse than no directory, because it looks finished.
+            // A previous attempt's leftovers are cleared first.
             if (Directory.Exists(folder))
             {
                 Directory.Delete(folder, recursive: true);
@@ -107,9 +107,9 @@ internal static class UpdateStaging
     }
 
     /// <summary>
-    /// Null when the transfer checked out, otherwise the reason it did not. Distinguishes a transfer
-    /// that stopped short from bytes that arrived different — the same distinction the installer
-    /// download needed, because they point at different causes.
+    /// Null when the transfer checked out, otherwise the reason it did not. Distinguishes a transfer that
+    /// stopped short from bytes that arrived different, because those point at different causes - one is
+    /// the network, the other is the file.
     /// </summary>
     private static async Task<string?> VerifyArchiveAsync(
         HttpClient http,
@@ -176,20 +176,28 @@ internal static class UpdateStaging
             return false;
         }
 
+        string manifestText;
         using (var reader = new StreamReader(manifestEntry.Open()))
         {
-            manifest = UpdatePackage.Parse(reader.ReadToEnd(), out var rejection);
-            if (manifest is null)
-            {
-                failure = $"the manifest was refused: {rejection?.Reason}";
-                return false;
-            }
+            manifestText = reader.ReadToEnd();
+        }
+
+        manifest = UpdatePackage.Parse(manifestText, out var rejection);
+        if (manifest is null)
+        {
+            failure = $"the manifest was refused: {rejection?.Reason}";
+            return false;
         }
 
         var root = Path.GetFullPath(staging);
         var rootWithSeparator = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
             + Path.DirectorySeparatorChar;
         Directory.CreateDirectory(root);
+
+        // The manifest is written out beside the files it describes. The applier reads it back from the
+        // staging directory to build the apply script, and a staging directory that cannot say what it
+        // contains is not something to hand to a script that replaces an installation.
+        File.WriteAllText(Path.Combine(root, "update-manifest.json"), manifestText);
 
         // Only entries the manifest names are unpacked: a file the manifest does not vouch for is not
         // something the applier would install anyway, so it never needs to touch the disk.
@@ -219,8 +227,14 @@ internal static class UpdateStaging
 
             zipEntry.ExtractToFile(target, overwrite: true);
 
-            using var stream = File.OpenRead(target);
-            var digest = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+            // Scoped deliberately: the cleanup below deletes this file, and a still-open handle makes
+            // that fail with "being used by another process" on a directory the code then cannot remove.
+            string digest;
+            using (var stream = File.OpenRead(target))
+            {
+                digest = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+            }
+
             if (!string.Equals(digest, entry.Sha256, StringComparison.OrdinalIgnoreCase))
             {
                 failure = $"{entry.RelativePath} did not match the manifest after unpacking.";

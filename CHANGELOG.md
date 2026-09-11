@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.5.6
+
+### Added
+
+- **A small update package the hub builds, verifies and applies — with a way back if it fails.**
+  The app stages an update as a ZIP plus a manifest: every file is checked against its digest
+  before anything is written, and the swap is performed by a generated PowerShell script in a
+  **separate process**, because the process doing the swap has already loaded the assemblies it
+  has to replace — the in-place applier died on `AdamCodexHub.App.dll` with "being used by
+  another process". PowerShell loads none of those assemblies and ships on every Windows machine,
+  so no extra binary is required. If a file fails after others have landed, the script rolls the
+  whole set back.
+
+### Fixed
+
+- **A transfer that stopped short is now told apart from a file that failed its checksum** — the
+  two used to be indistinguishable in the log, which is exactly the case a download guard exists
+  for.
+- **Three defects that only running the download path over a real loopback socket could find**
+  (a stubbed `HttpClient` would have skipped the part that can go wrong): verification deleted its
+  staging directory while the file handle was still open — on Windows that fails, and the deletion
+  was the whole point of the branch; the manifest was read out of the archive but never written
+  into the staging directory, so the first real update would have failed when the apply script was
+  generated; and one test passed for the wrong reason, because a missing checksum file is
+  deliberately tolerated.
+- **PowerShell refuses a trailing comma in an array literal**, so the generated file list is joined
+  rather than terminated — the parse error landed at the top of the script, nowhere near the entry
+  that carried the comma. The rollback test now forces the failure production would actually hit
+  (a file named in the manifest and absent from the package) instead of a read-only target that
+  `Copy-Item -Force` silently overrides.
+
 ## v1.5.5
 
 ### Fixed

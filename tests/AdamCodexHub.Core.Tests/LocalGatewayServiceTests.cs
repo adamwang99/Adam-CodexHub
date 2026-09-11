@@ -453,9 +453,35 @@ public sealed class LocalGatewayServiceTests
 
     /// <summary>
     /// An image endpoint is enabled and has a verdict, but a Codex turn can never use it — it is only
-    /// there to be picked and fail, and it would sit in the picker marked "(U)" forever because the
-    /// probes deliberately skip those ids.
-    /// </summary>
+    [Fact]
+    public async Task AcceptsARequestBodyLargerThanTheOldTenMegabyteCeiling()
+    {
+        // Codex posts the whole conversation with every turn. Measured 2026-09-11: a real long thread
+        // hit the old 10 MB guard and the gateway answered 413 "Request body exceeds the 10 MB gateway
+        // limit." on POST /v1/responses — the session could not continue at all.
+        await using var fixture = new GatewayFixture();
+        await fixture.InitializeAsync();
+        await fixture.Models.UpsertAsync(GatewayFixture.CreateModel("enabled-model"));
+
+        var padding = new string('x', 12 * 1024 * 1024);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/v1/responses")
+        {
+            Content = new StringContent($"{{\"model\":\"enabled-model\",\"input\":\"{padding}\"}}")
+        };
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            fixture.Gateway.LocalToken);
+
+        using var response = await fixture.Client.SendAsync(request);
+
+        Assert.NotEqual(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        // It reached the provider: the guard is a ceiling, not a refusal to forward the turn. (The fake
+        // upstream refuses this synthetic body, so the gateway may retry with the next key — hence
+        // NotEmpty rather than Single.)
+        Assert.NotEmpty(fixture.Handler.SeenTokens);
+    }
+
     [Fact]
     public async Task GatewayDoesNotOfferImageEndpoints()
     {

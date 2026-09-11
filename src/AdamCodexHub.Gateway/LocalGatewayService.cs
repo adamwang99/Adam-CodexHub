@@ -17,7 +17,11 @@ namespace AdamCodexHub.Gateway;
 
 public sealed class LocalGatewayService : IGatewayService
 {
-    private const long MaxRequestBodySize = 10 * 1024 * 1024;
+    // Codex sends the whole conversation with every turn, and a long thread with screenshots in it is
+    // tens of megabytes: measured 2026-09-11, a real chat hit the old 10 MB ceiling and the gateway
+    // answered 413 "Request body exceeds the 10 MB gateway limit." (Adam, `POST /v1/responses`). The
+    // ceiling is a guard against a runaway body, not a budget for a working session.
+    private const long MaxRequestBodySize = 64 * 1024 * 1024;
 
     /// <summary>Header the background probes send, so the gateway can tell them apart from the user's
     /// own Codex traffic and keep the key's health accounting to the latter.</summary>
@@ -775,7 +779,7 @@ public sealed class LocalGatewayService : IGatewayService
         if (request.ContentLength > MaxRequestBodySize)
         {
             throw new BadHttpRequestException(
-                "Request body exceeds the 10 MB gateway limit.",
+                $"Request body exceeds the {MaxRequestBodySize / (1024 * 1024)} MB gateway limit.",
                 StatusCodes.Status413PayloadTooLarge);
         }
 
@@ -784,7 +788,7 @@ public sealed class LocalGatewayService : IGatewayService
         if (buffer.Length > MaxRequestBodySize)
         {
             throw new BadHttpRequestException(
-                "Request body exceeds the 10 MB gateway limit.",
+                $"Request body exceeds the {MaxRequestBodySize / (1024 * 1024)} MB gateway limit.",
                 StatusCodes.Status413PayloadTooLarge);
         }
 

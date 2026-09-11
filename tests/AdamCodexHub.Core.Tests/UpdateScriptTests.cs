@@ -81,6 +81,23 @@ public sealed class UpdateScriptTests : IDisposable
     private string Generate(UpdatePackage.Manifest manifest) =>
         UpdateScript.Generate(manifest, _staging, _install, _log, relaunch: false);
 
+    /// <summary>
+    /// The script's own log, attached to failures. Without it a failing run reports only an exit
+    /// code, and the reason the script refused the update (a digest that did not match, a path it
+    /// could not write) stays invisible in CI.
+    /// </summary>
+    private string LogTail()
+    {
+        try
+        {
+            return File.Exists(_log) ? File.ReadAllText(_log) : "(no log file was written)";
+        }
+        catch (Exception ex)
+        {
+            return "(log unreadable: " + ex.Message + ")";
+        }
+    }
+
     [Fact]
     public void TheScriptIsPureAsciiBecausePowerShellReadsItAsAnsiWithoutABom()
     {
@@ -112,7 +129,7 @@ public sealed class UpdateScriptTests : IDisposable
 
         var exit = RunScript(Generate(manifest), out var output);
 
-        Assert.True(exit == 0, output);
+        Assert.True(exit == 0, $"exit={exit}\nscript output: {output}\nlog: {LogTail()}");
         Assert.Equal("new app", File.ReadAllText(Path.Combine(_install, "AdamCodexHub.App.dll")));
         Assert.Equal("core unchanged", File.ReadAllText(Path.Combine(_install, "AdamCodexHub.Core.dll")));
 
@@ -180,11 +197,11 @@ public sealed class UpdateScriptTests : IDisposable
             "win-x64",
             new List<UpdatePackage.FileEntry> { new("AdamCodexHub.App.dll", hash, 0) });
 
-        var first = RunScript(Generate(manifest), out _);
-        var second = RunScript(Generate(manifest), out _);
+        var first = RunScript(Generate(manifest), out var firstOutput);
+        var second = RunScript(Generate(manifest), out var secondOutput);
 
-        Assert.Equal(0, first);
-        Assert.Equal(0, second);
+        Assert.True(first == 0, $"first exit={first}\nscript output: {firstOutput}\nlog: {LogTail()}");
+        Assert.True(second == 0, $"second exit={second}\nscript output: {secondOutput}\nlog: {LogTail()}");
         Assert.Equal("new app", File.ReadAllText(Path.Combine(_install, "AdamCodexHub.App.dll")));
         Assert.Contains("already current", File.ReadAllText(_log));
     }

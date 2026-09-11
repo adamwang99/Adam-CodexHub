@@ -21,7 +21,7 @@
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
 
     <!-- Shipped with .NET 8; pinned to the app's target framework. -->
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
 

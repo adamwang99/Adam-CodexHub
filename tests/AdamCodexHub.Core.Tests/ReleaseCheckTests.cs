@@ -108,7 +108,7 @@ public sealed class ReleaseCheckTests
     public void FindsTheInstallerAssetAndTheChecksumPublishedBesideIt()
     {
         // The exact shape v1.5.4 shipped (4 assets), so the URL pair the downloader uses is pinned.
-        var setup = ReleaseCheck.FindSetupDownload(ReleaseWithInstaller);
+        var setup = ReleaseCheck.FindSetupDownload(ReleaseWithInstaller, "win-x64");
 
         Assert.NotNull(setup);
         Assert.Equal("AdamCodexHub-Setup-v1.5.6-win-x64.exe", setup!.FileName);
@@ -121,7 +121,7 @@ public sealed class ReleaseCheckTests
     public void ThePortableZipIsNeverMistakenForTheInstaller()
     {
         // Both assets start with "AdamCodexHub-" and end with an extension; only one is runnable.
-        var setup = ReleaseCheck.FindSetupDownload(ReleaseWithInstaller);
+        var setup = ReleaseCheck.FindSetupDownload(ReleaseWithInstaller, "win-x64");
 
         Assert.NotNull(setup);
         Assert.EndsWith(".exe", setup!.FileName, StringComparison.OrdinalIgnoreCase);
@@ -143,9 +143,9 @@ public sealed class ReleaseCheckTests
             }
             """;
 
-        Assert.Null(ReleaseCheck.FindSetupDownload(zipOnly));
-        Assert.Null(ReleaseCheck.FindSetupDownload("not json"));
-        Assert.Null(ReleaseCheck.FindSetupDownload("{\"tag_name\":\"v1.0.0\"}"));
+        Assert.Null(ReleaseCheck.FindSetupDownload(zipOnly, "win-x64"));
+        Assert.Null(ReleaseCheck.FindSetupDownload("not json", "win-x64"));
+        Assert.Null(ReleaseCheck.FindSetupDownload("{\"tag_name\":\"v1.0.0\"}", "win-x64"));
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public sealed class ReleaseCheckTests
             }
             """;
 
-        var setup = ReleaseCheck.FindSetupDownload(noChecksum);
+        var setup = ReleaseCheck.FindSetupDownload(noChecksum, "win-x64");
 
         Assert.NotNull(setup);
         Assert.Null(setup!.ChecksumUrl);
@@ -191,5 +191,58 @@ public sealed class ReleaseCheckTests
         Assert.False(ReleaseCheck.ChecksumMatches("", "abc"));
         Assert.False(ReleaseCheck.ChecksumMatches("abc", null));
         Assert.False(ReleaseCheck.ChecksumMatches("   ", "abc"));
+    }
+
+    [Fact]
+    public void TheInstallerIsMatchedToTheArchitectureThatAsked()
+    {
+        // The packaging script emits AdamCodexHub-Setup-v<ver>-<rid>.exe for win-x64 AND win-arm64.
+        // Before this was checked, an ARM installer could be offered to an x64 machine simply because
+        // it appeared first in the payload — the kind of thing that only shows up on someone else's
+        // computer, after the release.
+        const string bothArches = """
+            {
+              "tag_name": "v1.5.6",
+              "assets": [
+                { "name": "AdamCodexHub-Setup-v1.5.6-win-arm64.exe", "browser_download_url": "https://example/arm", "size": 10 },
+                { "name": "AdamCodexHub-Setup-v1.5.6-win-arm64.exe.sha256", "browser_download_url": "https://example/armsha", "size": 1 },
+                { "name": "AdamCodexHub-Setup-v1.5.6-win-x64.exe", "browser_download_url": "https://example/x64", "size": 20 },
+                { "name": "AdamCodexHub-Setup-v1.5.6-win-x64.exe.sha256", "browser_download_url": "https://example/x64sha", "size": 1 }
+              ]
+            }
+            """;
+
+        // arm64 listed first on purpose: position must not decide.
+        var onX64 = ReleaseCheck.FindSetupDownload(bothArches, "win-x64");
+        var onArm = ReleaseCheck.FindSetupDownload(bothArches, "win-arm64");
+
+        Assert.Equal("https://example/x64", onX64!.DownloadUrl);
+        Assert.Equal("https://example/x64sha", onX64.ChecksumUrl);
+        Assert.Equal("https://example/arm", onArm!.DownloadUrl);
+        Assert.Equal("https://example/armsha", onArm.ChecksumUrl);
+    }
+
+    [Fact]
+    public void AReleaseWithOnlyTheOtherArchitectureOffersNothing()
+    {
+        // Better no button than an installer that cannot run.
+        const string armOnly = """
+            {
+              "tag_name": "v1.5.6",
+              "assets": [
+                { "name": "AdamCodexHub-Setup-v1.5.6-win-arm64.exe", "browser_download_url": "https://example/arm", "size": 10 }
+              ]
+            }
+            """;
+
+        Assert.Null(ReleaseCheck.FindSetupDownload(armOnly, "win-x64"));
+        Assert.NotNull(ReleaseCheck.FindSetupDownload(armOnly, "win-arm64"));
+    }
+
+    [Fact]
+    public void TheDefaultRuntimeIdentifierDescribesThisProcess()
+    {
+        // Whatever the machine is, the default has to be a real rid the packaging script can emit.
+        Assert.Contains(ReleaseCheck.CurrentRuntimeIdentifier, new[] { "win-x64", "win-arm64" });
     }
 }

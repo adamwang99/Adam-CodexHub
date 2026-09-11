@@ -59,6 +59,22 @@
 
 ### Added
 
+- **A newer release now announces itself on the main screen.** Adam, 2026-09-11: *"khi có bản cập nhật
+  mới cần có báo noti ở giao diện chính để người dùng nhấn và đưa vào setting, chứ không cần người
+  dùng phải vào check mới biết."* The hub checks once at launch, in the background — no blocking, and
+  a check that fails says nothing rather than interrupting — and when a newer release exists a notice
+  appears above the toolbar on the Choose Provider page. Clicking it opens Settings, where the
+  download button is; dismissing hides it for the session and it returns on the next launch. Both
+  views read one shared object, so the notice and the Settings card can never disagree about whether
+  an update exists.
+
+- **The installer is matched to the architecture that asked for it.** The packaging script emits
+  `AdamCodexHub-Setup-v<version>-<rid>.exe` for both `win-x64` and `win-arm64`; before this the name
+  match ignored the architecture, so a release carrying both could hand an ARM installer to an x64
+  machine purely because it appeared first in the payload — a defect that would only surface on
+  someone else's computer, after the release. A release with no installer for the running
+  architecture now simply offers no download button.
+
 - **The release check can fetch the installer for you.** When a release actually carries a Setup
   asset, a second button downloads it into the Downloads folder, verifies its SHA-256 against the
   checksum published beside it, and reveals the file in Explorer. It stops exactly there: the hub

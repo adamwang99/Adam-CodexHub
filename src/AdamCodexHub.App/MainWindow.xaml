@@ -363,6 +363,38 @@
                  grid and the page scrolls as one stream. -->
             <StackPanel>
 
+                <!-- Update notice. It appears by itself when a newer release exists — the check runs
+                     once at launch, so nobody has to go into Settings to find out — and it is the only
+                     way in: clicking it opens Settings, where the download button lives. Dismissing
+                     hides it for this session only. -->
+                <Border Style="{StaticResource CardBorder}"
+                        Padding="12"
+                        Margin="0,0,0,14"
+                        Visibility="{Binding Source={x:Static services:UpdateState.Current}, Path=BannerVisibility}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding Source={x:Static services:UpdateState.Current}, Path=BannerText}"
+                                   Foreground="{DynamicResource BrushTextHigh}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap" />
+                        <Button Grid.Column="1"
+                                Content="{DynamicResource L10n_Update_OpenSettings}"
+                                Command="{Binding Source={x:Static services:UpdateState.Current}, Path=ShowSettingsCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                Margin="10,0,0,0" />
+                        <Button Grid.Column="2"
+                                Content="&#x2715;"
+                                Command="{Binding Source={x:Static services:UpdateState.Current}, Path=DismissCommand}"
+                                ToolTip="{DynamicResource L10n_Update_Dismiss}"
+                                Margin="8,0,0,0" />
+                    </Grid>
+                </Border>
+
                 <!-- Toolbar -->
                 <Border Style="{StaticResource CardBorder}" Padding="12" Margin="0,0,0,14">
                     <WrapPanel>

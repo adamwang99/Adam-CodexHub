@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 namespace AdamCodexHub.Core.Maintenance;
@@ -95,9 +96,29 @@ public static class ReleaseCheck
         string? ChecksumUrl,
         long SizeBytes);
 
-    /// <summary>Reads the Setup asset (and its <c>.sha256</c> sibling) out of a release payload.</summary>
-    public static SetupDownload? FindSetupDownload(string releaseJson)
+    /// <summary>
+    /// The runtime identifier of the process doing the asking, so a release that ships installers for
+    /// more than one architecture can be matched to the machine actually running the hub.
+    /// </summary>
+    public static string CurrentRuntimeIdentifier =>
+        RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "win-arm64" : "win-x64";
+
+    /// <summary>
+    /// Reads the Setup asset (and its <c>.sha256</c> sibling) out of a release payload.
+    ///
+    /// Nothing here is pinned to a version: the asset name is matched by shape, so the release that
+    /// comes after this one is handled by the same rule. The architecture is checked, though — the
+    /// packaging script emits <c>AdamCodexHub-Setup-v&lt;version&gt;-&lt;rid&gt;.exe</c> for both
+    /// <c>win-x64</c> and <c>win-arm64</c>, and handing an ARM installer to an x64 machine (or taking
+    /// whichever the JSON happened to list first) would be worse than offering nothing.
+    ///
+    /// Returns null when the release carries no installer for this architecture — the honest answer
+    /// there is "no download button" rather than an installer that cannot run.
+    /// </summary>
+    public static SetupDownload? FindSetupDownload(string releaseJson, string? runtimeIdentifier = null)
     {
+        var wanted = string.IsNullOrWhiteSpace(runtimeIdentifier) ? CurrentRuntimeIdentifier : runtimeIdentifier;
+
         try
         {
             using var document = JsonDocument.Parse(releaseJson);
@@ -127,7 +148,7 @@ public static class ReleaseCheck
 
             var setup = found.FirstOrDefault(asset =>
                 asset.Name.StartsWith("AdamCodexHub-Setup-", StringComparison.OrdinalIgnoreCase) &&
-                asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+                asset.Name.EndsWith("-" + wanted + ".exe", StringComparison.OrdinalIgnoreCase));
             if (setup.Name is null)
             {
                 return null;

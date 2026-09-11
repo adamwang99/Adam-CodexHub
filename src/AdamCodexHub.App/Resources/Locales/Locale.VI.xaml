@@ -121,6 +121,9 @@
     <sys:String x:Key="L10n_Diag_Restore">Khôi phục bản tốt nhất</sys:String>
     <sys:String x:Key="L10n_Diag_WarningsSection">CẢNH BÁO KHỞI ĐỘNG NHÀ CUNG CẤP</sys:String>
     <sys:String x:Key="L10n_Diag_Refresh">Làm mới chẩn đoán</sys:String>
+    <sys:String x:Key="L10n_Update_Banner">Đã có bản Adam CodexHub {0}. Bấm để mở Cài Đặt và tải về.</sys:String>
+    <sys:String x:Key="L10n_Update_OpenSettings">Mở Cài Đặt</sys:String>
+    <sys:String x:Key="L10n_Update_Dismiss">Ẩn thông báo này (hiện lại ở lần mở sau)</sys:String>
     <sys:String x:Key="L10n_Set_Title">Cài Đặt</sys:String>
     <sys:String x:Key="L10n_Set_Subtitle">Các mặc định bảo mật và phiên làm việc do Adam CodexHub áp dụng.</sys:String>
     <sys:String x:Key="L10n_Set_DefaultsSection">MẶC ĐỊNH BẮT BUỘC</sys:String>

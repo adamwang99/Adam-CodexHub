@@ -1978,9 +1978,6 @@ public sealed class SettingsViewModel : PageViewModel
     private static readonly TimeSpan DownloadStallTimeout = TimeSpan.FromSeconds(90);
 
     private string _statusKey = DefaultsStatusKey;
-    private string _updateStatus = string.Empty;
-    private string? _releaseUrl;
-    private ReleaseCheck.SetupDownload? _setup;
 
     public SettingsViewModel()
         : base("L10n_Set_Title", "L10n_Set_Subtitle")
@@ -1989,7 +1986,11 @@ public sealed class SettingsViewModel : PageViewModel
         // toolbar always show the same state; this VM mirrors them for the XAML + status line.
         Handoff.PropertyChanged += OnHandoffChanged;
         StatusMessage = L10n.T(_statusKey);
-        CheckForUpdateCommand = new AsyncRelayCommand(CheckForUpdateAsync);
+        // The check and the notice live in one shared object (UpdateState) so the main-screen banner
+        // and this card can never disagree about whether a newer release exists; this view owns only
+        // the download itself.
+        UpdateState.Current.PropertyChanged += OnUpdateStateChanged;
+        CheckForUpdateCommand = UpdateState.Current.CheckCommand;
         OpenReleaseCommand = new RelayCommand(OpenRelease);
         DownloadUpdateCommand = new AsyncRelayCommand(DownloadUpdateAsync);
     }
@@ -1997,34 +1998,21 @@ public sealed class SettingsViewModel : PageViewModel
     /// <summary>Shared hand-off state — Home toolbar and this page both bind to it.</summary>
     private static HandoffState Handoff => HandoffState.Current;
 
-    /// <summary>Asks GitHub, on demand, whether a newer release exists. Never runs on its own.</summary>
+    /// <summary>Asks GitHub on demand, through the shared notice. Never runs by itself.</summary>
     public ICommand CheckForUpdateCommand { get; }
 
     /// <summary>Opens the release page in the browser — the download stays the user's decision.</summary>
     public ICommand OpenReleaseCommand { get; }
 
     /// <summary>The build that is running, so a bug report can quote it.</summary>
-    public string RunningVersionLine => L10n.F("L10n_Set_UpdateRunning", RunningVersion);
+    public string RunningVersionLine =>
+        L10n.F("L10n_Set_UpdateRunning", UpdateState.RunningVersion);
 
-    /// <summary>Outcome of the last check; empty until the user asks.</summary>
-    public string UpdateStatus
-    {
-        get => _updateStatus;
-        private set
-        {
-            if (_updateStatus == value)
-            {
-                return;
-            }
-
-            _updateStatus = value;
-            OnPropertyChanged();
-        }
-    }
+    /// <summary>Outcome of the last check; empty until something is asked or found.</summary>
+    public string UpdateStatus => UpdateState.Current.StatusText;
 
     /// <summary>"Open the release page" only appears once there is a page worth opening.</summary>
-    public Visibility ReleaseLinkVisibility =>
-        string.IsNullOrWhiteSpace(_releaseUrl) ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility ReleaseLinkVisibility => UpdateState.Current.ReleaseLinkVisibility;
 
     /// <summary>
     /// Fetches the release's installer into the Downloads folder and verifies its SHA-256 against the
@@ -2034,8 +2022,15 @@ public sealed class SettingsViewModel : PageViewModel
     public ICommand DownloadUpdateCommand { get; }
 
     /// <summary>Only offered when the release actually carries a Setup asset.</summary>
-    public Visibility DownloadVisibility =>
-        _setup is null ? Visibility.Collapsed : Visibility.Visible;
+    public Visibility DownloadVisibility => UpdateState.Current.DownloadVisibility;
+
+    /// <summary>Mirrors the shared notice into this card.</summary>
+    private void OnUpdateStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(UpdateStatus));
+        OnPropertyChanged(nameof(ReleaseLinkVisibility));
+        OnPropertyChanged(nameof(DownloadVisibility));
+    }
 
     /// <summary>Open a fresh Codex chat and carry the session over when a provider is activated.</summary>
     public bool OpenFreshChat
@@ -2066,73 +2061,18 @@ public sealed class SettingsViewModel : PageViewModel
         OnPropertyChanged(nameof(RunningVersionLine));
     }
 
-    /// <summary>The informational version of the running assembly (e.g. "1.5.4+945e6d2…").</summary>
-    private static string RunningVersion =>
-        System.Reflection.Assembly.GetEntryAssembly()
-            ?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion
-        ?? System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString()
-        ?? "unknown";
-
-    /// <summary>
-    /// One request to the public releases API, on the user's click. A failure is reported in the
-    /// status line — an unreachable GitHub is not a broken hub, and it must never look like one.
-    /// </summary>
-    private async Task CheckForUpdateAsync()
-    {
-        UpdateStatus = L10n.T("L10n_Set_UpdateChecking");
-        try
-        {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-            // GitHub rejects requests without a User-Agent; the header names the app, nothing else.
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("AdamCodexHub");
-            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
-
-            var payload = await client.GetStringAsync(ReleaseCheck.LatestReleaseUrl);
-            var result = ReleaseCheck.Evaluate(RunningVersion, payload);
-
-            if (!result.Succeeded)
-            {
-                _releaseUrl = null;
-                _setup = null;
-                UpdateStatus = L10n.F("L10n_Set_UpdateFailed", result.Failure ?? string.Empty);
-            }
-            else if (result.IsNewer)
-            {
-                _releaseUrl = result.ReleaseUrl;
-                // Only a release that actually carries an installer offers the download button.
-                _setup = ReleaseCheck.FindSetupDownload(payload);
-                UpdateStatus = L10n.F("L10n_Set_UpdateAvailable", result.LatestVersion ?? string.Empty);
-            }
-            else
-            {
-                _releaseUrl = null;
-                _setup = null;
-                UpdateStatus = L10n.T("L10n_Set_UpdateCurrent");
-            }
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
-        {
-            _releaseUrl = null;
-            _setup = null;
-            UpdateStatus = L10n.F("L10n_Set_UpdateFailed", ex.Message);
-            LogSettings("Release check", $"{ex.GetType().Name}: {ex.Message}");
-        }
-
-        OnPropertyChanged(nameof(ReleaseLinkVisibility));
-        OnPropertyChanged(nameof(DownloadVisibility));
-    }
 
     private void OpenRelease()
     {
-        if (string.IsNullOrWhiteSpace(_releaseUrl))
+        var url = UpdateState.Current.ReleaseUrl;
+        if (string.IsNullOrWhiteSpace(url))
         {
             return;
         }
 
         try
         {
-            Process.Start(new ProcessStartInfo(_releaseUrl) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
@@ -2147,7 +2087,7 @@ public sealed class SettingsViewModel : PageViewModel
     /// </summary>
     private async Task DownloadUpdateAsync()
     {
-        var setup = _setup;
+        var setup = UpdateState.Current.Setup;
         if (setup is null)
         {
             return;
@@ -2170,7 +2110,7 @@ public sealed class SettingsViewModel : PageViewModel
             client.DefaultRequestHeaders.UserAgent.ParseAdd("AdamCodexHub");
             using var stall = new CancellationTokenSource();
 
-            UpdateStatus = L10n.T("L10n_Set_UpdateDownloadingStart");
+            UpdateState.Current.StatusText = L10n.T("L10n_Set_UpdateDownloadingStart");
 
             long total = setup.SizeBytes;
             long written = 0;
@@ -2209,7 +2149,7 @@ public sealed class SettingsViewModel : PageViewModel
                     written += read;
                     if (total > 0)
                     {
-                        UpdateStatus = L10n.F("L10n_Set_UpdateDownloading", written * 100 / total);
+                        UpdateState.Current.StatusText = L10n.F("L10n_Set_UpdateDownloading", written * 100 / total);
                     }
                 }
             }
@@ -2225,12 +2165,12 @@ public sealed class SettingsViewModel : PageViewModel
             {
                 // No checksum to compare against: keep the file, but never imply it was verified.
                 File.Move(partial, target, overwrite: true);
-                UpdateStatus = L10n.F("L10n_Set_UpdateDownloadedUnverified", setup.FileName);
+                UpdateState.Current.StatusText = L10n.F("L10n_Set_UpdateDownloadedUnverified", setup.FileName);
             }
             else if (!ReleaseCheck.ChecksumMatches(published, digest))
             {
                 File.Delete(partial);
-                UpdateStatus = L10n.T("L10n_Set_UpdateChecksumMismatch");
+                UpdateState.Current.StatusText = L10n.T("L10n_Set_UpdateChecksumMismatch");
                 LogSettings(
                     "Update download",
                     $"SHA-256 mismatch for {setup.FileName}: expected {published.Trim()}, got {digest}");
@@ -2239,7 +2179,7 @@ public sealed class SettingsViewModel : PageViewModel
             else
             {
                 File.Move(partial, target, overwrite: true);
-                UpdateStatus = L10n.F("L10n_Set_UpdateDownloaded", setup.FileName);
+                UpdateState.Current.StatusText = L10n.F("L10n_Set_UpdateDownloaded", setup.FileName);
             }
 
             Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{target}\"")
@@ -2251,7 +2191,7 @@ public sealed class SettingsViewModel : PageViewModel
         {
             // The stall guard fired: bytes stopped arriving, so the transfer was abandoned rather than
             // left hanging for hours looking alive.
-            UpdateStatus = L10n.T("L10n_Set_UpdateDownloadStalled");
+            UpdateState.Current.StatusText = L10n.T("L10n_Set_UpdateDownloadStalled");
             LogSettings(
                 "Update download",
                 $"no progress for {DownloadStallTimeout.TotalSeconds:0}s — aborted");
@@ -2260,7 +2200,7 @@ public sealed class SettingsViewModel : PageViewModel
         catch (Exception ex) when (ex is HttpRequestException or IOException
             or UnauthorizedAccessException or InvalidOperationException)
         {
-            UpdateStatus = L10n.F("L10n_Set_UpdateDownloadFailed", ex.Message);
+            UpdateState.Current.StatusText = L10n.F("L10n_Set_UpdateDownloadFailed", ex.Message);
             LogSettings("Update download", $"{ex.GetType().Name}: {ex.Message}");
             TryDelete(partial);
         }

@@ -121,6 +121,9 @@
     <sys:String x:Key="L10n_Diag_Restore">Restore last good</sys:String>
     <sys:String x:Key="L10n_Diag_WarningsSection">PROVIDER STARTUP WARNINGS</sys:String>
     <sys:String x:Key="L10n_Diag_Refresh">Refresh diagnostics</sys:String>
+    <sys:String x:Key="L10n_Update_Banner">Adam CodexHub {0} is available. Click to open Settings and download it.</sys:String>
+    <sys:String x:Key="L10n_Update_OpenSettings">Open Settings</sys:String>
+    <sys:String x:Key="L10n_Update_Dismiss">Hide this notice (it comes back next launch)</sys:String>
     <sys:String x:Key="L10n_Set_Title">Settings</sys:String>
     <sys:String x:Key="L10n_Set_Subtitle">Security and session defaults applied by Adam CodexHub.</sys:String>
     <sys:String x:Key="L10n_Set_DefaultsSection">ENFORCED DEFAULTS</sys:String>

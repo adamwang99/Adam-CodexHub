@@ -90,11 +90,32 @@ public sealed class MainViewModel : ObservableObject
 
         _home.CodexLaunched += (_, _) => CodexLaunched?.Invoke(this, EventArgs.Empty);
         L10n.LanguageChanged += ReapplyTitleBarText;
+
+        // Adam, 2026-09-11: a newer release has to announce itself on the main screen rather than wait
+        // for someone to go into Settings and ask. Fire-and-forget — the window is already drawing, and
+        // a check nobody requested that fails should simply say nothing.
+        Services.UpdateState.Current.SettingsRequested += ShowSettingsPage;
+        _ = Services.UpdateState.Current.CheckQuietlyAsync();
+    }
+
+    /// <summary>
+    /// Switches to the Settings page — where the release card and its download button live. Reached by
+    /// clicking the update notice on the main screen.
+    /// </summary>
+    private void ShowSettingsPage()
+    {
+        var settings = Pages.OfType<SettingsViewModel>().FirstOrDefault();
+        if (settings is not null)
+        {
+            CurrentPage = settings;
+        }
     }
 
     /// <summary>Re-localizes the fallback title-bar labels (no provider / no model / gateway).</summary>
     private void ReapplyTitleBarText()
     {
+        Services.UpdateState.Current.RefreshLanguage();
+
         if (_noProviderShown)
         {
             ActiveProvider = L10n.T("L10n_Main_NoProvider");

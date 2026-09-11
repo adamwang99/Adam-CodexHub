@@ -118,16 +118,6 @@ public partial class App : Application
         base.OnStartup(e);
         LogStartup("OnStartup entered");
 
-        // An update helper is a second process by design, so it is handled before the single-instance
-        // mutex — otherwise it would see a running instance, decide it was a duplicate, and exit without
-        // ever swapping the files it was started for.
-        if (UpdateApplyHost.IsUpdateHelper(e.Args))
-        {
-            UpdateApplyHost.Run(e.Args);
-            Shutdown(0);
-            return;
-        }
-
         try
         {
             var ownsMutex = false;

@@ -2113,12 +2113,24 @@ public sealed class SettingsViewModel : PageViewModel
                 return;
             }
 
-            var helper = Environment.ProcessPath;
-            if (string.IsNullOrEmpty(helper))
+            // The copy is handed to a PowerShell child, not done here: this process is a .NET app with the
+            // assemblies to be replaced already loaded, so it cannot write them. Measured 2026-09-11 —
+            // doing it in-process fails on AdamCodexHub.App.dll with "being used by another process".
+            // PowerShell holds none of those files open, so it can replace all of them.
+            var manifest = UpdatePackage.Parse(
+                File.ReadAllText(Path.Combine(staged.StagingDirectory, "update-manifest.json")),
+                out var rejection);
+            if (manifest is null)
             {
-                Warn(L10n.F("L10n_Set_UpdateInstallFailed", "the running executable could not be located"));
+                Warn(L10n.F("L10n_Set_UpdateInstallFailed", rejection?.Reason ?? "the manifest was refused"));
                 return;
             }
+
+            var scriptPath = Path.Combine(staged.StagingDirectory, UpdateScript.FileName);
+            File.WriteAllText(
+                scriptPath,
+                UpdateScript.Generate(manifest, staged.StagingDirectory, AppContext.BaseDirectory, UpdateLogPath),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
             System.Windows.MessageBox.Show(
                 L10n.F("L10n_Set_UpdateInstallRestarting"),
@@ -2126,13 +2138,13 @@ public sealed class SettingsViewModel : PageViewModel
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
 
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(helper)
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("powershell.exe")
             {
                 UseShellExecute = true,
-                Arguments = $"--apply-update \"{staged.StagingDirectory}\" \"{AppContext.BaseDirectory}\" 1",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
             });
 
-            // The helper is waiting for this process to go away; holding on here would deadlock the swap.
+            // The script is waiting for this process to go away; holding on here would stall the swap.
             System.Windows.Application.Current.Shutdown();
         }
         catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or IOException)
@@ -2149,6 +2161,16 @@ public sealed class SettingsViewModel : PageViewModel
             System.Windows.MessageBoxImage.Warning);
 
     /// <summary>
+    /// Where the apply script records what it did. During an update there is no UI left to explain a
+    /// failure, so this file is the only account of it.
+    /// </summary>
+    private static string UpdateLogPath => System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "AdamCodexHub",
+        "logs",
+        "update.log");
+
+    /// <summary>
     /// Downloads the release installer into the user's Downloads folder, verifies its SHA-256 against
     /// the checksum published beside it, and reveals it in Explorer. It deliberately does NOT run the
     /// installer: the app is unsigned, so replacing itself stays a click the user makes.
@@ -2157,16 +2179,14 @@ public sealed class SettingsViewModel : PageViewModel
     /// </summary>
     private async Task DownloadUpdateAsync()
     {
-        // The in-place path is NOT wired to this button yet, and deliberately so: the process that would
-        // do the swap is AdamCodexHub.App.exe itself, which has already loaded the very assemblies it
-        // has to replace. Measured 2026-09-11 by running the real helper against a real installation: it
-        // failed on AdamCodexHub.App.dll with "being used by another process" and rolled back. The
-        // machinery is sound (it stopped cleanly and left the install untouched) but the swap needs a
-        // process that holds no locks over the files it replaces. Until that exists, the button keeps
-        // its proven behaviour: fetch the installer, verify it, hand it over.
-        //
-        // var package = UpdateState.Current.UpdatePackage;
-        // if (package is not null) { await InstallInPlaceAsync(package); return; }
+        // A release that carries a small update package gets the in-place path instead. Same button,
+        // because to the person clicking it this is one decision: update this app.
+        var package = UpdateState.Current.UpdatePackage;
+        if (package is not null)
+        {
+            await InstallInPlaceAsync(package);
+            return;
+        }
 
         var setup = UpdateState.Current.Setup;
         if (setup is null)

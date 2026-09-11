@@ -4,15 +4,30 @@ using Microsoft.Data.Sqlite;
 namespace AdamCodexHub.Codex;
 
 /// <summary>
-/// Codex keeps the chosen model per thread in <c>~/.codex/state_5.sqlite</c> (<c>threads.model</c>),
-/// so a thread keeps whatever id it was last used with. Switching provider therefore strands every
-/// thread pinned to an id the provider being activated does not offer, and Codex then refuses the
-/// next turn ("The 'claude-5.5' model is not supported when using Codex with a ChatGPT account").
-/// This moves those threads onto the model of the provider that is about to be used.
+/// Repairs the per-thread state Codex keeps in <c>~/.codex/state_5.sqlite</c> so a chat keeps working
+/// after the hub changes which provider is in use.
 ///
-/// Safety: the file belongs to Codex, so we only write while Codex is closed, we replace nothing but
-/// the model and provider columns (transcripts are untouched), and every failure path returns 0
-/// instead of throwing. A return value of 0 means "nothing was changed".
+/// Two independent problems live in that table, both measured on 2026-09-11:
+///
+/// <list type="number">
+/// <item><b>Model pin.</b> A thread stores the model it last ran with, so switching provider strands it
+/// on an id the new provider does not offer and Codex refuses the next turn ("The 'claude-5.5' model is
+/// not supported when using Codex with a ChatGPT account"). Fixed by rewriting <c>model</c> /
+/// <c>model_provider</c>.</item>
+/// <item><b>Permission profile.</b> <c>approval_mode</c> and <c>sandbox_policy</c> are stored as a
+/// <i>pair</i>. Every working chat measured carries <c>on-request</c> + <c>managed</c> (or
+/// <c>danger-full-access</c>); the two chats that offered the model <b>zero tools</b> — the model could
+/// only see a clock and answered "I have no exec here" — carried <c>never</c> +
+/// <c>{"type":"disabled"}</c>, with every other column (source, project, cwd, memory mode) identical.
+/// A chat with no tools cannot do any work at all, which is exactly the symptom that kept coming back
+/// as "the window does nothing".</item>
+/// </list>
+///
+/// Safety, in order of importance: the file belongs to Codex, so only those four columns are ever
+/// written and the transcripts are untouched; the schema this depends on is <i>verified</i> before any
+/// write and the repair stands down with a log line if it does not match; a backup is taken first; the
+/// write happens under a busy timeout because Codex holds the same file open; and every failure path
+/// returns 0 instead of throwing. A return value of 0 means "nothing was changed".
 /// </summary>
 public sealed class CodexThreadModelMigration
 {
@@ -28,6 +43,18 @@ public sealed class CodexThreadModelMigration
 
     /// <summary>Provider id Codex stores for threads that run on the ChatGPT account.</summary>
     public const string AccountProviderId = "openai";
+
+    /// <summary>The <c>sandbox_policy</c> half of the profile that measured zero tools.</summary>
+    public const string ToolLessPolicy = "{\"type\":\"disabled\"}";
+
+    /// <summary>The <c>approval_mode</c> half of the profile that measured zero tools.</summary>
+    public const string ToolLessApproval = "never";
+
+    /// <summary>What working chats carry instead: no sandbox restriction and no approval prompts.</summary>
+    public const string WorkingPolicy = "{\"type\":\"danger-full-access\"}";
+
+    /// <summary>Paired with <see cref="WorkingPolicy"/>; the two are only ever written together.</summary>
+    public const string WorkingApproval = "on-request";
 
     /// <summary>
     /// Codex home to repair — the hub passes its configured `CODEX_HOME`. Left empty this helper
@@ -49,8 +76,9 @@ public sealed class CodexThreadModelMigration
     /// <paramref name="targetModel"/>. When <paramref name="targetProvider"/> is given, threads
     /// whose <c>model_provider</c> does not match it are rewritten too — a thread that is still
     /// pinned to the account refuses every gateway model ("not supported when using Codex with a
-    /// ChatGPT account") even though the config points at the gateway. Returns the number of
-    /// threads moved (0 = nothing to do, or the write was skipped).
+    /// ChatGPT account") even though the config points at the gateway. Threads sitting on the
+    /// profile that offers no tools are moved onto the working pair in the same pass.
+    /// Returns the number of threads changed (0 = nothing to do, or the write was skipped).
     /// </summary>
     public int Migrate(
         IReadOnlyCollection<string>? offeredModels,
@@ -109,7 +137,7 @@ public sealed class CodexThreadModelMigration
             // during 2026-09-11). If the shape is not exactly what this repair understands, the honest
             // move is to leave the user's data alone and say so — a hopeful UPDATE against a renamed
             // column is how a convenience turns into data loss.
-            if (!SchemaLooksFamiliar(connection, out var schemaNote))
+            if (!ReadSchema(connection, out var hasPermissions, out var schemaNote))
             {
                 Log?.Invoke(
                     $"Threads: leaving Codex's database untouched — {schemaNote}. " +
@@ -117,16 +145,20 @@ public sealed class CodexThreadModelMigration
                 return 0;
             }
 
-            var stranded = new List<(string Id, bool Model, bool Route)>();
+            var stranded = new List<StrandedThread>();
             using (var select = connection.CreateCommand())
             {
-                select.CommandText =
-                    "SELECT id, model, model_provider FROM threads WHERE model IS NOT NULL AND TRIM(model) <> ''";
+                select.CommandText = hasPermissions
+                    ? "SELECT id, model, model_provider, approval_mode, sandbox_policy FROM threads " +
+                      "WHERE model IS NOT NULL AND TRIM(model) <> ''"
+                    : "SELECT id, model, model_provider FROM threads " +
+                      "WHERE model IS NOT NULL AND TRIM(model) <> ''";
                 using var reader = select.ExecuteReader();
                 while (reader.Read())
                 {
                     var pinned = reader.GetString(1).Trim();
                     var provider = reader.IsDBNull(2) ? string.Empty : reader.GetString(2).Trim();
+
                     // Two ways a thread ends up unusable after a switch: the model it is pinned to is
                     // not offered by the provider we just moved to, or the thread is still routed at
                     // the previous source. Codex keeps model_provider per thread, so a thread left on
@@ -135,9 +167,18 @@ public sealed class CodexThreadModelMigration
                     var wrongModel = !offered.Contains(pinned);
                     var wrongRoute = targetProvider is not null &&
                         !string.Equals(provider, targetProvider, StringComparison.Ordinal);
-                    if (wrongModel || wrongRoute)
+
+                    var toolLess = false;
+                    if (hasPermissions)
                     {
-                        stranded.Add((reader.GetString(0), wrongModel, wrongRoute));
+                        var approval = reader.IsDBNull(3) ? string.Empty : reader.GetString(3).Trim();
+                        var policy = reader.IsDBNull(4) ? string.Empty : reader.GetString(4).Trim();
+                        toolLess = IsToolLessProfile(approval, policy);
+                    }
+
+                    if (wrongModel || wrongRoute || toolLess)
+                    {
+                        stranded.Add(new StrandedThread(reader.GetString(0), wrongModel, wrongRoute, toolLess));
                     }
                 }
             }
@@ -147,29 +188,59 @@ public sealed class CodexThreadModelMigration
                 return 0;
             }
 
+            var moved = stranded.Count(thread => thread.Model || thread.Route);
+            var permissionFixed = stranded.Count(thread => thread.Permissions);
+
             Log?.Invoke(
                 (running ? "Codex is running — " : string.Empty) +
                 $"repairing {stranded.Count} thread(s) pinned to a model this provider does not offer " +
-                $"(→ {targetModel}).");
+                $"(→ {targetModel})." +
+                (permissionFixed > 0
+                    ? $" {permissionFixed} of them had the permission profile that offers no tools " +
+                      $"({ToolLessApproval} + {ToolLessPolicy}) and were moved to {WorkingApproval} + " +
+                      $"{WorkingPolicy}."
+                    : string.Empty));
 
             using var transaction = connection.BeginTransaction();
             using var update = connection.CreateCommand();
             update.Transaction = transaction;
-            update.CommandText =
-                "UPDATE threads SET " +
-                "model = CASE WHEN $fixModel = 1 THEN $model ELSE model END, " +
-                "model_provider = CASE WHEN $fixRoute = 1 THEN $provider ELSE model_provider END " +
-                "WHERE id = $id";
+            update.CommandText = hasPermissions
+                ? "UPDATE threads SET " +
+                  "model = CASE WHEN $fixModel = 1 THEN $model ELSE model END, " +
+                  "model_provider = CASE WHEN $fixRoute = 1 THEN $provider ELSE model_provider END, " +
+                  "approval_mode = CASE WHEN $fixPerm = 1 THEN $approval ELSE approval_mode END, " +
+                  "sandbox_policy = CASE WHEN $fixPerm = 1 THEN $policy ELSE sandbox_policy END " +
+                  "WHERE id = $id"
+                : "UPDATE threads SET " +
+                  "model = CASE WHEN $fixModel = 1 THEN $model ELSE model END, " +
+                  "model_provider = CASE WHEN $fixRoute = 1 THEN $provider ELSE model_provider END " +
+                  "WHERE id = $id";
             update.Parameters.Add("$model", SqliteType.Text).Value = targetModel;
             update.Parameters.Add("$provider", SqliteType.Text).Value = targetProvider ?? string.Empty;
             var fixModel = update.Parameters.Add("$fixModel", SqliteType.Integer);
             var fixRoute = update.Parameters.Add("$fixRoute", SqliteType.Integer);
             var id = update.Parameters.Add("$id", SqliteType.Text);
-            foreach (var (threadId, model, route) in stranded)
+            SqliteParameter? fixPerm = null;
+            if (hasPermissions)
             {
-                id.Value = threadId;
-                fixModel.Value = model ? 1 : 0;
-                fixRoute.Value = route ? 1 : 0;
+                // Written as a pair, always: changing only sandbox_policy while approval_mode stayed
+                // "never" was measured being normalised straight back by Codex, which is why an earlier
+                // attempt at this looked like it had no effect.
+                update.Parameters.Add("$approval", SqliteType.Text).Value = WorkingApproval;
+                update.Parameters.Add("$policy", SqliteType.Text).Value = WorkingPolicy;
+                fixPerm = update.Parameters.Add("$fixPerm", SqliteType.Integer);
+            }
+
+            foreach (var thread in stranded)
+            {
+                id.Value = thread.Id;
+                fixModel.Value = thread.Model ? 1 : 0;
+                fixRoute.Value = thread.Route ? 1 : 0;
+                if (fixPerm is not null)
+                {
+                    fixPerm.Value = thread.Permissions ? 1 : 0;
+                }
+
                 update.ExecuteNonQuery();
             }
 
@@ -192,12 +263,27 @@ public sealed class CodexThreadModelMigration
     }
 
     /// <summary>
-    /// Confirms the two things this repair actually depends on: a <c>threads</c> table, and the
-    /// <c>model</c> / <c>model_provider</c> text columns it rewrites. Anything else about Codex's
-    /// schema is free to change without stopping us — and if these change, we stop.
+    /// The profile that measured zero tools: Codex Desktop's <c>Full access</c> chip writes exactly
+    /// this pair, so a chat the user meant to give MORE freedom to ends up unable to run anything.
+    /// Matched as a pair, because either half on its own is legitimate elsewhere.
     /// </summary>
-    private static bool SchemaLooksFamiliar(SqliteConnection connection, out string note)
+    private static bool IsToolLessProfile(string approval, string policy) =>
+        string.Equals(approval, ToolLessApproval, StringComparison.Ordinal) &&
+        Normalise(policy) == Normalise(ToolLessPolicy);
+
+    /// <summary>Whitespace-insensitive compare — the same JSON is stored with different spacing.</summary>
+    private static string Normalise(string json) =>
+        new(json.Where(character => !char.IsWhiteSpace(character)).ToArray());
+
+    private readonly record struct StrandedThread(string Id, bool Model, bool Route, bool Permissions);
+
+    /// <summary>
+    /// Confirms the columns this repair actually depends on, and reports separately whether the
+    /// permission columns are available (older Codex homes and the test fixtures may not have them).
+    /// </summary>
+    private static bool ReadSchema(SqliteConnection connection, out bool hasPermissions, out string note)
     {
+        hasPermissions = false;
         try
         {
             using var table = connection.CreateCommand();
@@ -229,6 +315,7 @@ public sealed class CodexThreadModelMigration
                 return false;
             }
 
+            hasPermissions = columns.Contains("approval_mode") && columns.Contains("sandbox_policy");
             note = string.Empty;
             return true;
         }

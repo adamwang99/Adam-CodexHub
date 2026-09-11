@@ -1970,6 +1970,13 @@ public sealed class SettingsViewModel : PageViewModel
 {
     private const string DefaultsStatusKey = "L10n_Set_DefaultsMsg";
 
+    /// <summary>
+    /// How long an update download may make no progress at all before it is treated as dead. A total
+    /// timeout is deliberately NOT used: measured on this machine a 91 MB installer came down at
+    /// 512 KB/min (≈3 h), so any fixed cap would abort a download that is working perfectly well.
+    /// </summary>
+    private static readonly TimeSpan DownloadStallTimeout = TimeSpan.FromSeconds(90);
+
     private string _statusKey = DefaultsStatusKey;
     private string _updateStatus = string.Empty;
     private string? _releaseUrl;
@@ -2157,8 +2164,11 @@ public sealed class SettingsViewModel : PageViewModel
 
         try
         {
-            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
+            // No total timeout — see DownloadStallTimeout. A stall guard below replaces it so a dead
+            // connection still fails in a minute and a half rather than never.
+            using var client = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
             client.DefaultRequestHeaders.UserAgent.ParseAdd("AdamCodexHub");
+            using var stall = new CancellationTokenSource();
 
             UpdateStatus = L10n.T("L10n_Set_UpdateDownloadingStart");
 
@@ -2184,10 +2194,18 @@ public sealed class SettingsViewModel : PageViewModel
                     useAsync: true);
 
                 var buffer = new byte[81920];
-                int read;
-                while ((read = await source.ReadAsync(buffer)) > 0)
+                while (true)
                 {
-                    await destination.WriteAsync(buffer.AsMemory(0, read));
+                    // Renewed on every chunk, so a slow-but-alive transfer is never cut off and a
+                    // silent one is.
+                    stall.CancelAfter(DownloadStallTimeout);
+                    var read = await source.ReadAsync(buffer, stall.Token);
+                    if (read <= 0)
+                    {
+                        break;
+                    }
+
+                    await destination.WriteAsync(buffer.AsMemory(0, read), CancellationToken.None);
                     written += read;
                     if (total > 0)
                     {
@@ -2229,7 +2247,17 @@ public sealed class SettingsViewModel : PageViewModel
                 UseShellExecute = true
             });
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException
+        catch (TaskCanceledException)
+        {
+            // The stall guard fired: bytes stopped arriving, so the transfer was abandoned rather than
+            // left hanging for hours looking alive.
+            UpdateStatus = L10n.T("L10n_Set_UpdateDownloadStalled");
+            LogSettings(
+                "Update download",
+                $"no progress for {DownloadStallTimeout.TotalSeconds:0}s — aborted");
+            TryDelete(partial);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException
             or UnauthorizedAccessException or InvalidOperationException)
         {
             UpdateStatus = L10n.F("L10n_Set_UpdateDownloadFailed", ex.Message);

@@ -151,6 +151,7 @@
     <sys:String x:Key="L10n_Set_UpdateDownloadedUnverified">Đã tải {0} nhưng bản phát hành không kèm file SHA-256 nên chưa đối chiếu được. Thư mục Downloads đã mở.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateChecksumMismatch">File tải về KHÔNG khớp SHA-256 nên đã bị xoá, không cài. Thử lại, hoặc tải tay từ trang phát hành.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateDownloadFailed">Tải không xong: {0}</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateDownloadStalled">Tải bị đứng (90 giây không nhận thêm dữ liệu) nên đã dừng và xoá file dở. Thử lại khi mạng ổn hơn — bản cài nặng ~91 MB nên mạng chậm sẽ lâu.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Đã lưu tuỳ chọn nối phiên.</sys:String>
     <sys:String x:Key="L10n_MT_Title">Kiểm Tra Tương Thích Mô Hình</sys:String>
     <sys:String x:Key="L10n_MT_Probes">PHÉP THỬ</sys:String>

@@ -22,7 +22,7 @@
 
     <!-- Shipped with .NET 8; pinned to the app's target framework. -->
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.12" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
 
     <PackageVersion Include="Tomlyn" Version="2.10.1" />

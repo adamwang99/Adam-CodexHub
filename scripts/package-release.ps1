@@ -234,7 +234,7 @@ $installerCandidates = @(
 )
 
 # Inno Setup remembers where it landed, and that is not always the default folder (a toolchain or
-# portable install keeps it wherever the user put it — measured 2026-09-11: winget reported 6.7.3 as
+# portable install keeps it wherever the user put it -- measured 2026-09-11: winget reported 6.7.3 as
 # installed while all three default paths were empty, so the installer was silently skipped and the
 # release came out ZIP-only). Whatever the uninstall entry names is a real ISCC.
 foreach ($key in @(
@@ -279,8 +279,93 @@ if ($iscc) {
         Set-Content -LiteralPath $setupChecksumPath -Encoding ascii
 }
 else {
-    Write-Warning 'Inno Setup 6 not found — installer skipped, ZIP-only package produced.'
+    Write-Warning 'Inno Setup 6 not found -- installer skipped, ZIP-only package produced.'
 }
+
+# --- Small update package -------------------------------------------------
+# Only the files that change between releases: the hub's own assemblies, its assets, and the CLI.
+# Measured 2026-09-11 against this publish output -- 6.6 MB of a 293.5 MB folder, the other 88% being
+# the .NET runtime, which never changes between patches. The user is on a line that managed 525 KB/min,
+# which makes the 91 MB installer roughly a three-hour download and this one a few minutes.
+#
+# The full installer is NOT replaced by this: it stays the way to install on a clean machine and the
+# way to repair a broken one. An update package only assumes a working install of an earlier version.
+$updateBaseName = "AdamCodexHub-update-v$Version-$RuntimeIdentifier"
+$updateZipPath = Join-Path $artifactsRoot "$updateBaseName.zip"
+$updateChecksumPath = "$updateZipPath.sha256"
+$updateStaging = Join-Path $artifactsRoot "$updateBaseName-files"
+
+Assert-WithinArtifacts -Path $updateZipPath
+Assert-WithinArtifacts -Path $updateChecksumPath
+Assert-WithinArtifacts -Path $updateStaging
+
+foreach ($path in @($updateZipPath, $updateChecksumPath)) {
+    if (Test-Path -LiteralPath $path) {
+        Remove-Item -LiteralPath $path -Force
+    }
+}
+
+$updateFiles = @(Get-ChildItem -LiteralPath $stagingDirectory -Recurse -File | Where-Object {
+    $relative = $_.FullName.Substring($stagingDirectory.Length).TrimStart('\')
+    $relative -like 'AdamCodexHub.*' -or
+    $relative -like 'cli\AdamCodexHub.*' -or
+    $relative -like 'Assets\*'
+})
+
+if ($updateFiles.Count -eq 0) {
+    throw "No updatable files were found in $stagingDirectory -- the update package would be empty."
+}
+
+# The manifest is the contract the applier trusts: version, target runtime, and a digest per file. It
+# is written with forward slashes so the same file reads identically on any platform.
+$manifestFiles = @(
+    foreach ($file in $updateFiles) {
+        $relative = $file.FullName.Substring($stagingDirectory.Length).TrimStart('\')
+        [ordered]@{
+            path   = $relative.Replace('\', '/')
+            sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            size   = $file.Length
+        }
+    }
+)
+
+$manifest = [ordered]@{
+    version           = $Version
+    runtimeIdentifier = $RuntimeIdentifier
+    generated         = [DateTimeOffset]::UtcNow.ToString('O')
+    files             = $manifestFiles
+}
+
+if (Test-Path -LiteralPath $updateStaging) {
+    Remove-Item -LiteralPath $updateStaging -Recurse -Force
+}
+
+New-Item -ItemType Directory -Path $updateStaging -Force | Out-Null
+foreach ($file in $updateFiles) {
+    $relative = $file.FullName.Substring($stagingDirectory.Length).TrimStart('\')
+    $destination = Join-Path $updateStaging $relative
+    New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+    Copy-Item -LiteralPath $file.FullName -Destination $destination
+}
+
+# Written into the update staging only, after the full ZIP was built above, so the portable package is
+# unaffected. WriteAllText with an explicit BOM-less UTF8Encoding on purpose: Set-Content -Encoding
+# utf8 writes a byte-order mark on PowerShell 5.1, and a leading BOM is exactly the kind of
+# byte-order detail that makes a perfectly good manifest fail to parse at the other end.
+$manifestJson = $manifest | ConvertTo-Json -Depth 6
+[System.IO.File]::WriteAllText(
+    (Join-Path $updateStaging 'update-manifest.json'),
+    $manifestJson,
+    (New-Object System.Text.UTF8Encoding($false)))
+
+Compress-Archive -Path (Join-Path $updateStaging '*') -DestinationPath $updateZipPath -CompressionLevel Optimal
+
+$updateHash = (Get-FileHash -LiteralPath $updateZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+"$updateHash *$(Split-Path $updateZipPath -Leaf)" |
+    Set-Content -LiteralPath $updateChecksumPath -Encoding ascii
+
+$updateSizeMb = [math]::Round((Get-Item -LiteralPath $updateZipPath).Length / 1MB, 1)
+Write-Host "Update package: $updateBaseName.zip ($updateSizeMb MB, $($updateFiles.Count) file(s))"
 
 [pscustomobject]@{
     Package  = $zipPath
@@ -288,4 +373,8 @@ else {
     Sha256   = $hash
     Installer = if ($iscc) { $setupPath } else { $null }
     InstallerChecksum = if ($iscc) { $setupChecksumPath } else { $null }
+    UpdatePackage = $updateZipPath
+    UpdateChecksum = $updateChecksumPath
+    UpdateSha256 = $updateHash
+    UpdateBytes = (Get-Item -LiteralPath $updateZipPath).Length
 }

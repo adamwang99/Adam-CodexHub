@@ -59,6 +59,17 @@
 
 ### Added
 
+- **A small update package, so an update is no longer a 91 MB download.** The hub's own assemblies
+  are 6.6 MB of a 293.5 MB publish folder; the other 88% is the .NET runtime, which never changes
+  between patches, and this machine downloads at ~525 KB/min — three hours for the installer against
+  a few minutes for the part that actually changed. The packaging script now also emits
+  `AdamCodexHub-update-v<version>-<rid>.zip` with a SHA-256 per file, and the manifest it carries is
+  treated as a security boundary: a path that could leave the install directory rejects the whole
+  manifest, never just the one entry. The full installer stays for first install and for repair. The
+  app side that applies the package is still to come — replacing files inside a running install is
+  the part that breaks things, and it gets its own change, its own rollback, and a test that upgrades
+  a real install.
+
 - **A newer release now announces itself on the main screen.** Adam, 2026-09-11: *"khi có bản cập nhật
   mới cần có báo noti ở giao diện chính để người dùng nhấn và đưa vào setting, chứ không cần người
   dùng phải vào check mới biết."* The hub checks once at launch, in the background — no blocking, and

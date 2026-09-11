@@ -4,6 +4,23 @@
 
 ### Fixed
 
+- **A chat that Codex had given no tools at all works again — and the cause was the permission
+  profile, not the model, the provider or the hub.** Codex stores `approval_mode` and
+  `sandbox_policy` per thread as a *pair*. Comparing every column of the two chats that offered the
+  model zero tools — it could only see a clock and answered "I have no exec here" — against chats
+  that offered eight (`exec_command`, `write_stdin`, …) left exactly one difference: `never` +
+  `{"type":"disabled"}` versus `on-request` + `managed`/`danger-full-access`, while source, project,
+  cwd, memory mode and history mode were identical. Codex Desktop's own **`Full access`** chip
+  writes the tool-less pair, so choosing more freedom is precisely how a chat becomes unable to do
+  anything — which is what kept returning as "the window does nothing". The thread repair now moves
+  that pair onto the working one in the same pass as the model pin. Both fields must be written
+  together: changing only `sandbox_policy` while `approval_mode` stayed `never` was measured being
+  normalised straight back by Codex, which is why an earlier attempt at this looked like it had no
+  effect. Verified end to end on a real chat: before the repair the gateway logged
+  `tools offered … none` for it, and afterwards the same chat ran a shell command — a real
+  `custom_tool_call` → `exec_command` with a process id in Codex's own rollout — and the file it
+  wrote was on disk with exactly the expected contents.
+
 - **A long chat could not be sent at all: the gateway refused its own request with `413`.** Codex posts
   the whole conversation with every turn, so a thread with a few screenshots in it went past the
   hub's 10 MB request guard and got `unexpected status 413 Payload Too Large: Request body exceeds the

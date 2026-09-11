@@ -165,6 +165,61 @@ public static class ReleaseCheck
         }
     }
 
+    /// <summary>
+    /// The small update package for this architecture, if the release carries one. Same shape as the
+    /// installer lookup and matched the same way — by name shape and architecture, never by version —
+    /// so the release after this one is handled by the same rule.
+    /// </summary>
+    public static SetupDownload? FindUpdatePackage(string releaseJson, string? runtimeIdentifier = null)
+    {
+        var wanted = string.IsNullOrWhiteSpace(runtimeIdentifier) ? CurrentRuntimeIdentifier : runtimeIdentifier;
+
+        try
+        {
+            using var document = JsonDocument.Parse(releaseJson);
+            if (!document.RootElement.TryGetProperty("assets", out var assets) ||
+                assets.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var found = new List<(string Name, string Url, long Size)>();
+            foreach (var asset in assets.EnumerateArray())
+            {
+                var name = asset.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+                var url = asset.TryGetProperty("browser_download_url", out var urlElement)
+                    ? urlElement.GetString()
+                    : null;
+                if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(url))
+                {
+                    continue;
+                }
+
+                var size = asset.TryGetProperty("size", out var sizeElement) && sizeElement.TryGetInt64(out var parsed)
+                    ? parsed
+                    : 0L;
+                found.Add((name, url, size));
+            }
+
+            var package = found.FirstOrDefault(asset =>
+                asset.Name.StartsWith("AdamCodexHub-update-", StringComparison.OrdinalIgnoreCase) &&
+                asset.Name.EndsWith("-" + wanted + ".zip", StringComparison.OrdinalIgnoreCase));
+            if (package.Name is null)
+            {
+                return null;
+            }
+
+            var checksum = found.FirstOrDefault(asset =>
+                asset.Name.Equals(package.Name + ".sha256", StringComparison.OrdinalIgnoreCase));
+
+            return new SetupDownload(package.Name, package.Url, checksum.Url, package.Size);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>What a finished transfer turned out to be.</summary>
     public enum DownloadOutcome
     {

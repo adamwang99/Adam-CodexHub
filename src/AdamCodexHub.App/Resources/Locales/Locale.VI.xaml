@@ -154,6 +154,9 @@
     <sys:String x:Key="L10n_Set_UpdateDownloadedUnverified">Đã tải {0} nhưng bản phát hành không kèm file SHA-256 nên chưa đối chiếu được. Thư mục Downloads đã mở.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateChecksumMismatch">File tải về KHÔNG khớp SHA-256 nên đã bị xoá, không cài. Thử lại, hoặc tải tay từ trang phát hành.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateDownloadFailed">Tải không xong: {0}</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateInstalling">Đang tải bản cập nhật nhỏ và kiểm tra từng file…</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateInstallFailed">Không chuẩn bị được bản cập nhật: {0}</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateInstallRestarting">Bản cập nhật đã sẵn sàng và đã được kiểm từng file. Adam CodexHub sẽ đóng lại, thay file, rồi tự mở lại — anh không cần làm gì thêm.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateDownloadStalled">Tải bị đứng (90 giây không nhận thêm dữ liệu) nên đã dừng và xoá file dở. Thử lại khi mạng ổn hơn — bản cài nặng ~91 MB nên mạng chậm sẽ lâu.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateDownloadIncomplete">Tải chưa xong: mới nhận {0} MB trên {1} MB thì kết nối bị cắt. Đã xoá file dở — thử lại, mạng chậm thì nên để chạy nền.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Đã lưu tuỳ chọn nối phiên.</sys:String>

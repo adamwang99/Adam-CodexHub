@@ -31,6 +31,7 @@ public sealed class UpdateState : INotifyPropertyChanged
     private string? _latestVersion;
     private string? _releaseUrl;
     private ReleaseCheck.SetupDownload? _setup;
+    private ReleaseCheck.SetupDownload? _updatePackage;
     private string _statusText = string.Empty;
     private bool _dismissed;
 
@@ -68,6 +69,17 @@ public sealed class UpdateState : INotifyPropertyChanged
 
     /// <summary>The installer to offer, when the release carries one.</summary>
     public ReleaseCheck.SetupDownload? Setup => _setup;
+
+    /// <summary>
+    /// The small update package for this architecture, when the release carries one. Preferred over the
+    /// installer when present: it is a few megabytes against ninety-odd, and it is applied in place
+    /// rather than run as a new installation.
+    /// </summary>
+    public ReleaseCheck.SetupDownload? UpdatePackage => _updatePackage;
+
+    /// <summary>Only offered when the release actually carries a small update package.</summary>
+    public Visibility InstallVisibility =>
+        _updatePackage is null ? Visibility.Collapsed : Visibility.Visible;
 
     public string? ReleaseUrl => _releaseUrl;
 
@@ -171,6 +183,8 @@ public sealed class UpdateState : INotifyPropertyChanged
                 _releaseUrl = result.ReleaseUrl;
                 // Only a release that actually carries an installer offers the download button.
                 _setup = ReleaseCheck.FindSetupDownload(payload);
+                // And one that carries a small update package offers the in-place update instead.
+                _updatePackage = ReleaseCheck.FindUpdatePackage(payload);
                 // A newer release than the one dismissed is worth mentioning again.
                 _dismissed = false;
                 if (manual)
@@ -208,6 +222,7 @@ public sealed class UpdateState : INotifyPropertyChanged
         Raise(nameof(ReleaseUrl));
         Raise(nameof(ReleaseLinkVisibility));
         Raise(nameof(DownloadVisibility));
+        Raise(nameof(InstallVisibility));
     }
 
     /// <summary>Drops the notice — used for every outcome that is not "a newer release exists".</summary>
@@ -216,6 +231,7 @@ public sealed class UpdateState : INotifyPropertyChanged
         _latestVersion = null;
         _releaseUrl = null;
         _setup = null;
+        _updatePackage = null;
     }
 
     /// <summary>Re-localizes the banner text after a language switch.</summary>

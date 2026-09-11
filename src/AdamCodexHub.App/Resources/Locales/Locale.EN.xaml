@@ -154,6 +154,9 @@
     <sys:String x:Key="L10n_Set_UpdateDownloadedUnverified">Downloaded {0}, but the release ships no SHA-256 file, so it could not be verified. Your Downloads folder is open.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateChecksumMismatch">The downloaded file did NOT match its SHA-256, so it was deleted and nothing was installed. Try again, or download it by hand from the release page.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateDownloadFailed">Download failed: {0}</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateInstalling">Downloading the small update and checking every file…</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateInstallFailed">The update could not be prepared: {0}</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateInstallRestarting">The update is ready and every file has been checked. Adam CodexHub will close, swap the files, and reopen itself — nothing further is needed from you.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateDownloadStalled">The download stalled — no data for 90 seconds — so it was stopped and the partial file deleted. Try again on a steadier connection: the installer is about 91 MB, so a slow line takes a while.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateDownloadIncomplete">The download did not finish: {0} MB of {1} MB arrived before the connection dropped. The partial file was deleted — try again, and on a slow line let it run.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Hand-off preference saved.</sys:String>

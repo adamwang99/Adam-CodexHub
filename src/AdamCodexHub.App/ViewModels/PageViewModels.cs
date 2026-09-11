@@ -2081,12 +2081,93 @@ public sealed class SettingsViewModel : PageViewModel
     }
 
     /// <summary>
+    /// <summary>
+    /// Applies the small update package in place. Preferred over the installer whenever the release
+    /// carries one, because ninety megabytes of runtime that never changes is a poor way to deliver six
+    /// megabytes of application.
+    ///
+    /// It stages and verifies first, then starts a second copy of this executable with --apply-update
+    /// and exits — Windows will not let a running application replace its own assemblies, so the swap
+    /// happens after this process is gone. If anything fails before that point the app stays open and
+    /// says why; this half never writes over the installation.
+    /// </summary>
+    private async Task InstallInPlaceAsync(ReleaseCheck.SetupDownload package)
+    {
+        try
+        {
+            // The request that has to survive a slow link, so it gets its own client with a generous
+            // timeout rather than sharing whatever the periodic check uses.
+            using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMinutes(15) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("AdamCodexHub");
+
+            var staged = await UpdateStaging.FetchAsync(
+                http,
+                package.DownloadUrl,
+                package.ChecksumUrl,
+                package.SizeBytes,
+                UpdateState.Current.LatestVersion ?? "next").ConfigureAwait(true);
+
+            if (!staged.Succeeded || staged.StagingDirectory is null)
+            {
+                Warn(L10n.F("L10n_Set_UpdateInstallFailed", staged.Message));
+                return;
+            }
+
+            var helper = Environment.ProcessPath;
+            if (string.IsNullOrEmpty(helper))
+            {
+                Warn(L10n.F("L10n_Set_UpdateInstallFailed", "the running executable could not be located"));
+                return;
+            }
+
+            System.Windows.MessageBox.Show(
+                L10n.F("L10n_Set_UpdateInstallRestarting"),
+                "Adam CodexHub",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(helper)
+            {
+                UseShellExecute = true,
+                Arguments = $"--apply-update \"{staged.StagingDirectory}\" \"{AppContext.BaseDirectory}\" 1",
+            });
+
+            // The helper is waiting for this process to go away; holding on here would deadlock the swap.
+            System.Windows.Application.Current.Shutdown();
+        }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or IOException)
+        {
+            Warn(L10n.F("L10n_Set_UpdateInstallFailed", ex.Message));
+        }
+    }
+
+    private static void Warn(string message) =>
+        System.Windows.MessageBox.Show(
+            message,
+            "Adam CodexHub",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Warning);
+
+    /// <summary>
     /// Downloads the release installer into the user's Downloads folder, verifies its SHA-256 against
     /// the checksum published beside it, and reveals it in Explorer. It deliberately does NOT run the
     /// installer: the app is unsigned, so replacing itself stays a click the user makes.
+    ///
+    /// Only reached when the release carries no small update package.
     /// </summary>
     private async Task DownloadUpdateAsync()
     {
+        // The in-place path is NOT wired to this button yet, and deliberately so: the process that would
+        // do the swap is AdamCodexHub.App.exe itself, which has already loaded the very assemblies it
+        // has to replace. Measured 2026-09-11 by running the real helper against a real installation: it
+        // failed on AdamCodexHub.App.dll with "being used by another process" and rolled back. The
+        // machinery is sound (it stopped cleanly and left the install untouched) but the swap needs a
+        // process that holds no locks over the files it replaces. Until that exists, the button keeps
+        // its proven behaviour: fetch the installer, verify it, hand it over.
+        //
+        // var package = UpdateState.Current.UpdatePackage;
+        // if (package is not null) { await InstallInPlaceAsync(package); return; }
+
         var setup = UpdateState.Current.Setup;
         if (setup is null)
         {

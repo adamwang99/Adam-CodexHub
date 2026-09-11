@@ -124,7 +124,19 @@ public static class UpdateApplier
                     backups.Add((string.Empty, target));
                 }
 
-                File.Copy(staged, target, overwrite: true);
+                // A running executable can be renamed but not overwritten — and the process doing this
+                // work is itself AdamCodexHub.App.exe, so the file it runs from is the one file it
+                // cannot simply copy over. Renaming it aside is allowed, and the new one takes effect
+                // on the next start. Without this, the first real update would fail on the last file.
+                if (string.Equals(target, Environment.ProcessPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Move(target, target + ".replaced", overwrite: true);
+                    File.Copy(staged, target);
+                }
+                else
+                {
+                    File.Copy(staged, target, overwrite: true);
+                }
 
                 // Verified on disk, not assumed from a successful copy call.
                 if (!string.Equals(HashFile(target), entry.Sha256, StringComparison.OrdinalIgnoreCase))

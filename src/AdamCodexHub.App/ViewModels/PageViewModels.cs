@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -11,6 +13,7 @@ using AdamCodexHub.App.Services;
 using AdamCodexHub.Codex;
 using AdamCodexHub.Core.Domain;
 using AdamCodexHub.Core.Interfaces;
+using AdamCodexHub.Core.Maintenance;
 using AdamCodexHub.Infrastructure.Paths;
 using AdamCodexHub.Providers;
 
@@ -670,9 +673,11 @@ public sealed class HomeViewModel : PageViewModel
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "AdamCodexHub", "logs");
             Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "ui.log");
             File.AppendAllText(
-                Path.Combine(dir, "ui.log"),
+                path,
                 $"{DateTimeOffset.Now:O} | {stage} | {ex.GetType().Name}: {ex.Message}{Environment.NewLine}");
+            AdamCodexHub.Core.Maintenance.Housekeeping.TrimLogFile(path);
         }
         catch
         {
@@ -688,9 +693,11 @@ public sealed class HomeViewModel : PageViewModel
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "AdamCodexHub", "logs");
             Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "ui.log");
             File.AppendAllText(
-                Path.Combine(dir, "ui.log"),
+                path,
                 $"{DateTimeOffset.Now:O} | {stage} | {message}{Environment.NewLine}");
+            AdamCodexHub.Core.Maintenance.Housekeeping.TrimLogFile(path);
         }
         catch
         {
@@ -1964,6 +1971,8 @@ public sealed class SettingsViewModel : PageViewModel
     private const string DefaultsStatusKey = "L10n_Set_DefaultsMsg";
 
     private string _statusKey = DefaultsStatusKey;
+    private string _updateStatus = string.Empty;
+    private string? _releaseUrl;
 
     public SettingsViewModel()
         : base("L10n_Set_Title", "L10n_Set_Subtitle")
@@ -1972,10 +1981,41 @@ public sealed class SettingsViewModel : PageViewModel
         // toolbar always show the same state; this VM mirrors them for the XAML + status line.
         Handoff.PropertyChanged += OnHandoffChanged;
         StatusMessage = L10n.T(_statusKey);
+        CheckForUpdateCommand = new AsyncRelayCommand(CheckForUpdateAsync);
+        OpenReleaseCommand = new RelayCommand(OpenRelease);
     }
 
     /// <summary>Shared hand-off state — Home toolbar and this page both bind to it.</summary>
     private static HandoffState Handoff => HandoffState.Current;
+
+    /// <summary>Asks GitHub, on demand, whether a newer release exists. Never runs on its own.</summary>
+    public ICommand CheckForUpdateCommand { get; }
+
+    /// <summary>Opens the release page in the browser — the download stays the user's decision.</summary>
+    public ICommand OpenReleaseCommand { get; }
+
+    /// <summary>The build that is running, so a bug report can quote it.</summary>
+    public string RunningVersionLine => L10n.F("L10n_Set_UpdateRunning", RunningVersion);
+
+    /// <summary>Outcome of the last check; empty until the user asks.</summary>
+    public string UpdateStatus
+    {
+        get => _updateStatus;
+        private set
+        {
+            if (_updateStatus == value)
+            {
+                return;
+            }
+
+            _updateStatus = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>"Open the release page" only appears once there is a page worth opening.</summary>
+    public Visibility ReleaseLinkVisibility =>
+        string.IsNullOrWhiteSpace(_releaseUrl) ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>Open a fresh Codex chat and carry the session over when a provider is activated.</summary>
     public bool OpenFreshChat
@@ -2003,6 +2043,95 @@ public sealed class SettingsViewModel : PageViewModel
         base.NotifyLanguageChanged();
         StatusMessage = L10n.T(_statusKey);
         OnPropertyChanged(nameof(OpenFreshChatTooltip));
+        OnPropertyChanged(nameof(RunningVersionLine));
+    }
+
+    /// <summary>The informational version of the running assembly (e.g. "1.5.4+945e6d2…").</summary>
+    private static string RunningVersion =>
+        System.Reflection.Assembly.GetEntryAssembly()
+            ?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion
+        ?? System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString()
+        ?? "unknown";
+
+    /// <summary>
+    /// One request to the public releases API, on the user's click. A failure is reported in the
+    /// status line — an unreachable GitHub is not a broken hub, and it must never look like one.
+    /// </summary>
+    private async Task CheckForUpdateAsync()
+    {
+        UpdateStatus = L10n.T("L10n_Set_UpdateChecking");
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+            // GitHub rejects requests without a User-Agent; the header names the app, nothing else.
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("AdamCodexHub");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+
+            var payload = await client.GetStringAsync(ReleaseCheck.LatestReleaseUrl);
+            var result = ReleaseCheck.Evaluate(RunningVersion, payload);
+
+            if (!result.Succeeded)
+            {
+                _releaseUrl = null;
+                UpdateStatus = L10n.F("L10n_Set_UpdateFailed", result.Failure ?? string.Empty);
+            }
+            else if (result.IsNewer)
+            {
+                _releaseUrl = result.ReleaseUrl;
+                UpdateStatus = L10n.F("L10n_Set_UpdateAvailable", result.LatestVersion ?? string.Empty);
+            }
+            else
+            {
+                _releaseUrl = null;
+                UpdateStatus = L10n.T("L10n_Set_UpdateCurrent");
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
+        {
+            _releaseUrl = null;
+            UpdateStatus = L10n.F("L10n_Set_UpdateFailed", ex.Message);
+            LogSettings("Release check", $"{ex.GetType().Name}: {ex.Message}");
+        }
+
+        OnPropertyChanged(nameof(ReleaseLinkVisibility));
+    }
+
+    private void OpenRelease()
+    {
+        if (string.IsNullOrWhiteSpace(_releaseUrl))
+        {
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(_releaseUrl) { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            LogSettings("Open release page", $"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    /// <summary>Same ui.log the other pages write to, trimmed by the same ceiling.</summary>
+    private static void LogSettings(string stage, string message)
+    {
+        try
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "AdamCodexHub", "logs");
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "ui.log");
+            File.AppendAllText(
+                path,
+                $"{DateTimeOffset.Now:O} | {stage} | {message}{Environment.NewLine}");
+            Housekeeping.TrimLogFile(path);
+        }
+        catch
+        {
+        }
     }
 
     /// <summary>Mirrors the shared switch state into this VM (and confirms the save in the status line).</summary>

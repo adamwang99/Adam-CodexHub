@@ -53,27 +53,27 @@ Instead of repeatedly editing `~/.codex/config.toml`, exposing API keys, or forc
 
 ## Screenshots
 
-*All screenshots below are captured from the real app (v1.4.0, English UI). The in-app guide ships both language sets — the Vietnamese guide shows Vietnamese shots, the English guide shows these English ones.*
+*All screenshots below are captured from the real app (v1.5.5, English UI). The in-app guide ships both language sets — the Vietnamese guide shows Vietnamese shots, the English guide shows these English ones.*
 
 **Choose Provider** — provider cards with per-card model dropdowns, one-row collapse with expand chevron, and the "how it works" flow below. Model names are coloured by their measured status (green = callable, amber = slow, grey = not checked yet, red = skipped).
 
-![Choose Provider](docs/images/screenshot-home-v1.4.0.png)
+![Choose Provider](docs/images/screenshot-home-v1.5.5.png)
 
 **Providers** — provider profile, encrypted key pool (DPAPI) and the verified model list in one place.
 
-![Providers](docs/images/screenshot-providers-v1.4.0.png)
+![Providers](docs/images/screenshot-providers-v1.5.5.png)
 
 **Sessions** — provider-safe project state and continuation handoffs.
 
-![Sessions](docs/images/screenshot-sessions-v1.4.0.png)
+![Sessions](docs/images/screenshot-sessions-v1.5.5.png)
 
 **Diagnostics** — local gateway state and Codex configuration recovery.
 
-![Diagnostics](docs/images/screenshot-diagnostics-v1.4.0.png)
+![Diagnostics](docs/images/screenshot-diagnostics-v1.5.5.png)
 
 **Settings** — enforced security and session defaults.
 
-![Settings](docs/images/screenshot-settings-v1.4.0.png)
+![Settings](docs/images/screenshot-settings-v1.5.5.png)
 
 ## Model status: callable, slow or skip
 
@@ -223,30 +223,42 @@ The source-of-truth order is:
 
 ## Quick start
 
-### 1. Download and verify
+### 1. Download
 
-Download the latest ZIP and checksum file from the [Releases page](https://github.com/adamwang99/Adam-CodexHub/releases/latest), place them in the same directory, then run PowerShell:
+The [Releases page](https://github.com/adamwang99/Adam-CodexHub/releases/latest) carries two ways to install, plus a `.sha256` for each:
+
+| File | What it is |
+| --- | --- |
+| `AdamCodexHub-Setup-vX.Y.Z-win-x64.exe` | Installer. Per-user, no administrator prompt, adds Start-menu entries and an uninstaller. |
+| `AdamCodexHub-vX.Y.Z-win-x64.zip` | Portable. Extract and run; nothing is written outside the folder and `%LOCALAPPDATA%\AdamCodexHub`. |
+
+Both include the .NET 8 runtime, so no separate .NET installation is needed. The binaries are unsigned, so Windows SmartScreen may warn on first launch — verifying the checksum below is the reliable check.
+
+### 2. Verify the download
+
+Put the file and its `.sha256` in the same directory, then run PowerShell from there:
 
 ```powershell
-$zip = '.\AdamCodexHub-v1.4.0-win-x64.zip'
-$checksum = "$zip.sha256"
+# Works for either download — point $file at the one you got.
+$file = Get-ChildItem 'AdamCodexHub-*-win-x64.exe', 'AdamCodexHub-*-win-x64.zip' |
+    Select-Object -First 1
 
-$expected = ((Get-Content $checksum -Raw).Trim() -split '\s+')[0]
-$actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+$expected = ((Get-Content "$($file.Name).sha256" -Raw).Trim() -split '\s+')[0]
+$actual = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
 
 $actual -eq $expected
 ```
 
 PowerShell must return `True`. If it returns `False`, delete both files and download them again from the official release page.
 
-### 2. Extract and launch
+### 3. Extract and launch
 
 1. Right-click the ZIP and select **Extract All**.
 2. Open the extracted `AdamCodexHub-vX.Y.Z-win-x64` folder.
 3. Run `AdamCodexHub.App.exe`.
 4. Read the mandatory session notice, select the acknowledgement checkbox and continue.
 
-### 3. Preserve native Codex account access
+### 4. Preserve native Codex account access
 
 Before activating a third-party provider for the first time:
 
@@ -257,7 +269,7 @@ Before activating a third-party provider for the first time:
 
 On the first successful API-provider activation, Adam CodexHub preserves the current account configuration as `%USERPROFILE%\.codex\config-ACCOUNT.toml`.
 
-### 4. Configure an API provider
+### 5. Configure an API provider
 
 1. Open **Providers**.
 2. Select an included provider, or choose **New** and enter a custom provider ID, display name, base URL and adapter.
@@ -268,7 +280,7 @@ On the first successful API-provider activation, Adam CodexHub preserves the cur
 
 For local providers such as Ollama or LM Studio, start the provider server first and confirm that its configured base URL is reachable.
 
-### 5. Discover and enable a model
+### 6. Discover and enable a model
 
 1. Open **Models** and select the provider.
 2. Choose **Scan models** to refresh the advertised catalog.
@@ -278,7 +290,7 @@ For local providers such as Ollama or LM Studio, start the provider server first
 
 Newly discovered models remain disabled by design.
 
-### 6. Prepare project continuity
+### 7. Prepare project continuity
 
 1. Open **Sessions**.
 2. Enter the absolute path to the project you are currently working on.
@@ -289,7 +301,7 @@ Newly discovered models remain disabled by design.
 
 The `.adam-codexhub` directory can contain project filenames, Git state and work summaries. Review it before committing or sharing it. It never needs to contain an API key.
 
-### 7. Activate and use the provider
+### 8. Activate and use the provider
 
 1. Select the target provider and enabled model in the top control bar.
 2. Choose **Activate**.

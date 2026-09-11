@@ -1571,6 +1571,39 @@
                                    Margin="21,0,0,0" />
                     </StackPanel>
                 </Border>
+
+                <!-- Release check: explicit, on demand, no auto-update. The app is unsigned and the
+                     download is ~90-130 MB, so replacing itself silently is the wrong trade; what was
+                     missing is simply a way to learn a newer build exists. -->
+                <Border Style="{StaticResource CardBorder}" Margin="0,20,0,0">
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource L10n_Set_UpdateSection}" Style="{StaticResource SectionLabel}" />
+                        <TextBlock Text="{Binding RunningVersionLine}"
+                                   Foreground="{DynamicResource BrushTextHigh}"
+                                   FontSize="13"
+                                   Margin="0,16,0,4" />
+                        <TextBlock Text="{DynamicResource L10n_Set_UpdateHint}"
+                                   Foreground="{DynamicResource BrushMuted}"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,12" />
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="{DynamicResource L10n_Set_UpdateCheck}"
+                                    Command="{Binding CheckForUpdateCommand}"
+                                    HorizontalAlignment="Left" />
+                            <Button Content="{DynamicResource L10n_Set_UpdateOpen}"
+                                    Command="{Binding OpenReleaseCommand}"
+                                    Visibility="{Binding ReleaseLinkVisibility}"
+                                    Margin="8,0,0,0"
+                                    HorizontalAlignment="Left" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding UpdateStatus}"
+                                   Foreground="{DynamicResource BrushMuted}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </DataTemplate>
     </Window.Resources>

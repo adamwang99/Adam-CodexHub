@@ -135,6 +135,15 @@
     <sys:String x:Key="L10n_Set_HandoffOpenChatTipOff">Đang TẮT nối phiên: kích hoạt nhà cung cấp chỉ đổi nhà cung cấp, Codex giữ nguyên phiên hiện tại nên chat cũ vẫn tính vào tài khoản đã ghim lúc tạo. Bật để CodexHub tự mở chat mới và nối bối cảnh sang nhà cung cấp vừa chọn.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSend">Tự gửi bối cảnh phiên làm việc</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSendHint">Tắt: bối cảnh được dán vào chat mới và chờ anh nhấn Enter.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateSection">BẢN PHÁT HÀNH</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateRunning">Đang chạy bản {0}</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateHint">Kiểm tra khi anh bấm, không tự chạy nền và không tự tải về. Bản tải nằm trên GitHub, anh tự quyết định cài hay không.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateCheck">Kiểm tra bản mới</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateOpen">Mở trang tải về</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateChecking">Đang hỏi GitHub…</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateCurrent">Đang dùng bản mới nhất.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateAvailable">Đã có bản {0}. Bấm "Mở trang tải về" để xem có gì thay đổi.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateFailed">Chưa kiểm tra được ({0}). Mạng hoặc GitHub đang không phản hồi — hub vẫn chạy bình thường.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Đã lưu tuỳ chọn nối phiên.</sys:String>
     <sys:String x:Key="L10n_MT_Title">Kiểm Tra Tương Thích Mô Hình</sys:String>
     <sys:String x:Key="L10n_MT_Probes">PHÉP THỬ</sys:String>
@@ -318,6 +327,7 @@ Xác nhận hành động: {1}</sys:String>
     <sys:String x:Key="L10n_Home_RefreshingModels">Đang tự cập nhật danh mục mô hình cho {0}…</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Đã hoàn tất kích hoạt.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Đã kích hoạt {0}.</sys:String>
+    <sys:String x:Key="L10n_Home_ProviderVerificationFailed">Đã kích hoạt nhưng chưa xác nhận được {0} là nhà cung cấp đang bật, nên Codex không được mở. Bấm Làm mới nhà cung cấp rồi thử lại.</sys:String>
     <sys:String x:Key="L10n_Home_ContinuationReady">Đã mở chat Codex mới và tự gửi bối cảnh phiên làm việc trước.</sys:String>
     <sys:String x:Key="L10n_Home_ContinuationManual">Đã dán bối cảnh vào chat Codex mới — anh kiểm tra rồi nhấn Enter.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Kích hoạt thất bại: {0}</sys:String>

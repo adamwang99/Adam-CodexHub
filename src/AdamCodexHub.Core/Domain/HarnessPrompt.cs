@@ -36,15 +36,15 @@ public static class HarnessPrompt
     /// Returns the request body with the identity claim replaced, or the original bytes when the
     /// request carries no such claim.
     /// </summary>
-    public static byte[] Neutralise(byte[] body, out string? replaced)
+    public static ArraySegment<byte> Neutralise(ArraySegment<byte> body, out string? replaced)
     {
         replaced = null;
-        if (body.Length == 0)
+        if (body.Count == 0)
         {
             return body;
         }
 
-        var text = Encoding.UTF8.GetString(body);
+        var text = Encoding.UTF8.GetString(body.Array!, body.Offset, body.Count);
         foreach (var claim in Claims)
         {
             var start = text.IndexOf(claim, StringComparison.OrdinalIgnoreCase);

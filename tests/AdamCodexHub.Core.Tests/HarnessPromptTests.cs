@@ -53,6 +53,10 @@ public sealed class HarnessPromptTests
         var result = HarnessPrompt.Neutralise(body, out var replaced);
 
         Assert.Null(replaced);
-        Assert.Same(body, result);
+        // The bytes come back as they went in, and without a copy: the segment still points at the
+        // caller's array, which is what keeps a 64 MB turn from being duplicated for nothing.
+        Assert.Same(body, result.Array);
+        Assert.Equal(0, result.Offset);
+        Assert.Equal(body.Length, result.Count);
     }
 }

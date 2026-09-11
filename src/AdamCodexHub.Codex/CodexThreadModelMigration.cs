@@ -104,6 +104,19 @@ public sealed class CodexThreadModelMigration
                 pragma.ExecuteNonQuery();
             }
 
+            // This database belongs to a closed app that updates itself, and the columns written here
+            // are an observation of one build, not a contract (measured across CW 0.153.0 and 0.153.4
+            // during 2026-09-11). If the shape is not exactly what this repair understands, the honest
+            // move is to leave the user's data alone and say so — a hopeful UPDATE against a renamed
+            // column is how a convenience turns into data loss.
+            if (!SchemaLooksFamiliar(connection, out var schemaNote))
+            {
+                Log?.Invoke(
+                    $"Threads: leaving Codex's database untouched — {schemaNote}. " +
+                    "Switching provider still works; the open chats may need a new chat.");
+                return 0;
+            }
+
             var stranded = new List<(string Id, bool Model, bool Route)>();
             using (var select = connection.CreateCommand())
             {
@@ -175,6 +188,54 @@ public sealed class CodexThreadModelMigration
         catch (UnauthorizedAccessException)
         {
             return 0;
+        }
+    }
+
+    /// <summary>
+    /// Confirms the two things this repair actually depends on: a <c>threads</c> table, and the
+    /// <c>model</c> / <c>model_provider</c> text columns it rewrites. Anything else about Codex's
+    /// schema is free to change without stopping us — and if these change, we stop.
+    /// </summary>
+    private static bool SchemaLooksFamiliar(SqliteConnection connection, out string note)
+    {
+        try
+        {
+            using var table = connection.CreateCommand();
+            table.CommandText =
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'threads'";
+            if (Convert.ToInt64(table.ExecuteScalar() ?? 0L) == 0)
+            {
+                note = "this build of Codex has no 'threads' table";
+                return false;
+            }
+
+            var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            using (var info = connection.CreateCommand())
+            {
+                info.CommandText = "SELECT name FROM pragma_table_info('threads')";
+                using var reader = info.ExecuteReader();
+                while (reader.Read())
+                {
+                    columns.Add(reader.GetString(0));
+                }
+            }
+
+            var missing = new[] { "id", "model", "model_provider" }
+                .Where(column => !columns.Contains(column))
+                .ToList();
+            if (missing.Count > 0)
+            {
+                note = $"this build of Codex has no {string.Join("/", missing)} column on 'threads'";
+                return false;
+            }
+
+            note = string.Empty;
+            return true;
+        }
+        catch (SqliteException ex)
+        {
+            note = $"the schema could not be read ({ex.SqliteErrorCode})";
+            return false;
         }
     }
 

@@ -135,6 +135,15 @@
     <sys:String x:Key="L10n_Set_HandoffOpenChatTipOff">Session hand-off is OFF: activating a provider only swaps the provider, so Codex keeps the current chat and it stays billed to the account pinned when it was created. Turn it on to open a fresh chat with the context carried over.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSend">Send the session recap automatically</sys:String>
     <sys:String x:Key="L10n_Set_HandoffAutoSendHint">Off: the recap is pasted into the new chat and waits for you to press Enter.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateSection">RELEASES</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateRunning">Running version {0}</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateHint">Checked when you ask, never in the background, and nothing is downloaded automatically. Releases live on GitHub; installing one stays your decision.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateCheck">Check for a new version</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateOpen">Open the download page</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateChecking">Asking GitHub…</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateCurrent">This is the newest release.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateAvailable">Version {0} is available. Open the download page to see what changed.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateFailed">Could not check ({0}). The network or GitHub is not answering — the hub itself is unaffected.</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Hand-off preference saved.</sys:String>
     <sys:String x:Key="L10n_MT_Title">Model Compatibility Test</sys:String>
     <sys:String x:Key="L10n_MT_Probes">PROBES</sys:String>
@@ -318,6 +327,7 @@ Confirm action: {1}</sys:String>
     <sys:String x:Key="L10n_Home_RefreshingModels">Refreshing the model catalogue for {0}…</sys:String>
     <sys:String x:Key="L10n_Home_ActivationDone">Activation completed.</sys:String>
     <sys:String x:Key="L10n_Home_Activated">Activated {0}.</sys:String>
+    <sys:String x:Key="L10n_Home_ProviderVerificationFailed">Activated, but {0} could not be confirmed as the active provider, so Codex was not launched. Refresh providers and try again.</sys:String>
     <sys:String x:Key="L10n_Home_ContinuationReady">Opened a fresh Codex chat and sent the previous session's context.</sys:String>
     <sys:String x:Key="L10n_Home_ContinuationManual">Pasted the context into the new Codex chat — review it, then press Enter.</sys:String>
     <sys:String x:Key="L10n_Home_ActivationFailed">Activation failed: {0}</sys:String>

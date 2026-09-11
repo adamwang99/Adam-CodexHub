@@ -67,6 +67,72 @@ public sealed class CodexThreadModelMigrationTests : IDisposable
     }
 
     [Fact]
+    public void AnUnfamiliarSchemaIsLeftAloneWithAnExplanation()
+    {
+        // state_5.sqlite belongs to a closed app that updates itself, and the columns rewritten here
+        // were read off one build (CW 0.153.x, 2026-09-11) — they are an observation, not a contract.
+        // A future CW that renames the column must cost the user nothing: no write, no exception, and
+        // a log line that says why the repair stood down.
+        var database = Path.Combine(_home, "state_5.sqlite");
+        using (var connection = new SqliteConnection($"Data Source={database}"))
+        {
+            connection.Open();
+            using var create = connection.CreateCommand();
+            // 'model_provider' is gone — the shape this repair depends on no longer holds.
+            create.CommandText =
+                "CREATE TABLE threads (id TEXT PRIMARY KEY, model TEXT, route TEXT)";
+            create.ExecuteNonQuery();
+
+            using var insert = connection.CreateCommand();
+            insert.CommandText =
+                "INSERT INTO threads (id, model, route) VALUES ('stranded', 'claude-5.5', 'somewhere')";
+            insert.ExecuteNonQuery();
+        }
+
+        var log = new List<string>();
+        var migrated = new CodexThreadModelMigration
+        {
+            CodexHome = _home,
+            CodexIsRunning = () => true,
+            Log = log.Add
+        }.Migrate(new[] { "gpt-5.6-sol" }, "gpt-5.6-sol", CodexThreadModelMigration.AccountProviderId);
+
+        Assert.Equal(0, migrated);
+        Assert.Contains(log, line => line.Contains("model_provider") && line.Contains("untouched"));
+
+        // The user's row is exactly as it was.
+        using var verify = new SqliteConnection($"Data Source={database}");
+        verify.Open();
+        using var read = verify.CreateCommand();
+        read.CommandText = "SELECT model FROM threads WHERE id = 'stranded'";
+        Assert.Equal("claude-5.5", read.ExecuteScalar() as string);
+    }
+
+    [Fact]
+    public void AMissingThreadsTableIsReportedRatherThanGuessedAt()
+    {
+        var database = Path.Combine(_home, "state_5.sqlite");
+        using (var connection = new SqliteConnection($"Data Source={database}"))
+        {
+            connection.Open();
+            using var create = connection.CreateCommand();
+            create.CommandText = "CREATE TABLE conversations (id TEXT PRIMARY KEY, model TEXT)";
+            create.ExecuteNonQuery();
+        }
+
+        var log = new List<string>();
+        var migrated = new CodexThreadModelMigration
+        {
+            CodexHome = _home,
+            CodexIsRunning = () => false,
+            Log = log.Add
+        }.Migrate(new[] { "gpt-5.6-sol" }, "gpt-5.6-sol");
+
+        Assert.Equal(0, migrated);
+        Assert.Contains(log, line => line.Contains("no 'threads' table"));
+    }
+
+    [Fact]
     public void IgnoresATargetTheProviderDoesNotOffer()
     {
         var database = SeedThreads(("stranded", "dsv4"));

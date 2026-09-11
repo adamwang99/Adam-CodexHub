@@ -341,7 +341,7 @@ public sealed class LocalGatewayService : IGatewayService
             return;
         }
 
-        byte[] body;
+        ArraySegment<byte> body;
         try
         {
             body = await ReadRequestBodyAsync(context.Request, context.RequestAborted);
@@ -772,7 +772,15 @@ public sealed class LocalGatewayService : IGatewayService
     private static bool IsLoopback(HttpContext context) =>
         context.Connection.RemoteIpAddress is { } address && IPAddress.IsLoopback(address);
 
-    private static async Task<byte[]> ReadRequestBodyAsync(
+    /// <summary>
+    /// Reads the turn into memory, once. It cannot be streamed straight through: a turn may be retried
+    /// with the next key, or re-sent under a different model when the picked one is refused, and both
+    /// need the same bytes again. What it must not do is pay for those bytes twice — a naive
+    /// <c>MemoryStream</c> + <c>ToArray()</c> costs 2× the body at peak plus the doubling it did while
+    /// growing, which on a 64 MB ceiling is real memory. Sizing the buffer from Content-Length and
+    /// handing back its own array removes both.
+    /// </summary>
+    private static async Task<ArraySegment<byte>> ReadRequestBodyAsync(
         HttpRequest request,
         CancellationToken cancellationToken)
     {
@@ -783,7 +791,10 @@ public sealed class LocalGatewayService : IGatewayService
                 StatusCodes.Status413PayloadTooLarge);
         }
 
-        await using var buffer = new MemoryStream();
+        var capacity = request.ContentLength is > 0 and <= MaxRequestBodySize
+            ? (int)request.ContentLength.Value
+            : 0;
+        using var buffer = new MemoryStream(capacity);
         await request.Body.CopyToAsync(buffer, cancellationToken);
         if (buffer.Length > MaxRequestBodySize)
         {
@@ -792,20 +803,22 @@ public sealed class LocalGatewayService : IGatewayService
                 StatusCodes.Status413PayloadTooLarge);
         }
 
-        return buffer.ToArray();
+        // GetBuffer avoids the second full-size copy ToArray would make; the segment carries the real
+        // length so the slack at the end is never sent.
+        return new ArraySegment<byte>(buffer.GetBuffer(), 0, (int)buffer.Length);
     }
 
     private static HttpRequestMessage CreateUpstreamRequest(
         HttpRequest incoming,
         ProviderProfile provider,
         string endpoint,
-        byte[] body,
+        ArraySegment<byte> body,
         string? apiKey)
     {
         var uri = BuildUpstreamUri(provider, endpoint, apiKey);
         var request = new HttpRequestMessage(HttpMethod.Post, uri)
         {
-            Content = new ByteArrayContent(body)
+            Content = new ByteArrayContent(body.Array!, body.Offset, body.Count)
         };
         request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse(
             incoming.ContentType ?? "application/json");
@@ -1017,9 +1030,10 @@ public sealed class LocalGatewayService : IGatewayService
     }
 
     /// <summary>Same request body with a different model — only ever used for a stuck turn.</summary>
-    private static byte[] SwapModel(byte[] body, string model)
+    private static ArraySegment<byte> SwapModel(ArraySegment<byte> body, string model)
     {
-        if (JsonNode.Parse(body) is not JsonObject json)
+        if (JsonNode.Parse(Encoding.UTF8.GetString(body.Array!, body.Offset, body.Count))
+            is not JsonObject json)
         {
             return body;
         }
@@ -1029,11 +1043,11 @@ public sealed class LocalGatewayService : IGatewayService
     }
 
     /// <summary>The tool names a request offers the model — "none" means the session cannot work.</summary>
-    private static string DescribeTools(byte[] body)
+    private static string DescribeTools(ArraySegment<byte> body)
     {
         try
         {
-            using var json = JsonDocument.Parse(body);
+            using var json = JsonDocument.Parse(new ReadOnlyMemory<byte>(body.Array!, body.Offset, body.Count));
             if (!json.RootElement.TryGetProperty("tools", out var tools) ||
                 tools.ValueKind != JsonValueKind.Array)
             {

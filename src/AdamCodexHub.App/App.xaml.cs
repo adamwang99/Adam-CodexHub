@@ -1008,9 +1008,15 @@ public partial class App : Application
             var detail = exception is null
                 ? string.Empty
                 : $" | {exception.GetType().Name}: {exception.Message}";
+            var path = Path.Combine(directory, "startup.log");
             File.AppendAllText(
-                Path.Combine(directory, "startup.log"),
+                path,
                 $"{DateTimeOffset.Now:O} | {stage}{detail}{Environment.NewLine}");
+
+            // This file only ever grew: measured 2026-09-11 it was at 832 KB / 7,183 lines after six
+            // days, because the gateway logs every turn and nothing ever pruned it. Checking on the
+            // write path means the ceiling holds without a timer.
+            Core.Maintenance.Housekeeping.TrimLogFile(path);
         }
         catch
         {

@@ -5,6 +5,15 @@
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <!-- The .NET analysers catch a class of mistake nothing else here does: a patch that landed
+         truncated, a disposable left undisposed, an async method that never awaits. Warnings stay
+         warnings on purpose — a build that refuses to run because of a style rule would get
+         `TreatWarningsAsErrors` switched off in a hurry, and then nothing is checked at all. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Default</AnalysisMode>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/adamwang99/Adam-CodexHub</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

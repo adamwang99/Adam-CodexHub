@@ -2,14 +2,34 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
+
+  <!-- Version policy, decided 2026-09-11 after `dotnet list package` reported the tree drifting into
+       three different major lines at once.
+
+       The app targets .NET 8, so the Microsoft.Extensions.* packages stay on 8.x on purpose: those
+       ship in lockstep with the runtime, and pulling 10.x into a net8.0 app buys nothing while
+       widening the dependency surface. Microsoft.Data.Sqlite is the exception — it is a standalone
+       library, not part of the shared framework, and it is what talks to Codex's own database, so it
+       tracks the current patch.
+
+       Test tooling follows its own lane: it never ships to a user, so it takes the newest stable.
+
+       When Dependabot opens a major-version PR for a Microsoft.Extensions package, the answer is
+       "not until the app moves to that runtime" — otherwise this comment is the thing that rots. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <!-- Standalone library, tracks current patch. -->
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+
+    <!-- Shipped with .NET 8; pinned to the app's target framework. -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
+
     <PackageVersion Include="Tomlyn" Version="2.10.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageVersion Include="xunit" Version="2.6.6" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.6" />
+
+    <!-- Test-only: never reaches a user, so newest stable. -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
 </Project>

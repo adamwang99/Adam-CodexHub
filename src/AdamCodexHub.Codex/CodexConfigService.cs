@@ -479,6 +479,12 @@ public sealed class CodexConfigService : ICodexConfigService
             useAsync: true);
         await input.CopyToAsync(output, cancellationToken);
         await output.FlushAsync(cancellationToken);
+
+        // A backup is written before every activation and none was ever removed: measured 2026-09-11
+        // this folder held 231 files totalling 91 MB on Adam's machine. Ten is far more history than a
+        // rollback needs (RestoreLatest only reads the newest), and the newest are the ones kept.
+        Core.Maintenance.Housekeeping.PruneBackups(_backupDirectory, "config-*.toml");
+
         return backup;
     }
 

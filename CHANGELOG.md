@@ -1,5 +1,73 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A long chat could not be sent at all: the gateway refused its own request with `413`.** Codex posts
+  the whole conversation with every turn, so a thread with a few screenshots in it went past the
+  hub's 10 MB request guard and got `unexpected status 413 Payload Too Large: Request body exceeds the
+  10 MB gateway limit.` back from `127.0.0.1:20129/v1/responses` — the turn died before it was ever
+  forwarded, which is one reason a long session looked like it "did nothing". The ceiling is a guard
+  against a runaway body, not a budget for a working session, so it is 64 MB now and the message
+  derives its number from the constant instead of hardcoding "10 MB". The accompanying
+  `Context Warnings … no content extracted` was never a second fault — it is a reader failing to
+  parse the error body. Measured live: a 12 MB POST now reaches the provider (500 from upstream)
+  instead of being stopped by the hub (413).
+
+- **The release came out ZIP-only even though the pipeline builds an installer.** `package-release.ps1`
+  looked for `ISCC.exe` in the three default Inno Setup folders, and on this machine Inno Setup 6.7.3
+  lives somewhere else entirely, so the installer step was silently skipped. It now also reads the
+  install location out of the uninstall registry keys, which is what any real installation records.
+
+### Changed
+
+- **The hub stops growing on your disk.** Two leaks, both from code that only ever appended: the log
+  files had no ceiling (`startup.log` measured 832 KB / 7,183 lines after six days, because the
+  gateway logs every turn), and a config backup was written before every provider activation with
+  nothing ever removed (231 files / 91 MB in `~/.codex/adam-codexhub-backups`). Logs are now trimmed
+  to 5 MB keeping the newest lines and a visible marker where the gap is, and config backups keep the
+  ten newest. Files that are not ours are never touched.
+
+- **A turn no longer costs twice its size in memory.** With a 64 MB ceiling the old
+  `MemoryStream` + `ToArray()` pattern peaked at 2× the body for no reason; the buffer is now sized
+  from `Content-Length` and handed on without the second copy. The bytes still have to be held once,
+  because a turn may be retried with the next key or re-sent under a different model.
+
+- **The thread repair refuses to write when Codex's database is not the shape it knows.** The
+  `model` / `model_provider` columns it rewrites were read off one build of Codex, and Codex updates
+  itself; a hopeful `UPDATE` against a renamed column is how a convenience becomes data loss. It now
+  checks the table and columns first and, when they differ, logs why it stood down and changes
+  nothing.
+
+### Added
+
+- **Settings can tell you a newer release exists.** Someone on an older build had no way to learn a
+  fix had shipped, which meant every release had to be hand-delivered. There is a "check for a new
+  version" button now — on demand only, never a background poll, nothing downloaded automatically,
+  and an unreachable GitHub reports itself as a failed check rather than a broken hub.
+
+- **The App layer has a test guard at last, and it immediately caught a real bug.** The App project
+  has no WPF unit tests (its view models read the user's own preferences file, so a test that touched
+  them would be editing real data), and its most repeatable failures are resources that silently go
+  missing. Five tests now read the source instead: both locale files must define exactly the same
+  keys, every `L10n_*` key used in XAML or in code must exist in both languages, every
+  `pack://…/Assets/…` image a locale points at must exist on disk *and* be listed as a csproj
+  `Resource`, and the two locale files must stay single-line-ending. On its first run it found
+  `L10n_Home_ProviderVerificationFailed` — referenced in code since the activation-verification work,
+  defined in no locale — so that failure message had been rendering as a raw key. It is written now,
+  in both languages.
+
+- The .NET analysers are enabled (as warnings, not errors) so the class of mistake nothing else here
+  catches — a truncated patch, an undisposed handle — shows up at build time. The build is warning
+  clean at this level.
+
+- Dependency versions are now a stated policy rather than drift: `Microsoft.Extensions.*` stay on 8.x
+  because they ship with the runtime the app targets, `Microsoft.Data.Sqlite` tracks the current
+  patch because it is a standalone library talking to Codex's own database, and test tooling takes the
+  newest stable because it never reaches a user. Dependabot's major-version PRs now have a documented
+  answer instead of a judgement call each time.
+
 ## v1.5.4
 
 ### Fixed
@@ -391,7 +459,7 @@
 
 - all README screenshots and both in-app guide sets re-shot at v1.4.0
 
-## Unreleased
+## v1.0.0 — initial skeleton
 
 ### Added
 

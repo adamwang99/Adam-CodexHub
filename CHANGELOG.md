@@ -59,6 +59,15 @@
 
 ### Added
 
+- **The release check can fetch the installer for you.** When a release actually carries a Setup
+  asset, a second button downloads it into the Downloads folder, verifies its SHA-256 against the
+  checksum published beside it, and reveals the file in Explorer. It stops exactly there: the hub
+  never runs the installer, so replacing the application stays a click the user makes. What it will
+  not do is pretend — a release with no installer offers no button, a file that fails its checksum is
+  deleted and reported in red rather than left looking installable, and a release that ships no
+  checksum says so instead of implying it was verified. Downloads land under a `.part` name and are
+  only given their real name once verified.
+
 - **Settings can tell you a newer release exists.** Someone on an older build had no way to learn a
   fix had shipped, which meant every release had to be hand-delivered. There is a "check for a new
   version" button now — on demand only, never a background poll, nothing downloaded automatically,

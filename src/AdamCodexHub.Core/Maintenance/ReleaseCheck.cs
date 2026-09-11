@@ -83,4 +83,88 @@ public static class ReleaseCheck
 
         return Version.TryParse(text, out var version) ? version : null;
     }
+
+    /// <summary>
+    /// The installer a release offers, plus the checksum published next to it. Null when the release
+    /// carries no Setup asset — a release built on a runner without Inno Setup is ZIP-only, and the
+    /// honest answer there is "nothing to fetch", not a broken download button.
+    /// </summary>
+    public sealed record SetupDownload(
+        string FileName,
+        string DownloadUrl,
+        string? ChecksumUrl,
+        long SizeBytes);
+
+    /// <summary>Reads the Setup asset (and its <c>.sha256</c> sibling) out of a release payload.</summary>
+    public static SetupDownload? FindSetupDownload(string releaseJson)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(releaseJson);
+            if (!document.RootElement.TryGetProperty("assets", out var assets) ||
+                assets.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var found = new List<(string Name, string Url, long Size)>();
+            foreach (var asset in assets.EnumerateArray())
+            {
+                var name = asset.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : null;
+                var url = asset.TryGetProperty("browser_download_url", out var urlElement)
+                    ? urlElement.GetString()
+                    : null;
+                if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(url))
+                {
+                    continue;
+                }
+
+                var size = asset.TryGetProperty("size", out var sizeElement) && sizeElement.TryGetInt64(out var parsed)
+                    ? parsed
+                    : 0L;
+                found.Add((name, url, size));
+            }
+
+            var setup = found.FirstOrDefault(asset =>
+                asset.Name.StartsWith("AdamCodexHub-Setup-", StringComparison.OrdinalIgnoreCase) &&
+                asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+            if (setup.Name is null)
+            {
+                return null;
+            }
+
+            var checksum = found.FirstOrDefault(asset =>
+                asset.Name.Equals(setup.Name + ".sha256", StringComparison.OrdinalIgnoreCase));
+
+            return new SetupDownload(setup.Name, setup.Url, checksum.Url, setup.Size);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Compares a published checksum line (<c>&lt;hex&gt;  &lt;filename&gt;</c>, the format
+    /// <c>Get-FileHash</c> and the packaging script both write) against a computed digest. Only the
+    /// hex token is compared, and case does not matter.
+    /// </summary>
+    public static bool ChecksumMatches(string? publishedLine, string? computedHex)
+    {
+        if (string.IsNullOrWhiteSpace(publishedLine) || string.IsNullOrWhiteSpace(computedHex))
+        {
+            return false;
+        }
+
+        var expected = publishedLine
+            .Trim()
+            .Split(new[] { ' ', '\t', '*' }, StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return false;
+        }
+
+        return string.Equals(expected, computedHex.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
 }

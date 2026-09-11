@@ -1596,6 +1596,12 @@
                                     Visibility="{Binding ReleaseLinkVisibility}"
                                     Margin="8,0,0,0"
                                     HorizontalAlignment="Left" />
+                            <!-- Downloads the installer and reveals it in Explorer; it never runs it. -->
+                            <Button Content="{DynamicResource L10n_Set_UpdateDownload}"
+                                    Command="{Binding DownloadUpdateCommand}"
+                                    Visibility="{Binding DownloadVisibility}"
+                                    Margin="8,0,0,0"
+                                    HorizontalAlignment="Left" />
                         </StackPanel>
                         <TextBlock Text="{Binding UpdateStatus}"
                                    Foreground="{DynamicResource BrushMuted}"

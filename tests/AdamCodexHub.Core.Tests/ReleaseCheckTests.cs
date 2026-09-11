@@ -90,4 +90,106 @@ public sealed class ReleaseCheckTests
         Assert.DoesNotContain("token", ReleaseCheck.LatestReleaseUrl, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("?", ReleaseCheck.LatestReleaseUrl);
     }
+
+    private const string ReleaseWithInstaller = """
+        {
+          "tag_name": "v1.5.6",
+          "html_url": "https://github.com/adamwang99/Adam-CodexHub/releases/tag/v1.5.6",
+          "assets": [
+            { "name": "AdamCodexHub-v1.5.6-win-x64.zip", "browser_download_url": "https://example/zip", "size": 138936320 },
+            { "name": "AdamCodexHub-v1.5.6-win-x64.zip.sha256", "browser_download_url": "https://example/zipsha", "size": 96 },
+            { "name": "AdamCodexHub-Setup-v1.5.6-win-x64.exe", "browser_download_url": "https://example/setup", "size": 99934336 },
+            { "name": "AdamCodexHub-Setup-v1.5.6-win-x64.exe.sha256", "browser_download_url": "https://example/setupsha", "size": 100 }
+          ]
+        }
+        """;
+
+    [Fact]
+    public void FindsTheInstallerAssetAndTheChecksumPublishedBesideIt()
+    {
+        // The exact shape v1.5.4 shipped (4 assets), so the URL pair the downloader uses is pinned.
+        var setup = ReleaseCheck.FindSetupDownload(ReleaseWithInstaller);
+
+        Assert.NotNull(setup);
+        Assert.Equal("AdamCodexHub-Setup-v1.5.6-win-x64.exe", setup!.FileName);
+        Assert.Equal("https://example/setup", setup.DownloadUrl);
+        Assert.Equal("https://example/setupsha", setup.ChecksumUrl);
+        Assert.Equal(99934336, setup.SizeBytes);
+    }
+
+    [Fact]
+    public void ThePortableZipIsNeverMistakenForTheInstaller()
+    {
+        // Both assets start with "AdamCodexHub-" and end with an extension; only one is runnable.
+        var setup = ReleaseCheck.FindSetupDownload(ReleaseWithInstaller);
+
+        Assert.NotNull(setup);
+        Assert.EndsWith(".exe", setup!.FileName, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(".zip", setup.FileName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AZipOnlyReleaseOffersNothingToDownload()
+    {
+        // A release packaged on a runner without Inno Setup has no installer: the honest answer is
+        // "no download button", not a button that fails.
+        const string zipOnly = """
+            {
+              "tag_name": "v1.0.0",
+              "assets": [
+                { "name": "AdamCodexHub-v1.0.0-win-x64.zip", "browser_download_url": "https://example/zip", "size": 1 },
+                { "name": "AdamCodexHub-v1.0.0-win-x64.zip.sha256", "browser_download_url": "https://example/zipsha", "size": 1 }
+              ]
+            }
+            """;
+
+        Assert.Null(ReleaseCheck.FindSetupDownload(zipOnly));
+        Assert.Null(ReleaseCheck.FindSetupDownload("not json"));
+        Assert.Null(ReleaseCheck.FindSetupDownload("{\"tag_name\":\"v1.0.0\"}"));
+    }
+
+    [Fact]
+    public void AnInstallerWithoutAPublishedChecksumIsStillOffered()
+    {
+        // The download must not refuse to happen just because verification is impossible — but the
+        // caller has to be able to tell, hence a null ChecksumUrl rather than a fabricated one.
+        const string noChecksum = """
+            {
+              "tag_name": "v1.5.6",
+              "assets": [
+                { "name": "AdamCodexHub-Setup-v1.5.6-win-x64.exe", "browser_download_url": "https://example/setup", "size": 10 }
+              ]
+            }
+            """;
+
+        var setup = ReleaseCheck.FindSetupDownload(noChecksum);
+
+        Assert.NotNull(setup);
+        Assert.Null(setup!.ChecksumUrl);
+    }
+
+    [Theory]
+    // Get-FileHash / the packaging script write "<hex> *<name>" and "<hex>  <name>"; both must parse.
+    [InlineData("abc123 *AdamCodexHub-Setup.exe", "abc123", true)]
+    [InlineData("abc123  AdamCodexHub-Setup.exe", "abc123", true)]
+    [InlineData("ABC123 *AdamCodexHub-Setup.exe", "abc123", true)]
+    [InlineData("abc123 *AdamCodexHub-Setup.exe\n", "abc123", true)]
+    [InlineData("abc123 *AdamCodexHub-Setup.exe", "deadbeef", false)]
+    public void PublishedChecksumsAreComparedByTheirHexToken(
+        string published,
+        string computed,
+        bool expected)
+    {
+        Assert.Equal(expected, ReleaseCheck.ChecksumMatches(published, computed));
+    }
+
+    [Fact]
+    public void AnEmptyOrMissingChecksumNeverCountsAsAMatch()
+    {
+        // Failing open here would make the verification decorative.
+        Assert.False(ReleaseCheck.ChecksumMatches(null, "abc"));
+        Assert.False(ReleaseCheck.ChecksumMatches("", "abc"));
+        Assert.False(ReleaseCheck.ChecksumMatches("abc", null));
+        Assert.False(ReleaseCheck.ChecksumMatches("   ", "abc"));
+    }
 }

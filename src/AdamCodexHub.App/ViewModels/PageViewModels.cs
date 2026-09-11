@@ -1973,6 +1973,7 @@ public sealed class SettingsViewModel : PageViewModel
     private string _statusKey = DefaultsStatusKey;
     private string _updateStatus = string.Empty;
     private string? _releaseUrl;
+    private ReleaseCheck.SetupDownload? _setup;
 
     public SettingsViewModel()
         : base("L10n_Set_Title", "L10n_Set_Subtitle")
@@ -1983,6 +1984,7 @@ public sealed class SettingsViewModel : PageViewModel
         StatusMessage = L10n.T(_statusKey);
         CheckForUpdateCommand = new AsyncRelayCommand(CheckForUpdateAsync);
         OpenReleaseCommand = new RelayCommand(OpenRelease);
+        DownloadUpdateCommand = new AsyncRelayCommand(DownloadUpdateAsync);
     }
 
     /// <summary>Shared hand-off state — Home toolbar and this page both bind to it.</summary>
@@ -2016,6 +2018,17 @@ public sealed class SettingsViewModel : PageViewModel
     /// <summary>"Open the release page" only appears once there is a page worth opening.</summary>
     public Visibility ReleaseLinkVisibility =>
         string.IsNullOrWhiteSpace(_releaseUrl) ? Visibility.Collapsed : Visibility.Visible;
+
+    /// <summary>
+    /// Fetches the release's installer into the Downloads folder and verifies its SHA-256 against the
+    /// checksum published beside it. Deliberately stops there: it never runs the installer, so
+    /// replacing the application stays a click the user makes.
+    /// </summary>
+    public ICommand DownloadUpdateCommand { get; }
+
+    /// <summary>Only offered when the release actually carries a Setup asset.</summary>
+    public Visibility DownloadVisibility =>
+        _setup is null ? Visibility.Collapsed : Visibility.Visible;
 
     /// <summary>Open a fresh Codex chat and carry the session over when a provider is activated.</summary>
     public bool OpenFreshChat
@@ -2074,27 +2087,33 @@ public sealed class SettingsViewModel : PageViewModel
             if (!result.Succeeded)
             {
                 _releaseUrl = null;
+                _setup = null;
                 UpdateStatus = L10n.F("L10n_Set_UpdateFailed", result.Failure ?? string.Empty);
             }
             else if (result.IsNewer)
             {
                 _releaseUrl = result.ReleaseUrl;
+                // Only a release that actually carries an installer offers the download button.
+                _setup = ReleaseCheck.FindSetupDownload(payload);
                 UpdateStatus = L10n.F("L10n_Set_UpdateAvailable", result.LatestVersion ?? string.Empty);
             }
             else
             {
                 _releaseUrl = null;
+                _setup = null;
                 UpdateStatus = L10n.T("L10n_Set_UpdateCurrent");
             }
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
         {
             _releaseUrl = null;
+            _setup = null;
             UpdateStatus = L10n.F("L10n_Set_UpdateFailed", ex.Message);
             LogSettings("Release check", $"{ex.GetType().Name}: {ex.Message}");
         }
 
         OnPropertyChanged(nameof(ReleaseLinkVisibility));
+        OnPropertyChanged(nameof(DownloadVisibility));
     }
 
     private void OpenRelease()
@@ -2111,6 +2130,135 @@ public sealed class SettingsViewModel : PageViewModel
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
             LogSettings("Open release page", $"{ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Downloads the release installer into the user's Downloads folder, verifies its SHA-256 against
+    /// the checksum published beside it, and reveals it in Explorer. It deliberately does NOT run the
+    /// installer: the app is unsigned, so replacing itself stays a click the user makes.
+    /// </summary>
+    private async Task DownloadUpdateAsync()
+    {
+        var setup = _setup;
+        if (setup is null)
+        {
+            return;
+        }
+
+        var directory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads");
+        Directory.CreateDirectory(directory);
+        var target = Path.Combine(directory, setup.FileName);
+        // Written under a .part name so a half-finished download can never be mistaken for a ready
+        // installer sitting in Downloads.
+        var partial = target + ".part";
+
+        try
+        {
+            using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(15) };
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("AdamCodexHub");
+
+            UpdateStatus = L10n.T("L10n_Set_UpdateDownloadingStart");
+
+            long total = setup.SizeBytes;
+            long written = 0;
+            using (var response = await client.GetAsync(
+                setup.DownloadUrl,
+                HttpCompletionOption.ResponseHeadersRead))
+            {
+                response.EnsureSuccessStatusCode();
+                if (response.Content.Headers.ContentLength is { } length and > 0)
+                {
+                    total = length;
+                }
+
+                await using var source = await response.Content.ReadAsStreamAsync();
+                await using var destination = new FileStream(
+                    partial,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None,
+                    bufferSize: 81920,
+                    useAsync: true);
+
+                var buffer = new byte[81920];
+                int read;
+                while ((read = await source.ReadAsync(buffer)) > 0)
+                {
+                    await destination.WriteAsync(buffer.AsMemory(0, read));
+                    written += read;
+                    if (total > 0)
+                    {
+                        UpdateStatus = L10n.F("L10n_Set_UpdateDownloading", written * 100 / total);
+                    }
+                }
+            }
+
+            var digest = await ComputeSha256Async(partial);
+            string? published = null;
+            if (!string.IsNullOrWhiteSpace(setup.ChecksumUrl))
+            {
+                published = await client.GetStringAsync(setup.ChecksumUrl);
+            }
+
+            if (published is null)
+            {
+                // No checksum to compare against: keep the file, but never imply it was verified.
+                File.Move(partial, target, overwrite: true);
+                UpdateStatus = L10n.F("L10n_Set_UpdateDownloadedUnverified", setup.FileName);
+            }
+            else if (!ReleaseCheck.ChecksumMatches(published, digest))
+            {
+                File.Delete(partial);
+                UpdateStatus = L10n.T("L10n_Set_UpdateChecksumMismatch");
+                LogSettings(
+                    "Update download",
+                    $"SHA-256 mismatch for {setup.FileName}: expected {published.Trim()}, got {digest}");
+                return;
+            }
+            else
+            {
+                File.Move(partial, target, overwrite: true);
+                UpdateStatus = L10n.F("L10n_Set_UpdateDownloaded", setup.FileName);
+            }
+
+            Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{target}\"")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException
+            or UnauthorizedAccessException or InvalidOperationException)
+        {
+            UpdateStatus = L10n.F("L10n_Set_UpdateDownloadFailed", ex.Message);
+            LogSettings("Update download", $"{ex.GetType().Name}: {ex.Message}");
+            TryDelete(partial);
+        }
+    }
+
+    private static async Task<string> ComputeSha256Async(string path)
+    {
+        await using var stream = File.OpenRead(path);
+        var hash = await System.Security.Cryptography.SHA256.HashDataAsync(stream);
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
         }
     }
 

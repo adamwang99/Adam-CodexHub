@@ -144,6 +144,13 @@
     <sys:String x:Key="L10n_Set_UpdateCurrent">This is the newest release.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateAvailable">Version {0} is available. Open the download page to see what changed.</sys:String>
     <sys:String x:Key="L10n_Set_UpdateFailed">Could not check ({0}). The network or GitHub is not answering — the hub itself is unaffected.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateDownload">Download the update</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateDownloadingStart">Downloading the installer into your Downloads folder…</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateDownloading">Downloading… {0}%</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateDownloaded">Downloaded {0}, its SHA-256 matches, and the Downloads folder is open. Click the file to install — the hub does not install it for you.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateDownloadedUnverified">Downloaded {0}, but the release ships no SHA-256 file, so it could not be verified. Your Downloads folder is open.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateChecksumMismatch">The downloaded file did NOT match its SHA-256, so it was deleted and nothing was installed. Try again, or download it by hand from the release page.</sys:String>
+    <sys:String x:Key="L10n_Set_UpdateDownloadFailed">Download failed: {0}</sys:String>
     <sys:String x:Key="L10n_Set_HandoffSaved">Hand-off preference saved.</sys:String>
     <sys:String x:Key="L10n_MT_Title">Model Compatibility Test</sys:String>
     <sys:String x:Key="L10n_MT_Probes">PROBES</sys:String>
